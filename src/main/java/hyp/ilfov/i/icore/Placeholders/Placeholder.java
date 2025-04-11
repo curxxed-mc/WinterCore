@@ -39,7 +39,7 @@ public class Placeholder extends PlaceholderExpansion {
 
     @Override
     public boolean persist() {
-        return true; // This ensures the expansion remains loaded.
+        return true; 
     }
 
     @Override
@@ -50,22 +50,22 @@ public class Placeholder extends PlaceholderExpansion {
 
         switch (identifier) {
             case "player_rank":
-                String rank = rankManager.getRankSync(player);  // Use the synchronous method
-                String rankColor = rankManager.getColorPreferenceSync(player);  // Sync for color preference
-                return rankColor + rank;  // Apply color code to rank
+                String rank = rankManager.getRankSync(player); 
+                String rankColor = rankManager.getColorPreferenceSync(player);  
+                return rankColor + rank; 
             case "player_color":
                 return rankManager.getColorPreferenceSync(player);
             case "player_prefix":
                 return rankManager.getRankPrefixSync(player);
             case "player_rank_name":
-                return rankManager.getRankSync(player).replaceAll("§.", ""); // Remove color codes
+                return rankManager.getRankSync(player).replaceAll("§.", "");
             case "player_rank_weight":
                 return String.valueOf(plugin.getConfig().getConfigurationSection("ranks")
                         .getConfigurationSection(rankManager.getRankSync(player)).getInt("weight"));
             case "player_rank_noformat":
                 String rankNoFormat = rankManager.getRankSync(player);
                 String rankColorNoFormat = rankManager.getColorPreferenceSync(player);
-                return rankColorNoFormat + rankNoFormat.replaceAll("(?i)§[k-or]", ""); // Remove formatting codes only
+                return rankColorNoFormat + rankNoFormat.replaceAll("(?i)§[k-or]", ""); 
             default:
                 return null;
         }
