@@ -1,0 +1,79 @@
+name: iCore
+version: 'beta-1'
+main: hyp.ilfov.i.icore.Main
+authors: [ curxxe ]
+softdepend:
+  - PlaceholderAPI
+commands:
+  chatcolor:
+    description: Change chat color
+  fly:
+    description: Toggle flying
+  feed:
+    description: Restore player hunger
+  clearchat:
+    description: Clear the chat
+  gms:
+    description: Change to survival mode
+  gmc:
+    description: Change to creative mode
+  gma:
+    description: Change to adventure mode
+  gmsp:
+    description: Change to spectator mode
+  heal:
+    description: Restore player health
+  setrank:
+    description: Set a player's rank
+  permission:
+    description: Manage permissions for a player
+  perm:
+    description: Manage permissions for a player
+  reloadconfig:
+    description: Reloads the config.yml file
+  list:
+    description: Shows the available ranks and online players with their ranks.
+  vanish:
+    description: Allows you to vanish
+  v:
+    description: Allows you to vanish
+  disguise:
+    description: Disguises you into any player
+  report:
+    description: Report a player for a specific reason
+  staffchat:
+    description: Send a message in Staff Chat
+  adminchat:
+    description: Send a message in Admin Chat
+  managerchat:
+    description: Send a message in Manager Chat
+  sc:
+    description: Send a message in Staff Chat
+  ac:
+    description: Send a message in Admin Chat
+  mc:
+    description: Send a message in Manager Chat
+  about:
+    description: Information about the Plugin
+  warn:
+    description: warns a player
+  mute:
+    description: mutes a player
+  unmute:
+    description: unmutes a player
+  ban:
+    description: bans a player
+  tban:
+    description: temporarily bans a player
+  kick:
+    description: kicks a player
+  history:
+    description: shows punishemnt history of a player
+  fix:
+    description: Repair your item or all items in your inventory
+  more:
+    description: Gives you a stack of the item you're holding
+  enchant:
+    description: Better version of the default enchant command
+  ping:
+    description: Allows you to check the connection of a player to the server
