@@ -1,0 +1,112 @@
+name: iCore
+version: 'beta-1'
+main: hyp.ilfov.i.icore.Main
+authors: [ curxxe ]
+softdepend:
+  - PlaceholderAPI
+commands:
+  chatcolor:
+    description: Change chat color
+  fly:
+    description: Toggle flying
+  feed:
+    description: Restore player hunger
+  clearchat:
+    description: Clear the chat
+  gms:
+    description: Change to survival mode
+  gmc:
+    description: Change to creative mode
+  gma:
+    description: Change to adventure mode
+  gmsp:
+    description: Change to spectator mode
+  heal:
+    description: Restore player health
+  setrank:
+    description: Set a player's rank
+  permission:
+    description: Manage permissions for a player
+    aliases:
+      - perm
+  reloadconfig:
+    description: Reloads the config.yml file
+  list:
+    description: Shows the available ranks and online players with their ranks.
+  vanish:
+    description: Allows you to vanish
+    aliases:
+      - v
+  report:
+    description: Report a player for a specific reason
+  sc:
+    description: Send a message in Staff Chat
+    aliases:
+      - staffchat
+  ac:
+    description: Send a message in Admin Chat
+    aliases:
+      - adminchat
+  mc:
+    description: Send a message in Manager Chat
+    aliases:
+      - managerchat
+  about:
+    description: Information about the Plugin
+  warn:
+    description: warns a player
+  mute:
+    description: mutes a player
+  unmute:
+    description: unmutes a player
+  ban:
+    description: bans a player
+  tban:
+    description: temporarily bans a player
+    aliases:
+      - tempban
+  kick:
+    description: kicks a player
+  history:
+    description: shows punishemnt history of a player
+  fix:
+    description: Repair your item or all items in your inventory
+  more:
+    description: Gives you a stack of the item you're holding
+  enchant:
+    description: Better version of the default enchant command
+  ping:
+    description: Allows you to check the connection of a player to the server
+  message:
+    description: Privately message a player
+    aliases:
+      - msg
+  reply:
+    description: Replies to a private message
+    aliases:
+      - r
+  tpm:
+    description: Allows you to toggle on/off private messages
+  freeze:
+    description: freezes players
+  thru:
+    description: allows you to go through blocks
+  troll:
+    description: Demo menu :)
+  speed:
+    description: Speed
+  cleareffects:
+    description: clears effects
+  invsee:
+   description: allows you to see other player's inventory
+  win:
+    description: Shows the credits (when you've beaten the enderdragon) without skipping it.
+  profile:
+    description: Shows your or another player's profile
+  tps:
+    description: Shows the tps of the server
+  servermanager:
+    description: Server manager for BungeeCord
+    aliases:
+      - sm
+

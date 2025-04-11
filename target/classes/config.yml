@@ -1,0 +1,115 @@
+# iCore Plugin Configuration
+# config.yml
+# I tried making this as simple as possible to understand
+# Enables or disables the plugin's core features
+plugin-enabled: true
+
+# Defines the default rank or role for new players (optional)
+default-rank: Default
+
+# Rank-related settings
+ranks:
+  Owner:
+    prefix: "&7[&4Owner&7] "
+    weight: 100
+    name-color: "&4&o"
+  Developer:
+    prefix: "&7[&bDeveloper&7] "
+    weight: 95
+    name-color: "&b&o"
+  Admin:
+    prefix: "&7[&cAdmin&7] "
+    weight: 90
+    name-color: "&c&o"
+  Media-Owner:
+    prefix: "&7[&4Media-Owner&7] "
+    weight: 80
+    name-color: "&4"
+  Moderator:
+    prefix: "&7[&9Moderator&7] "
+    weight: 75
+    name-color: "&9&o"
+  Helper:
+    prefix: "&7[&eHelper&7] "
+    weight: 70
+    name-color: "&e&o"
+  YouTuber:
+    prefix: "&7[&dYouTube&7] "
+    weight: 60
+    name-color: "&d&o"
+  King:
+    prefix: "&7[&3King&7] "
+    weight: 45
+    name-color: "&3"
+  Default:
+    prefix: ""
+    weight: 1
+    name-color: "&a"
+
+# Whether to display player ranks in the tab list
+show-rank-in-tab: true
+
+# Whether to display player ranks above their head
+show-rank-above-head: true
+
+# Permissions settings (optional, depending on your plugin's needs)
+permissions:
+  Owner:
+    permission: "core.owner"
+    inherits: ["Developer", "Admin", "Moderator", "Helper"]
+  Developer:
+    permission: "core.developer"
+    inherits: ["Admin", "Moderator", "Helper"]
+  Admin:
+    permission: "core.admin"
+    inherits: ["Moderator", "Helper"]
+  Moderator:
+    permission: "core.moderate"
+    inherits: ["Helper"]
+  Helper:
+    permission: "core.helper"
+permissions-subsets:
+  core.helper:
+    - "iCore.fly"
+    - "iCore.feed"
+    - "iCore.heal"
+
+# Server message settings (optional)
+messages:
+  plugin-enabled: "iCore plugin enabled successfully!"
+  plugin-disabled: "iCore plugin disabled successfully!"
+  no-permission: "&cYou do not have permission to use this command."
+
+# Staff
+server-name: "Testing Servers"  # The name of your server
+join-message: "&9[S] %player% &bconnected to &e%server-name%"  # Message when player joins
+switch-message: "&9[S] %player% &bconnected to &e%server-name% &bfrom &e%previous-server%" # Message when player switches in between servers
+quit-message: "&9[S] %player% &bdisconnected from &e%server-name%"  # Message when player quits
+
+StaffVanishMessages:
+  vanish: "&9[S] %player% &bhas vanished!"
+  unvanish: "&9[S] %player% &bis no longer vanished!"
+# Logging settings (optional)
+logging:
+  enabled: true
+  log-file: "logs/icore.log"
+
+#Database
+mysql:
+  host: "localhost"
+  port: "3306"
+  database: "icore"
+  username: "root"
+  password: "password"
+
+Redis:
+  host: "127.0.0.1"
+  port: 6379
+  password: ""
+
+DiscordWebhook:
+  url: "https://discord.com/api/webhooks/.../..."
+  VanishLogs: true
+
+
+
