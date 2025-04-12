@@ -3,8 +3,8 @@ hyp\ilfov\i\icore\listeners\RankGUIListener.class
 hyp\ilfov\i\icore\utils\PunishmentManager.class
 hyp\ilfov\i\icore\Commands\Utility\EnchantCommand.class
 hyp\ilfov\i\icore\Commands\Staff\HistoryCommand.class
-hyp\ilfov\i\icore\Commands\Utility\Fly.class
 hyp\ilfov\i\icore\Commands\misc\SpeedCommand.class
+hyp\ilfov\i\icore\Commands\Utility\Fly.class
 hyp\ilfov\i\icore\utils\WebhookManager$1.class
 hyp\ilfov\i\icore\Database\RedisSocials.class
 hyp\ilfov\i\icore\listeners\FreezeListener.class
@@ -15,7 +15,9 @@ hyp\ilfov\i\icore\Placeholders\Placeholder.class
 hyp\ilfov\i\icore\Bungee\BungeeListener.class
 hyp\ilfov\i\icore\utils\SocialInput.class
 hyp\ilfov\i\icore\Commands\Utility\Heal.class
+hyp\ilfov\i\icore\Commands\Staff\StaffList\StaffListGUI.class
 hyp\ilfov\i\icore\utils\SocialInput$SocialPrompt.class
+hyp\ilfov\i\icore\Commands\Utility\JumpToPlayer.class
 hyp\ilfov\i\icore\Database\RedisManager.class
 hyp\ilfov\i\icore\Commands\Gamemode\gma.class
 hyp\ilfov\i\icore\Commands\Staff\FreezeCommand.class
@@ -32,8 +34,8 @@ hyp\ilfov\i\icore\Commands\Gamemode\gms.class
 hyp\ilfov\i\icore\Commands\misc\ReloadConfig.class
 hyp\ilfov\i\icore\Commands\Utility\ProfileCommand.class
 hyp\ilfov\i\icore\Commands\Staff\WarnCommand.class
-hyp\ilfov\i\icore\Commands\Utility\TPSCommand.class
 hyp\ilfov\i\icore\Commands\Staff\ClearChat.class
+hyp\ilfov\i\icore\Commands\Utility\TPSCommand.class
 hyp\ilfov\i\icore\Database\RedisManager$1.class
 hyp\ilfov\i\icore\Commands\misc\ListCommand.class
 hyp\ilfov\i\icore\Commands\Troll\TrollCommand.class
@@ -47,11 +49,13 @@ hyp\ilfov\i\icore\utils\RankManager.class
 hyp\ilfov\i\icore\Commands\Staff\BanCommand.class
 hyp\ilfov\i\icore\Commands\Staff\StaffChatCommand.class
 hyp\ilfov\i\icore\Commands\Staff\ManagePermissionCommand.class
+hyp\ilfov\i\icore\Commands\Staff\StaffList\StaffRedisHandler.class
 hyp\ilfov\i\icore\Commands\Utility\FixCommand.class
 hyp\ilfov\i\icore\Commands\Staff\UnmuteCommand.class
 hyp\ilfov\i\icore\Commands\Staff\SetRankCommand$1.class
-hyp\ilfov\i\icore\utils\DisguiseGUI.class
+hyp\ilfov\i\icore\Commands\Staff\StaffList\StaffList.class
 hyp\ilfov\i\icore\Main.class
+hyp\ilfov\i\icore\utils\DisguiseGUI.class
 hyp\ilfov\i\icore\Commands\Gamemode\gmsp.class
 hyp\ilfov\i\icore\Commands\Utility\ThruCommand.class
 hyp\ilfov\i\icore\Commands\Utility\PingCommand.class
@@ -61,3 +65,4 @@ hyp\ilfov\i\icore\Commands\Utility\ReportCommand.class
 hyp\ilfov\i\icore\Commands\Staff\AdminChatCommand.class
 hyp\ilfov\i\icore\utils\PermissionManager.class
 hyp\ilfov\i\icore\Commands\misc\AboutCommand.class
+hyp\ilfov\i\icore\utils\Staff\StaffData.class

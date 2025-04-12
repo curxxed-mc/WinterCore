@@ -45,6 +45,7 @@ public class PlayerListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         event.setJoinMessage(null);
         Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
 
         rankManager.getRankAsync(player, rank -> plugin.getLogger().info("Cached rank '" + rank + "' for " + player.getName()));
         rankManager.refreshPlayerDisplay(player);
@@ -54,34 +55,70 @@ public class PlayerListener implements Listener {
             rankManager.getColorPreference(rank, rankColor -> {
                 BukkitReflection.updatePlayerNameTag(player, rankColor);
 
-                String serverName = plugin.getConfig().getString("server-name", "hub-restricted");
-                String playerName = rankColor + player.getName() + ChatColor.RESET;
+                if (player.hasPermission("iCore.staff") || player.hasPermission("iCore.admin") || player.hasPermission("iCore.manager")) {
+                    String serverName = plugin.getConfig().getString("server-name", "hub-restricted");
+                    String last = plugin.getRedisManager().getLastServer(uuid);
+                    plugin.getRedisManager().updateLastServer(uuid, serverName);
 
-                String last = plugin.getRedisManager().getLastServer(player.getUniqueId());
-                plugin.getRedisManager().updateLastServer(player.getUniqueId(), serverName);
-
-                if (last != null && !last.equals(serverName)) {
-                    plugin.getRedisManager().publishStaffActivity("switch", player.getName(), rankColor.toString(), last, serverName);
-                } else {
-                    plugin.getRedisManager().publishStaffActivity("join", player.getName(), rankColor.toString(), "", serverName);
+                    if (last != null && !last.equals(serverName)) {
+                        plugin.getLogger().info("Publishing staff switch: " + player.getName() + " from " + last + " to " + serverName);
+                        plugin.getRedisManager().publishStaffActivity("switch", player.getName(), rankColor.toString(), last, serverName);
+                    } else {
+                        plugin.getLogger().info("Publishing staff join: " + player.getName() + " to " + serverName);
+                        plugin.getRedisManager().publishStaffActivity("join", player.getName(), rankColor.toString(), "", serverName);
+                    }
                 }
             });
         });
     }
 
+
+
+
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         event.setQuitMessage(null);
         Player player = event.getPlayer();
-        String serverName = plugin.getConfig().getString("server-name", "Unknown");
+        UUID uuid = player.getUniqueId();
 
-        rankManager.getRank(player, rank -> {
-            rankManager.getColorPreference(rank, rankColor -> {
-                plugin.getRedisManager().publishStaffActivity("quit", player.getName(), rankColor.toString(), serverName, "");
-                plugin.getRedisManager().removeLastServer(player.getUniqueId());
+        plugin.getLogger().info("[RedisDebug] Player quit detected: " + player.getName());
+
+        // Delay check to allow Redis to finish setting the pending key on switch
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+            plugin.getLogger().info("[RedisDebug] Checking switch state for: " + player.getName());
+
+            boolean isPending = plugin.getRedisManager().isStillPendingSwitch(uuid);
+
+            if (isPending) {
+                plugin.getLogger().info("[RedisDebug] " + player.getName() + " is switching servers. No quit announcement.");
+                plugin.getRedisManager().clearPendingSwitch(uuid); // Optional cleanup
+                return;
+            }
+
+            plugin.getLogger().info("[RedisDebug] " + player.getName() + " is ACTUALLY quitting.");
+
+            rankManager.getRank(player, rank -> {
+                rankManager.getColorPreference(rank, rankColor -> {
+                    String lastServer = plugin.getRedisManager().getLastServer(uuid);
+                    if (lastServer == null) lastServer = "unknown";
+
+                    plugin.getRedisManager().publishStaffActivity(
+                            "quit",
+                            player.getName(),
+                            rankColor.toString(),
+                            plugin.getConfig().getString("server-name"),
+                            lastServer
+                    );
+                });
             });
-        });
+
+        }, 20L); // Wait 1 second
     }
+
+
+
+
+
 
     @EventHandler
     public void onPlayerChat(PlayerChatEvent event) {
