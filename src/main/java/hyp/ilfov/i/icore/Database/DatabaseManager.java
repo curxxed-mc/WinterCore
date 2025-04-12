@@ -4,6 +4,8 @@ import hyp.ilfov.i.icore.Main;
 import lombok.Getter;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -132,4 +134,51 @@ public class DatabaseManager {
             plugin.getLogger().log(Level.SEVERE, "❌ Error closing MySQL connection!", e);
         }
     }
+
+    public void addPermission(UUID uuid, String permission) {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            String sql = "INSERT IGNORE INTO player_permissions (uuid, permission) VALUES (?, ?);";
+            try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+                ps.setString(1, uuid.toString());
+                ps.setString(2, permission);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "❌ Could not add permission " + permission + " to " + uuid, e);
+            }
+        });
+    }
+
+    public void removePermission(UUID uuid, String permission) {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            String sql = "DELETE FROM player_permissions WHERE uuid = ? AND permission = ?;";
+            try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+                ps.setString(1, uuid.toString());
+                ps.setString(2, permission);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "❌ Could not remove permission " + permission + " from " + uuid, e);
+            }
+        });
+    }
+
+    public void getPlayerPermissions(UUID uuid, Consumer<List<String>> callback) {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            List<String> permissions = new ArrayList<>();
+            String sql = "SELECT permission FROM player_permissions WHERE uuid = ?;";
+            try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+                ps.setString(1, uuid.toString());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        permissions.add(rs.getString("permission"));
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "❌ Could not fetch permissions for " + uuid, e);
+            }
+            plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept(permissions));
+        });
+    }
+
+
+
 }

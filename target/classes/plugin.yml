@@ -109,4 +109,8 @@ commands:
     description: Server manager for BungeeCord
     aliases:
       - sm
+  jtp:
+    description: Jump to a player
+  stafflist:
+    description: Shows the list of online staff members
 
