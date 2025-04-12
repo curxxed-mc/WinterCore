@@ -35,7 +35,9 @@ public final class Main extends JavaPlugin {
     @Getter
     private FreezeCommand freezeCommand;
     @Getter
-    public static DatabaseManager databaseManager;
+    public DatabaseManager databaseManager;
+    @Getter
+    private PermissionManager permissionManager;
     @Setter
     private Plugin plugin;
 
@@ -74,6 +76,7 @@ public final class Main extends JavaPlugin {
         redisManager.publishServerStatus(true);  // Then announce "I'm online"
         redisManager.startInfoUpdater();
         RegisterPlugin registerPlugin = new RegisterPlugin();
+        permissionManager = new PermissionManager(this);
         registerPlugin.registerPlugin(this);
         rankManager.startAutoCacheRefresh();
         getLogger().info("iCore has been enabled in " + (System.currentTimeMillis() - start) + "ms!");

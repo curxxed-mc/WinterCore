@@ -56,15 +56,13 @@ public class ManagePermissionCommand implements CommandExecutor {
     }
 
     private void addPermission(Player player, String permission) {
-        // Add the permission for the player (implement your logic here)
-        // You can either update the player's permissions directly or add it to the player's rank
-        // Example (directly adding the permission):
         player.addAttachment(plugin, permission, true);
+        plugin.getDatabaseManager().addPermission(player.getUniqueId(), permission);
     }
 
     private void removePermission(Player player, String permission) {
-        // Remove the permission for the player (implement your logic here)
-        // Example (directly removing the permission):
         player.addAttachment(plugin, permission, false);
+        plugin.getDatabaseManager().removePermission(player.getUniqueId(), permission);
     }
+
 }

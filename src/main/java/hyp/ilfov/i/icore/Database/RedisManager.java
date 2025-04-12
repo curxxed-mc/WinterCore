@@ -1,5 +1,6 @@
 package hyp.ilfov.i.icore.Database;
 
+import com.google.gson.JsonObject;
 import hyp.ilfov.i.icore.Commands.Staff.VanishCommand;
 import hyp.ilfov.i.icore.Main;
 import org.bukkit.Bukkit;
@@ -217,16 +218,23 @@ public class RedisManager {
     }
 
     public void sendPlayerToServer(Player player, String server) {
-        ByteArrayOutputStream b = new ByteArrayOutputStream();
-        DataOutputStream out = new DataOutputStream(b);
-        try {
-            out.writeUTF("Connect");
-            out.writeUTF(server);
-            player.sendPluginMessage(plugin, "BungeeCord", b.toByteArray());
-        } catch (IOException e) {
-            plugin.getLogger().warning("Failed to send player to server: " + e.getMessage());
-        }
+        UUID uuid = player.getUniqueId();
+        markPendingSwitch(uuid);
+
+        // Add a tiny delay before actually sending the player
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            ByteArrayOutputStream b = new ByteArrayOutputStream();
+            DataOutputStream out = new DataOutputStream(b);
+            try {
+                out.writeUTF("Connect");
+                out.writeUTF(server);
+                player.sendPluginMessage(plugin, "BungeeCord", b.toByteArray());
+            } catch (IOException e) {
+                plugin.getLogger().warning("Failed to send player to server: " + e.getMessage());
+            }
+        }, 2L); // ~0.1s delay gives Redis time to propagate
     }
+
 
     private void handleRemoteCommand(String message) {
         String[] parts = message.split("\\|", 2);
@@ -270,14 +278,38 @@ public class RedisManager {
     }
 
     public void publishStaffActivity(String type, String playerName, String color, String fromServer, String toServer) {
+        plugin.getLogger().info("[RedisDebug] Trying to publish staff activity:");
+        plugin.getLogger().info("[RedisDebug] Type: " + type);
+        plugin.getLogger().info("[RedisDebug] Payload: " + playerName + ", " + color + ", " + fromServer + ", " + toServer);
+
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             String payload = type + "|" + playerName + "|" + color + "|" + fromServer + "|" + toServer;
             jedis.publish("staff-activity", payload);
+            plugin.getLogger().info("[RedisDebug] Redis publish successful: " + payload);
+        } catch (Exception e) {
+            plugin.getLogger().warning("[RedisDebug] Failed to publish staff activity: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void publishStaffActivity(String type, JsonObject json) {
+        plugin.getLogger().info("[RedisDebug] Trying to publish staff activity:");
+        plugin.getLogger().info("[RedisDebug] Type: " + type);
+        plugin.getLogger().info("[RedisDebug] Payload: " + json.toString());
+
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            jedis.publish("staff-activity", json.toString());
+            plugin.getLogger().info("[RedisDebug] Redis publish successful: " + json.toString());
+        } catch (Exception e) {
+            plugin.getLogger().warning("[RedisDebug] Failed to publish staff activity: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
 
+
     private void handleStaffActivityMessage(String message) {
+        plugin.getLogger().info("[RedisDebug] Received staff-activity message: " + message);
         String[] parts = message.split("\\|");
         if (parts.length < 5) return;
 
@@ -294,7 +326,8 @@ public class RedisManager {
         String formattedMessage = ChatColor.translateAlternateColorCodes('&',
                 template.replace("%player%", color + playerName + ChatColor.RESET)
                         .replace("%previous-server%", fromServer)
-                        .replace("%server-name%", toServer)
+                        .replace("%server-name%", toServer.isEmpty() ? fromServer : toServer)
+
         );
 
         for (Player online : Bukkit.getOnlinePlayers()) {
@@ -354,5 +387,37 @@ public class RedisManager {
         }
     }
 
+    public void markPendingSwitch(UUID uuid) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            String key = "pendingSwitch:" + uuid.toString();
+            jedis.del(key); // Clear any existing key
+            jedis.setex(key, 5, "1"); // expires in 5s
+            long ttl = jedis.ttl(key);
+            plugin.getLogger().info("[RedisDebug] markPendingSwitch -> Set " + key + " with TTL " + ttl + "s");
+        }
+    }
 
+
+    public boolean isStillPendingSwitch(UUID uuid) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            String key = "pendingSwitch:" + uuid.toString();
+            boolean exists = jedis.exists(key);
+            long ttl = jedis.ttl(key);
+
+            plugin.getLogger().info("[RedisDebug] isStillPendingSwitch -> " + key + " exists: " + exists + ", TTL: " + ttl + "s");
+
+            // If TTL is 0 or -2, key is gone. If TTL -1, something went wrong (no expire set)
+            return exists && ttl > 0;
+        }
+    }
+
+
+
+    public void clearPendingSwitch(UUID uuid) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            String key = "pendingSwitch:" + uuid.toString();
+            jedis.del(key);
+            plugin.getLogger().info("[RedisDebug] clearPendingSwitch -> Removed " + key);
+        }
+    }
 }

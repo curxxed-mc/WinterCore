@@ -1,63 +1,68 @@
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\ClearEffectsCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\utils\RankManager.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\ReloadConfig.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\utils\PermissionManager.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\FreezeCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Placeholders\Placeholder.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\VanishCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\MuteCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\utils\BukkitReflection.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\BanCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\Feed.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\AdminChatCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\SpeedCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\listeners\RankGUIListener.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\HistoryCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\InvSeeCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\WarnCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\utils\DisguiseGUI.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\listeners\PlayerListener.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\utils\AltManager.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\ThruCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\AboutCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\Fly.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\ReplyCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\AltsCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Troll\TrollCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\TempBanCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Database\DatabaseManager.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\DisguiseCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\ProfileCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\FixCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\utils\PunishmentManager.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Main.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Gamemode\gmc.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\Heal.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\StaffChatCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\ManagerChatCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\utils\SocialInput.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Gamemode\gmsp.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\ManagePermissionCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\MoreCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\utils\WebhookManager.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\listeners\ColorGUI.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\TPSCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\UnmuteCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Bungee\ServerManagerCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Database\RankCache.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Database\RedisManager.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\ReportCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\ListCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Bungee\BungeeListener.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\EnchantCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\PingCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\KickCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Gamemode\gms.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\MessageCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Database\RedisSocials.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\ClearChat.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Troll\WinCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\utils\RegisterPlugin.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\SetRankCommand.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Gamemode\gma.java
-E:\Intellij Plugins\iCore\src\main\java\hyp\ilfov\i\icore\listeners\FreezeListener.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Bungee\BungeeListener.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Bungee\ServerManagerCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Gamemode\gma.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Gamemode\gmc.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Gamemode\gms.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Gamemode\gmsp.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\AboutCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\DisguiseCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\ListCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\MessageCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\MoreCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\ReloadConfig.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\ReplyCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\misc\SpeedCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\AdminChatCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\AltsCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\BanCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\ClearChat.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\FreezeCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\HistoryCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\InvSeeCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\KickCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\ManagePermissionCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\ManagerChatCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\MuteCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\SetRankCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\StaffChatCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\StaffList\StaffList.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\StaffList\StaffListGUI.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\StaffList\StaffRedisHandler.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\TempBanCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\UnmuteCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\VanishCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Staff\WarnCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Troll\TrollCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Troll\WinCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\ClearEffectsCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\EnchantCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\Feed.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\FixCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\Fly.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\Heal.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\JumpToPlayer.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\PingCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\ProfileCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\ReportCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\ThruCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Commands\Utility\TPSCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Database\DatabaseManager.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Database\RankCache.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Database\RedisManager.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Database\RedisSocials.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\listeners\ColorGUI.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\listeners\FreezeListener.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\listeners\PlayerListener.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\listeners\RankGUIListener.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Main.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\Placeholders\Placeholder.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\AltManager.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\BukkitReflection.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\DisguiseGUI.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\PermissionManager.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\PunishmentManager.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\RankManager.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\RegisterPlugin.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\SocialInput.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\Staff\StaffData.java
+C:\Users\Cristi\Documents\iCore\src\main\java\hyp\ilfov\i\icore\utils\WebhookManager.java

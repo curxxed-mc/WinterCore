@@ -8,14 +8,22 @@ import hyp.ilfov.i.icore.Commands.Gamemode.gms;
 import hyp.ilfov.i.icore.Commands.Gamemode.gmsp;
 import hyp.ilfov.i.icore.Commands.Bungee.ServerManagerCommand;
 import hyp.ilfov.i.icore.Commands.Staff.*;
+import hyp.ilfov.i.icore.Commands.Staff.StaffList.StaffList;
+import hyp.ilfov.i.icore.Commands.Staff.StaffList.StaffListGUI;
 import hyp.ilfov.i.icore.Commands.Troll.TrollCommand;
 import hyp.ilfov.i.icore.Commands.Troll.WinCommand;
 import hyp.ilfov.i.icore.Commands.Utility.*;
 import hyp.ilfov.i.icore.Commands.misc.*;
+import hyp.ilfov.i.icore.Database.RedisManager;
 import hyp.ilfov.i.icore.Main;
 import hyp.ilfov.i.icore.listeners.*;
+import hyp.ilfov.i.icore.utils.Staff.StaffData;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.messaging.Messenger;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class RegisterPlugin {
     private PlayerListener playerListener;
@@ -23,6 +31,7 @@ public class RegisterPlugin {
     private SocialInput socialInput;
     private RankManager rankManager;
     private DisguiseGUI disguiseGUI;
+    private final Map<UUID, StaffData> staffMap = new HashMap<>();
 
 
     public void registerPlugin(Main pl) {
@@ -68,6 +77,7 @@ public class RegisterPlugin {
         pm.registerEvents(freezeListener, pl);
         pm.registerEvents(new ProfileCommand(pl, pl.getRedisManager()), pl);
         pm.registerEvents(socialInput, pl);
+        pm.registerEvents(new StaffListGUI(pl), pl);
     }
 
     public void registerCommands(Main pl) {
@@ -118,6 +128,8 @@ public class RegisterPlugin {
         pl.getCommand("profile").setExecutor(new ProfileCommand(pl, pl.getRedisManager()));
         pl.getCommand("tps").setExecutor(new TPSCommand());
         pl.getCommand("servermanager").setExecutor(new ServerManagerCommand(pl));
+        pl.getCommand("jtp").setExecutor(new JumpToPlayer());
+        pl.getCommand("stafflist").setExecutor(new StaffList(pl, staffMap));
         /*pl.getCommand("disguise").setExecutor(new DisguiseCommand(pl, disguiseGUI, RankManager.getInstance()));*/
     }
 }
