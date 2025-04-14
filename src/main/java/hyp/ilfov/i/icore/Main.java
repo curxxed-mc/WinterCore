@@ -49,7 +49,8 @@ public final class Main extends JavaPlugin {
 
         new Placeholder(this).register();
 
-        DatabaseManager.getInstance();
+        this.databaseManager = DatabaseManager.init(this);
+
 
         this.rankManager = new RankManager(this);
         this.punishmentManager = new PunishmentManager(this);
