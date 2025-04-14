@@ -1,6 +1,6 @@
 name: iCore
 version: 'beta-1'
-main: hyp.ilfov.i.icore.Main
+main: curxxed.dev.icore.Main
 authors: [ curxxe ]
 softdepend:
   - PlaceholderAPI

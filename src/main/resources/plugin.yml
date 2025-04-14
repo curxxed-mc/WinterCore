@@ -1,6 +1,6 @@
 name: iCore
-version: 'beta-1'
-main: hyp.ilfov.i.icore.Main
+version: '0.5.2'
+main: curxxed.dev.icore.Main
 authors: [ curxxe ]
 softdepend:
   - PlaceholderAPI
@@ -113,4 +113,3 @@ commands:
     description: Jump to a player
   stafflist:
     description: Shows the list of online staff members
-

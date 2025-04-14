@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>hyp.ilfov.i</groupId>
+    <groupId>curxxed.dev</groupId>
     <artifactId>iCore</artifactId>
-    <version>BETA 0.1</version>
+    <version>v0.5</version>
     <packaging>jar</packaging>
 
     <name>iCore</name>
@@ -85,7 +85,12 @@
             <artifactId>reflections</artifactId>
             <version>0.10.2</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>21.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -104,7 +109,15 @@
                             <relocations>
                                 <relocation>
                                     <pattern>com.zaxxer.hikari</pattern>
-                                    <shadedPattern>hyp.ilfov.i.icore.libs.hikari</shadedPattern>
+                                    <shadedPattern>curxxed.dev.icore.libs.hikari</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google.common</pattern>
+                                    <shadedPattern>curxxed.dev.icore.libs.google.common</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>redis.clients</pattern>
+                                    <shadedPattern>curxxed.dev.icore.libs.redis</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
