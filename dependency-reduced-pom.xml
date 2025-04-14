@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>hyp.ilfov.i</groupId>
+  <groupId>curxxed.dev</groupId>
   <artifactId>iCore</artifactId>
   <name>iCore</name>
-  <version>BETA 0.1</version>
+  <version>v0.5</version>
   <build>
     <plugins>
       <plugin>
@@ -20,7 +20,15 @@
               <relocations>
                 <relocation>
                   <pattern>com.zaxxer.hikari</pattern>
-                  <shadedPattern>hyp.ilfov.i.icore.libs.hikari</shadedPattern>
+                  <shadedPattern>curxxed.dev.icore.libs.hikari</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.google.common</pattern>
+                  <shadedPattern>curxxed.dev.icore.libs.google.common</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>redis.clients</pattern>
+                  <shadedPattern>curxxed.dev.icore.libs.redis</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
