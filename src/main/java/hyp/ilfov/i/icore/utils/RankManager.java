@@ -30,6 +30,7 @@ public class RankManager {
     private final Map<UUID, String> colorCache = new HashMap<>();
     private final Map<UUID, Player> targetPlayers = new HashMap<>();
     private final DatabaseManager databaseManager;
+
     private static final String DEFAULT_RANK = "Default";
     private static RankManager instance;
     private final Map<UUID, Long> lastRefresh = new HashMap<>();
@@ -37,7 +38,7 @@ public class RankManager {
 
     public RankManager(Main plugin) {
         this.plugin = plugin;
-        this.databaseManager = new DatabaseManager(plugin);
+        this.databaseManager = plugin.getDatabaseManager();
     }
 
 
