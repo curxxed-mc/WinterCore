@@ -1,8 +1,10 @@
 package curxxed.dev.icore.Database;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import curxxed.dev.icore.Commands.Staff.VanishCommand;
 import curxxed.dev.icore.Main;
+import net.kyori.adventure.platform.facet.Facet;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -19,10 +21,12 @@ public class RedisManager {
 
     private final Main plugin;
     private final String serverName;
+    private final Gson gson;
 
     public RedisManager(Main plugin) {
         this.plugin = plugin;
         this.serverName = plugin.getConfig().getString("server-name", "Unknown");
+        this.gson = new Gson();
         startListening();
     }
 
@@ -32,6 +36,30 @@ public class RedisManager {
             jedis.publish("vanishSync", player.getUniqueId() + ":" + vanished);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to publish vanish state: " + e.getMessage());
+        }
+    }
+
+    private void handlePlayerReportMessage(String message) {
+        try {
+            JsonObject report = gson.fromJson(message, JsonObject.class);
+            String reporter = report.get("reporter").getAsString();
+            String reported = report.get("reported").getAsString();
+            String reason = report.get("reason").getAsString();
+            String server = report.get("server").getAsString();
+
+            String formattedMessage = ChatColor.GRAY + "[" + ChatColor.RESET + reporter + " reported " + reported + ChatColor.RESET +
+                    " for: " + reason + ChatColor.GRAY + " (Server: " + server + ")";
+
+            // Notify staff on the local server
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                for (Player online : Bukkit.getOnlinePlayers()) {
+                    if (online.hasPermission("iCore.staff") || online.isOp()) {
+                        online.sendMessage(formattedMessage);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to handle player report message: " + e.getMessage());
         }
     }
 
@@ -73,14 +101,18 @@ public class RedisManager {
                             case "manager:message":
                                 handleManagerChatMessage(message);
                                 break;
+                            case "player-report":
+                                handlePlayerReportMessage(message);
+                                break;
                         }
                     }
-                }, "vanishSync", "server-status", "server-command", "staff-activity", "staff:message", "admin:message", "manager:message");
+                }, "vanishSync", "server-status", "server-command", "staff-activity", "staff:message", "admin:message", "manager:message", "player-report");
             } catch (Exception e) {
                 plugin.getLogger().warning("Redis subscription failed: " + e.getMessage());
             }
         });
     }
+
 
     private void handleStaffChatMessage(String message) {
         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -216,6 +248,20 @@ public class RedisManager {
             jedis.publish("server-command", payload);
         }
     }
+
+    public void publishReport(String reporter, String reported, String reason, String server) {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("type", "report");
+        obj.addProperty("reporter", reporter);
+        obj.addProperty("reported", reported);
+        obj.addProperty("reason", reason);
+        obj.addProperty("server", server);
+
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            jedis.publish("player-report", obj.toString());
+        }
+    }
+
 
     public void sendPlayerToServer(Player player, String server) {
         UUID uuid = player.getUniqueId();

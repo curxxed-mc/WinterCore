@@ -252,22 +252,25 @@ public class PlayerListener implements Listener {
 
 
     public void notifyStaff(Player reporter, Player target, String reason) {
-        String staffMessage = getStaffNotificationMessage(reporter, target, reason);
-        TextComponent tpButton = new TextComponent(" [TP]");
-        tpButton.setColor(ChatColor.GREEN);
-        tpButton.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tp " + target.getName()));
-        tpButton.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new BaseComponent[] { (BaseComponent)new TextComponent("Teleport to " + target
-                .getName()) }));
-        this.plugin.getServer().getOnlinePlayers().stream()
-                .filter(player -> player.hasPermission("iCore.staff"))
-                .forEach(staff -> staff.spigot().sendMessage(new BaseComponent[] { (BaseComponent)new TextComponent(staffMessage), (BaseComponent)tpButton }));
+        // Ensure inputs are valid
+        if (reporter == null || target == null || reason == null || reason.isEmpty()) {
+            plugin.getLogger().warning("Invalid report data: reporter, target, or reason is null/empty.");
+            return;
+        }
+
+        // Construct the plain text message
+        String serverName = plugin.getConfig().getString("server-name", "Unknown");
+
+        // Broadcast the message to Redis only
+        plugin.getRedisManager().publishReport(
+                reporter.getName(),
+                target.getName(),
+                reason,
+                serverName
+        );
     }
 
-    public String getStaffNotificationMessage(Player reporter, Player target, String reason) {
-        String reporterName = reporter.getDisplayName();
-        String targetName = target.getDisplayName();
-        return ChatColor.BLUE + "[SC] " + reporterName + ChatColor.WHITE + " has reported " + targetName + ChatColor.RESET + " for: " + ChatColor.ITALIC + reason;
-    }
+
 
     public void getStaffChatMessage(Player player, String message, java.util.function.Consumer<String> callback) {
         if (player.hasPermission("iCore.Staff") || player.hasPermission("iCore.Admin") || player.hasPermission("iCore.Manager")) {
