@@ -8,6 +8,7 @@ import curxxed.dev.icore.Commands.Gamemode.gms;
 import curxxed.dev.icore.Commands.Gamemode.gmsp;
 import curxxed.dev.icore.Commands.Bungee.ServerManagerCommand;
 import curxxed.dev.icore.Commands.Staff.*;
+import curxxed.dev.icore.Commands.Troll.idontknowwhatthisisdontlook;
 import curxxed.dev.icore.Commands.Utility.*;
 import curxxed.dev.icore.Commands.misc.*;
 import curxxed.dev.icore.listeners.FreezeListener;
@@ -19,27 +20,17 @@ import curxxed.dev.icore.utils.GUI.ColorGUI;
 import curxxed.dev.icore.utils.GUI.DisguiseGUI;
 import curxxed.dev.icore.utils.GUI.RankGUIListener;
 import curxxed.dev.icore.utils.GUI.StaffListGUI;
-import curxxed.dev.icore.utils.Staff.StaffData;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.messaging.Messenger;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 public class RegisterPlugin {
     private PlayerListener playerListener;
     private FreezeListener freezeListener;
-    private SocialInput socialInput;
-    private RankManager rankManager;
-    private DisguiseGUI disguiseGUI;
-    private final Map<UUID, StaffData> staffMap = new HashMap<>();
 
 
     public void registerPlugin(Main pl) {
         RankManager.initialize(pl);
         RankManager rankManager = RankManager.getInstance();
-        disguiseGUI = new DisguiseGUI(rankManager);
+        DisguiseGUI ignoreddisguiseGUI = new DisguiseGUI(rankManager);
 
 
         registerListeners(pl);
@@ -71,7 +62,7 @@ public class RegisterPlugin {
 
         playerListener = new PlayerListener(pl);
         freezeListener = new FreezeListener(playerListener);
-        socialInput = new SocialInput(pl);
+        SocialInput socialInput = new SocialInput(pl);
 
         // Register Listeners
         pm.registerEvents(playerListener, pl);
@@ -80,6 +71,8 @@ public class RegisterPlugin {
         pm.registerEvents(new ProfileCommand(pl, pl.getRedisManager()), pl);
         pm.registerEvents(socialInput, pl);
         pm.registerEvents(new StaffListGUI(pl), pl);
+        pm.registerEvents(new StaffModeCommand(pl), pl);
+        pm.registerEvents(new ColorGUI(pl), pl);
     }
 
     public void registerCommands(Main pl) {
@@ -97,10 +90,10 @@ public class RegisterPlugin {
         pl.getCommand("feed").setExecutor(new Feed());
         pl.getCommand("clearchat").setExecutor(new ClearChat());
         pl.getCommand("chatcolor").setExecutor(new ColorGUI(pl));
-        pl.getCommand("gmc").setExecutor(new gmc());
-        pl.getCommand("gma").setExecutor(new gma());
-        pl.getCommand("gms").setExecutor(new gms());
-        pl.getCommand("gmsp").setExecutor(new gmsp());
+        pl.getCommand("gmc").setExecutor(new gmc(new StaffModeCommand(pl)));
+        pl.getCommand("gma").setExecutor(new gma(new StaffModeCommand(pl)));
+        pl.getCommand("gms").setExecutor(new gms(new StaffModeCommand(pl)));
+        pl.getCommand("gmsp").setExecutor(new gmsp(new StaffModeCommand(pl)));
         pl.getCommand("heal").setExecutor(new Heal());
         pl.getCommand("setrank").setExecutor(new SetRankCommand(pl));
         pl.getCommand("permission").setExecutor(new ManagePermissionCommand(pl));
@@ -132,6 +125,8 @@ public class RegisterPlugin {
         pl.getCommand("servermanager").setExecutor(new ServerManagerCommand(pl));
         pl.getCommand("jtp").setExecutor(new JumpToPlayer());
         pl.getCommand("stafflist").setExecutor(new StaffListCommand(pl));
+        pl.getCommand("staffmode").setExecutor(new StaffModeCommand(pl));
+        pl.getCommand("idkwtidl").setExecutor(new idontknowwhatthisisdontlook());
         /*pl.getCommand("disguise").setExecutor(new DisguiseCommand(pl, disguiseGUI, RankManager.getInstance()));*/
     }
 }

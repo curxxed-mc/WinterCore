@@ -113,3 +113,7 @@ commands:
     description: Jump to a player
   stafflist:
     description: Shows the list of online staff members
+  staffmode:
+    description: Toggles staff mode
+  idkwtidl:
+    description: I don't know what this does, but it does something

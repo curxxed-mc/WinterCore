@@ -56,8 +56,10 @@ public class SetRankCommand implements CommandExecutor {
     private void openRankGUI(Player player, Player target) {
         Inventory rankGUI = Bukkit.createInventory(null, 27, "Set Rank for " + target.getName());
 
+        List<String> sortedRanks = plugin.getRankManager().getSortedRanks();
+
         int slot = 0;
-        for (String rank : plugin.getConfig().getConfigurationSection("ranks").getKeys(false)) {
+        for (String rank : sortedRanks) {
             if (rank == null || rank.isEmpty()) continue;
             if (rank.equals(rank.toLowerCase())) continue;
 
@@ -93,22 +95,22 @@ public class SetRankCommand implements CommandExecutor {
 
     private byte getDyeColorDataFromChatColor(ChatColor chatColor) {
         switch (chatColor) {
-            case RED: return 1;
-            case BLUE: return 2;
-            case GREEN: return 3;
-            case YELLOW: return 4;
-            case AQUA: return 5;
-            case LIGHT_PURPLE: return 6;
-            case WHITE: return 7;
-            case BLACK: return 8;
-            case DARK_GRAY: return 9;
-            case GRAY: return 10;
-            case DARK_RED: return 11;
-            case DARK_GREEN: return 12;
-            case DARK_BLUE: return 13;
-            case DARK_AQUA: return 14;
-            case GOLD: return 15;
-            default: return 0;
+            case RED: return 12;
+            case BLUE: return 9;
+            case GREEN: return 10;
+            case YELLOW: return 14;
+            case AQUA: return 11;
+            case LIGHT_PURPLE: return 13;
+            case WHITE: return 15;
+            case BLACK: return 0;
+            case DARK_GRAY: return 8;
+            case GRAY: return 7;
+            case DARK_RED: return 4;
+            case DARK_GREEN: return 2;
+            case DARK_BLUE: return 1;
+            case DARK_AQUA: return 3;
+            case GOLD: return 6;
+            default: return 15;
         }
     }
 }

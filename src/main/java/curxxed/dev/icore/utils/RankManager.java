@@ -62,11 +62,13 @@ public class RankManager {
     public void setRank(Player player, String rank, Player giver) {
         databaseManager.setRank(player.getUniqueId(), rank);
         sendRankUpdateToBungee(player.getName(), rank);
-        invalidatePlayerCache(player); // Invalidate cache
-        getRankAsync(player, fetchedRank -> plugin.getLogger().info("Cache refreshed automatically after rank set for " + player.getName()));
 
-        // Refresh display name with the new rank's prefix and color
-        refreshPlayerDisplay(player);
+        // Invalidate and refresh the cache
+        invalidatePlayerCache(player);
+        getRankAsync(player, fetchedRank -> {
+            plugin.getLogger().info("Cache refreshed automatically after rank set for " + player.getName());
+            refreshPlayerDisplay(player); // Refresh display name
+        });
 
         plugin.getLogger().info("Set rank of " + player.getName() + " to " + rank);
         player.sendMessage(ChatColor.GREEN + "Your rank has been set to " + rank + " by " + giver.getName() + ".");
@@ -448,7 +450,7 @@ public class RankManager {
     public void refreshPlayerDisplay(Player player) {
         getRankPrefix(player, prefix -> {
             String color = getColorPreferenceSync(player);
-            String fullDisplayName = prefix + color + player.getName();
+            String fullDisplayName = prefix + " " + color + player.getName();
             player.setDisplayName(fullDisplayName);
             plugin.getLogger().info("Display name refreshed for " + player.getName() + " → " + fullDisplayName);
         });
