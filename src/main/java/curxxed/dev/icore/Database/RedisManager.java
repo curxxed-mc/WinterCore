@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import curxxed.dev.icore.Commands.Staff.VanishCommand;
 import curxxed.dev.icore.Main;
+import curxxed.dev.icore.utils.RankManager;
 import net.kyori.adventure.platform.facet.Facet;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -30,7 +31,6 @@ public class RedisManager {
         startListening();
     }
 
-    // Sync vanish state across servers
     public void syncVanishState(Player player, boolean vanished) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.publish("vanishSync", player.getUniqueId() + ":" + vanished);
@@ -42,18 +42,22 @@ public class RedisManager {
     private void handlePlayerReportMessage(String message) {
         try {
             JsonObject report = gson.fromJson(message, JsonObject.class);
-            String reporter = report.get("reporter").getAsString();
-            String reported = report.get("reported").getAsString();
+            String reporterName = report.get("reporter").getAsString();
+            String reportedName = report.get("reported").getAsString();
             String reason = report.get("reason").getAsString();
             String server = report.get("server").getAsString();
+            String reporterColor = plugin.getRankManager().getColorPreferenceSync(Bukkit.getPlayer(reporterName));
+            String reportedColor = plugin.getRankManager().getColorPreferenceSync(Bukkit.getPlayer(reportedName));
+            String formattedReporter = reporterColor + reporterName;
+            String formattedReported = reportedColor + reportedName;
+            String formattedMessage = ChatColor.GRAY + "[" + ChatColor.BLUE + "S" + ChatColor.GRAY + "] " +
+                    formattedReporter + ChatColor.AQUA + " reported " +
+                    formattedReported + ChatColor.AQUA + " for: " +
+                    ChatColor.YELLOW + reason + ChatColor.GRAY + " (Server: " + server + ")";
 
-            String formattedMessage = ChatColor.GRAY + "[" + ChatColor.RESET + reporter + " reported " + reported + ChatColor.RESET +
-                    " for: " + reason + ChatColor.GRAY + " (Server: " + server + ")";
-
-            // Notify staff on the local server
             Bukkit.getScheduler().runTask(plugin, () -> {
                 for (Player online : Bukkit.getOnlinePlayers()) {
-                    if (online.hasPermission("iCore.staff") || online.isOp()) {
+                    if (online.hasPermission("iCore.staff") || online.hasPermission("iCore.admin") || online.hasPermission("iCore.manager") || online.isOp()) {
                         online.sendMessage(formattedMessage);
                     }
                 }
@@ -62,8 +66,6 @@ public class RedisManager {
             plugin.getLogger().warning("Failed to handle player report message: " + e.getMessage());
         }
     }
-
-    // Announce server online/offline with custom ChatColor formatting
     public void publishServerStatus(boolean isOnline) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.publish("server-status", serverName + "|" + (isOnline ? "online" : "offline"));
@@ -72,7 +74,6 @@ public class RedisManager {
         }
     }
 
-    // Redis listener
     private void startListening() {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try (Jedis jedis = plugin.getRedisPool().getResource()) {
@@ -167,13 +168,8 @@ public class RedisManager {
 
         final String sourceServer = parts[0];
         final boolean isOnline = parts[1].equalsIgnoreCase("online");
-
-        // Don't announce our own server status
         if (sourceServer.equals(serverName)) return;
-
-        //* Format the prefix as per your request
         final String statusPrefix = ChatColor.GRAY + "[" + ChatColor.DARK_GRAY + ChatColor.RESET + "i" + ChatColor.AQUA + "Core" + ChatColor.GRAY + "] ";
-
         final String statusMessage = statusPrefix + (isOnline
                 ? ChatColor.GRAY + "Server " + ChatColor.AQUA + sourceServer + ChatColor.GRAY + " has just came " + ChatColor.GREEN + "online" + ChatColor.GRAY + " and will be " + ChatColor.AQUA + ChatColor.BOLD + "joinable in 5 seconds!"
                 : ChatColor.GRAY + "Server " + ChatColor.AQUA + sourceServer + ChatColor.GRAY + " has just went " + ChatColor.DARK_RED + "offline" + ChatColor.GRAY + " and is no longer " + ChatColor.DARK_RED + ChatColor.BOLD + "joinable!");
@@ -205,15 +201,15 @@ public class RedisManager {
                     if (lastHeartbeat == null) continue;
 
                     long diff = now - Long.parseLong(lastHeartbeat);
-                    if (diff > 10000) { // 10s grace period
-                        jedis.del(key); // Optional: clean up dead key
+                    if (diff > 10000) {
+                        jedis.del(key);
                         jedis.publish("server-status", otherServer + "|offline");
                     }
                 }
             } catch (Exception e) {
                 plugin.getLogger().warning("Heartbeat monitor failed: " + e.getMessage());
             }
-        }, 0L, 100L); // Run every 5 seconds
+        }, 0L, 100L);
     }
 
     public void startHeartbeatSender() {
@@ -221,11 +217,11 @@ public class RedisManager {
             try (Jedis jedis = plugin.getRedisPool().getResource()) {
                 String key = "server:" + serverName + ":heartbeat";
                 jedis.set(key, String.valueOf(System.currentTimeMillis()));
-                jedis.expire(key, 15); // Optional: Add TTL to auto-cleanup if not refreshed
+                jedis.expire(key, 15);
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to send heartbeat: " + e.getMessage());
             }
-        }, 0L, 40L); // Every 2 seconds
+        }, 0L, 40L);
     }
 
 
@@ -267,7 +263,7 @@ public class RedisManager {
         UUID uuid = player.getUniqueId();
         markPendingSwitch(uuid);
 
-        // Add a tiny delay before actually sending the player
+
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             ByteArrayOutputStream b = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(b);
@@ -278,7 +274,7 @@ public class RedisManager {
             } catch (IOException e) {
                 plugin.getLogger().warning("Failed to send player to server: " + e.getMessage());
             }
-        }, 2L); // ~0.1s delay gives Redis time to propagate
+        }, 2L);
     }
 
 
@@ -308,14 +304,13 @@ public class RedisManager {
                 jedis.hset(key, "maxPlayers", String.valueOf(Bukkit.getMaxPlayers()));
                 jedis.hset(key, "whitelisted", String.valueOf(Bukkit.hasWhitelist()));
 
-                // NEW: Store online players
-                jedis.del("server:" + serverName + ":players"); // clear old data
+                jedis.del("server:" + serverName + ":players");
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     jedis.sadd("server:" + serverName + ":players", player.getUniqueId().toString());
                 }
 
                 jedis.expire(key, 10);
-                jedis.expire("server:" + serverName + ":players", 10); // Expire fast if server dies
+                jedis.expire("server:" + serverName + ":players", 10);
 
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to update server info: " + e.getMessage());
@@ -366,6 +361,9 @@ public class RedisManager {
     }
 
     public void publishStaffActivity(String type, JsonObject json) {
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online.hasPermission("iCore.staff") || online.hasPermission("iCore.admin") || online.hasPermission("iCore.manager") || online.isOp()) continue;
+        }
         plugin.getLogger().info("[RedisDebug] Trying to publish staff activity:");
         plugin.getLogger().info("[RedisDebug] Type: " + type);
         plugin.getLogger().info("[RedisDebug] Payload: " + json.toString());
@@ -395,7 +393,6 @@ public class RedisManager {
         String template = plugin.getConfig().getString(type + "-message");
         if (template == null) return;
 
-        // Safely replace server placeholders with fallback
         String formattedMessage = ChatColor.translateAlternateColorCodes('&',
                 template.replace("%player%", color + playerName + ChatColor.RESET)
                         .replace("%previous-server%", fromServer)
@@ -463,8 +460,8 @@ public class RedisManager {
     public void markPendingSwitch(UUID uuid) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             String key = "pendingSwitch:" + uuid.toString();
-            jedis.del(key); // Clear any existing key
-            jedis.setex(key, 5, "1"); // expires in 5s
+            jedis.del(key);
+            jedis.setex(key, 5, "1");
             long ttl = jedis.ttl(key);
             plugin.getLogger().info("[RedisDebug] markPendingSwitch -> Set " + key + " with TTL " + ttl + "s");
         }
@@ -476,10 +473,7 @@ public class RedisManager {
             String key = "pendingSwitch:" + uuid.toString();
             boolean exists = jedis.exists(key);
             long ttl = jedis.ttl(key);
-
             plugin.getLogger().info("[RedisDebug] isStillPendingSwitch -> " + key + " exists: " + exists + ", TTL: " + ttl + "s");
-
-            // If TTL is 0 or -2, key is gone. If TTL -1, something went wrong (no expire set)
             return exists && ttl > 0;
         }
     }

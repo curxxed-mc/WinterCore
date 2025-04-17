@@ -94,22 +94,24 @@ public class PlayerListener implements Listener {
 
             plugin.getLogger().info("[RedisDebug] " + player.getName() + " is ACTUALLY quitting.");
 
-            rankManager.getRank(player, rank -> {
-                rankManager.getColorPreference(rank, rankColor -> {
-                    String lastServer = plugin.getRedisManager().getLastServer(uuid);
-                    if (lastServer == null) lastServer = "unknown";
+            // Only process quit messages for staff members
+            if (player.hasPermission("iCore.staff") || player.hasPermission("iCore.admin") || player.hasPermission("iCore.manager")) {
+                rankManager.getRank(player, rank -> {
+                    rankManager.getColorPreference(rank, rankColor -> {
+                        String lastServer = plugin.getRedisManager().getLastServer(uuid);
+                        if (lastServer == null) lastServer = "unknown";
 
-                    plugin.getRedisManager().publishStaffActivity(
-                            "quit",
-                            player.getName(),
-                            rankColor.toString(),
-                            plugin.getConfig().getString("server-name"),
-                            lastServer
-                    );
-                    plugin.getRedisManager().removeLastServer(player.getUniqueId());
+                        plugin.getRedisManager().publishStaffActivity(
+                                "quit",
+                                player.getName(),
+                                rankColor.toString(),
+                                plugin.getConfig().getString("server-name"),
+                                lastServer
+                        );
+                        plugin.getRedisManager().removeLastServer(player.getUniqueId());
+                    });
                 });
-            });
-
+            }
         }, 2L); // Wait 1 second
     }
 
@@ -123,7 +125,8 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         String message = event.getMessage();
         String displayName = player.getDisplayName();
-        String formattedMessage = displayName + ChatColor.WHITE + ": " + message;
+        ChatColor messageColor = plugin.getRankManager().getMessageColorPreference(player).asBungee();
+        String formattedMessage = displayName + ChatColor.WHITE + ": " + messageColor + message;
 
         // Check if the message starts with "!"
         if (message.startsWith("!")) {
@@ -277,11 +280,10 @@ public class PlayerListener implements Listener {
             String playerName = player.getDisplayName();
 
             plugin.getRankManager().getRankPrefix(player, rankPrefix -> {
-                ChatColor messageColor = ChatColor.valueOf(plugin.getRankManager().getMessageColorPreference(player).name());
-                String chatMessage = messageColor + message + ChatColor.RESET;
+                String chatMessage = ChatColor.BLUE + message + ChatColor.RESET;
                 String finalMessage = ChatColor.BLUE + "[SC] " + playerName + ": " + chatMessage;
 
-                callback.accept(finalMessage); // Pass the message back to wherever it’s needed
+                callback.accept(finalMessage);
             });
         } else {
             callback.accept(null);
@@ -294,8 +296,7 @@ public class PlayerListener implements Listener {
             String playerName = player.getDisplayName();
 
             plugin.getRankManager().getRankPrefix(player, rankPrefix -> {
-                ChatColor messageColor = ChatColor.valueOf(plugin.getRankManager().getMessageColorPreference(player).name());
-                String chatMessage = messageColor + message + ChatColor.RESET;
+                String chatMessage = ChatColor.RED + message + ChatColor.RESET;
                 String finalMessage = ChatColor.RED + "[AC] "  + playerName + ": " + chatMessage;
 
                 callback.accept(finalMessage);
@@ -311,8 +312,7 @@ public class PlayerListener implements Listener {
             String playerName = player.getDisplayName();
 
             plugin.getRankManager().getRankPrefix(player, rankPrefix -> {
-                ChatColor messageColor = ChatColor.valueOf(plugin.getRankManager().getMessageColorPreference(player).name());
-                String chatMessage = messageColor + message + ChatColor.RESET;
+                String chatMessage = ChatColor.DARK_RED + message + ChatColor.RESET;
                 String finalMessage = ChatColor.DARK_RED + "[MC] " + playerName + ": " + chatMessage;
 
                 callback.accept(finalMessage);

@@ -50,9 +50,9 @@ public class Placeholder extends PlaceholderExpansion {
 
         switch (identifier) {
             case "player_rank":
-                String rank = rankManager.getRankSync(player); 
-                String rankColor = rankManager.getColorPreferenceSync(player);  
-                return rankColor + rank; 
+                String rank = rankManager.getRankSync(player);
+                String rankColor = rankManager.getColorPreferenceSync(player);
+                return rankColor + rank;
             case "player_color":
                 return rankManager.getColorPreferenceSync(player);
             case "player_prefix":
@@ -65,7 +65,7 @@ public class Placeholder extends PlaceholderExpansion {
             case "player_rank_noformat":
                 String rankNoFormat = rankManager.getRankSync(player);
                 String rankColorNoFormat = rankManager.getColorPreferenceSync(player);
-                return rankColorNoFormat + rankNoFormat.replaceAll("(?i)§[k-or]", ""); 
+                return rankColorNoFormat + rankNoFormat.replaceAll("(?i)§[lomnk]", "");
             default:
                 return null;
         }

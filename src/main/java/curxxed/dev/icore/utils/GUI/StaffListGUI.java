@@ -41,8 +41,10 @@ public class StaffListGUI implements Listener {
                     String uuidStr = entry.getKey();
                     String server = entry.getValue();
 
-                    if (server == null || server.isEmpty()) continue;
-                    if (!jedis.exists("server:" + server + ":heartbeat")) continue;
+                    // Ensure the server is active
+                    if (server == null || server.isEmpty() || !jedis.exists("server:" + server + ":heartbeat")) {
+                        continue;
+                    }
 
                     UUID uuid;
                     try {

@@ -26,10 +26,12 @@ C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\M
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\SetRankCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\StaffChatCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\StaffListCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\StaffModeCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\TempBanCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\UnmuteCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\VanishCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\WarnCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Troll\idontknowwhatthisisdontlook.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Troll\TrollCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Troll\WinCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\ClearEffectsCommand.java
@@ -63,5 +65,4 @@ C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\Punishment
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\RankManager.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\RegisterPlugin.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\SocialInput.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\Staff\StaffData.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\WebhookManager.java
