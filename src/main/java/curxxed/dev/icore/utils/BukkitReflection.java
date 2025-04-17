@@ -27,10 +27,10 @@ public class BukkitReflection {
     private static final Field PLAYER_LIST_MAX_PLAYERS_FIELD;
 
     private static final Class CRAFT_PLAYER_CLASS;
-    private static final Method CRAFT_PLAYER_GET_HANDLE_METHOD;
+    public static final Method CRAFT_PLAYER_GET_HANDLE_METHOD;
 
     private static final Class ENTITY_PLAYER_CLASS;
-    private static final Field ENTITY_PLAYER_PING_FIELD;
+    public static final Field ENTITY_PLAYER_PING_FIELD;
 
     private static final Class CRAFT_ITEM_STACK_CLASS;
     private static final Method CRAFT_ITEM_STACK_AS_NMS_COPY_METHOD;

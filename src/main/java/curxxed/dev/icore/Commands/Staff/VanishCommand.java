@@ -55,7 +55,9 @@ public class VanishCommand implements CommandExecutor {
                 .forEach(p -> p.hidePlayer(player));
 
         player.sendMessage(ChatColor.AQUA + "You are now vanished!");
-        plugin.getRankManager().updatePlayerRank(player);
+
+        // Refresh the player's rank prefix and display name
+        plugin.getRankManager().refreshPlayerDisplay(player);
 
         sendStaffNotification(player, rankColor, true);
         plugin.getRedisManager().syncVanishState(player, true); // Redis support
@@ -67,7 +69,9 @@ public class VanishCommand implements CommandExecutor {
         Bukkit.getOnlinePlayers().forEach(p -> p.showPlayer(player));
 
         player.sendMessage(ChatColor.AQUA + "You are no longer vanished!");
-        plugin.getRankManager().updatePlayerRank(player);
+
+        // Refresh the player's rank prefix and display name
+        plugin.getRankManager().refreshPlayerDisplay(player);
 
         sendStaffNotification(player, rankColor, false);
         plugin.getRedisManager().syncVanishState(player, false); // Redis support
