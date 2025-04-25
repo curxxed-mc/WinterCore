@@ -1,7 +1,4 @@
-# iCore Plugin Configuration
-# config.yml
-# I tried making this as simple as possible to understand
-# Enables or disables the plugin's core features
+# 🔥 iCore Plugin Configuration - Powered by curxxed.dev 🔥
 plugin-enabled: true
 
 # Defines the default rank or role for new players (optional)
@@ -55,20 +52,36 @@ show-rank-above-head: true
 # Permissions settings (optional, depending on your plugin's needs)
 permissions:
   Owner:
-    permission: "core.owner"
+    permissions: "core.owner"
     inherits: ["Developer", "Admin", "Moderator", "Helper"]
   Developer:
-    permission: "core.developer"
+    permissions: "core.developer"
     inherits: ["Admin", "Moderator", "Helper"]
   Admin:
-    permission: "core.admin"
+    permissions: "core.admin"
     inherits: ["Moderator", "Helper"]
   Moderator:
-    permission: "core.moderate"
+    permissions: "core.moderate"
     inherits: ["Helper"]
   Helper:
-    permission: "core.helper"
+    permissions: "core.helper"
 permissions-subsets:
+  "core.owner":
+    - "iCore.*"
+  "core.developer":
+    - "iCore.*"
+  "core.admin":
+    - "iCore.ban"
+    - "iCore.kick"
+    - "iCore.mute"
+    - "iCore.unmute"
+    - "iCore.warn"
+    - "iCore.history"
+    - "iCore.report"
+    - "iCore.vanish"
+    - "iCore.staffchat"
+    - "iCore.adminchat"
+    - "iCore.gamemode"
   core.helper:
     - "iCore.fly"
     - "iCore.feed"

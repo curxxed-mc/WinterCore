@@ -58,11 +58,13 @@ public class ManagePermissionCommand implements CommandExecutor {
     private void addPermission(Player player, String permission) {
         player.addAttachment(plugin, permission, true);
         plugin.getDatabaseManager().addPermission(player.getUniqueId(), permission);
+        plugin.getPermissionManager().reapplyPermissions(player); // Reapply permissions
     }
 
     private void removePermission(Player player, String permission) {
         player.addAttachment(plugin, permission, false);
         plugin.getDatabaseManager().removePermission(player.getUniqueId(), permission);
+        plugin.getPermissionManager().reapplyPermissions(player); // Reapply permissions
     }
 
 }
