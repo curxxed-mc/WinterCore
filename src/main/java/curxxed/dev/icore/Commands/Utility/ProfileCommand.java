@@ -1,11 +1,10 @@
 package curxxed.dev.icore.Commands.Utility;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
 import curxxed.dev.icore.Commands.Staff.VanishCommand;
 import curxxed.dev.icore.Database.RedisManager;
 import curxxed.dev.icore.Main;
 import curxxed.dev.icore.listeners.FreezeListener;
+import curxxed.dev.icore.utils.NMSUtils;
 import curxxed.dev.icore.utils.RankManager;
 import curxxed.dev.icore.utils.SocialInput;
 import org.bukkit.*;
@@ -16,7 +15,9 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.SkullMeta;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 
 public class ProfileCommand implements CommandExecutor, Listener {
@@ -173,14 +174,32 @@ public class ProfileCommand implements CommandExecutor, Listener {
         ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
         SkullMeta meta = (SkullMeta) head.getItemMeta();
 
-        GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-        profile.getProperties().put("textures", new Property("textures", texture));
-
         try {
+            // Dynamically load GameProfile and Property classes
+            Class<?> gameProfileClass = NMSUtils.getNMSClass("GameProfile");
+            Class<?> propertyClass = NMSUtils.getNMSClass("Property");
+
+            // Create a new GameProfile instance
+            Constructor<?> gameProfileConstructor = gameProfileClass.getConstructor(UUID.class, String.class);
+            Object gameProfile = gameProfileConstructor.newInstance(UUID.randomUUID(), null);
+
+            // Create a new Property instance
+            Constructor<?> propertyConstructor = propertyClass.getConstructor(String.class, String.class);
+            Object property = propertyConstructor.newInstance("textures", texture);
+
+            // Add the Property to the GameProfile
+            Method getPropertiesMethod = gameProfileClass.getMethod("getProperties");
+            Object properties = getPropertiesMethod.invoke(gameProfile);
+            Method putMethod = properties.getClass().getMethod("put", Object.class, Object.class);
+            putMethod.invoke(properties, "textures", property);
+
+            // Set the GameProfile in the SkullMeta
             Field profileField = meta.getClass().getDeclaredField("profile");
             profileField.setAccessible(true);
-            profileField.set(meta, profile);
-        } catch (Exception ignored) {}
+            profileField.set(meta, gameProfile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         meta.setDisplayName(ChatColor.AQUA + name);
         List<String> lore = new ArrayList<>();

@@ -1,14 +1,11 @@
 package curxxed.dev.icore.listeners;
 
 import curxxed.dev.icore.Main;
-import curxxed.dev.icore.utils.BukkitReflection;
 import curxxed.dev.icore.utils.GUI.ColorGUI;
+import curxxed.dev.icore.utils.NMSUtils;
 import curxxed.dev.icore.utils.RankManager;
 import curxxed.dev.icore.Commands.Staff.FreezeCommand;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -43,14 +40,14 @@ public class PlayerListener implements Listener {
         event.setJoinMessage(null);
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
+        plugin.getPermissionManager().loadAndApplyPermissions(player);
 
-        rankManager.getRankAsync(player, rank -> plugin.getLogger().info("Cached rank '" + rank + "' for " + player.getName()));
         rankManager.refreshPlayerDisplay(player);
         rankManager.setRankAboveHead(player);
 
         rankManager.getRank(player, rank -> {
             rankManager.getColorPreference(rank, rankColor -> {
-                BukkitReflection.updatePlayerNameTag(player, rankColor);
+                rankManager.updateNameTagColor(player, rankColor);
 
                 if (player.hasPermission("iCore.staff") || player.hasPermission("iCore.admin") || player.hasPermission("iCore.manager")) {
                     String serverName = plugin.getConfig().getString("server-name", "hub-restricted");
@@ -58,10 +55,8 @@ public class PlayerListener implements Listener {
                     plugin.getRedisManager().updateLastServer(uuid, serverName);
 
                     if (last != null && !last.equals(serverName)) {
-                        plugin.getLogger().info("Publishing staff switch: " + player.getName() + " from " + last + " to " + serverName);
                         plugin.getRedisManager().publishStaffActivity("switch", player.getName(), rankColor.toString(), last, serverName);
                     } else {
-                        plugin.getLogger().info("Publishing staff join: " + player.getName() + " to " + serverName);
                         plugin.getRedisManager().publishStaffActivity("join", player.getName(), rankColor.toString(), "", serverName);
                     }
                 }
@@ -78,21 +73,15 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        plugin.getLogger().info("[RedisDebug] Player quit detected: " + player.getName());
-
-        // Delay check to allow Redis to finish setting the pending key on switch
         Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
-            plugin.getLogger().info("[RedisDebug] Checking switch state for: " + player.getName());
 
             boolean isPending = plugin.getRedisManager().isStillPendingSwitch(uuid);
 
             if (isPending) {
-                plugin.getLogger().info("[RedisDebug] " + player.getName() + " is switching servers. No quit announcement.");
                 plugin.getRedisManager().clearPendingSwitch(uuid); // Optional cleanup
                 return;
             }
 
-            plugin.getLogger().info("[RedisDebug] " + player.getName() + " is ACTUALLY quitting.");
 
             // Only process quit messages for staff members
             if (player.hasPermission("iCore.staff") || player.hasPermission("iCore.admin") || player.hasPermission("iCore.manager")) {

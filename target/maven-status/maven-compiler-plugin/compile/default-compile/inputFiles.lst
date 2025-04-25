@@ -12,6 +12,7 @@ C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\Mo
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\ReloadConfig.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\ReplyCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\SpeedCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Social\DiscordCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\AdminChatCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\AltsCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\BanCommand.java
@@ -23,6 +24,7 @@ C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\K
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\ManagePermissionCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\ManagerChatCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\MuteCommand.java
+C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\RankCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\SetRankCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\StaffChatCommand.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\StaffListCommand.java
@@ -55,14 +57,16 @@ C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\listeners\Player
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Main.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Placeholders\Placeholder.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\AltManager.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\BukkitReflection.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\GUI\ColorGUI.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\GUI\DisguiseGUI.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\GUI\RankGUIListener.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\GUI\StaffListGUI.java
+C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\NMSUtils.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\PermissionManager.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\PunishmentManager.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\RankManager.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\RegisterPlugin.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\SocialInput.java
+C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\Staff\StaffModeListener.java
+C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\Staff\StaffModeManager.java
 C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\WebhookManager.java

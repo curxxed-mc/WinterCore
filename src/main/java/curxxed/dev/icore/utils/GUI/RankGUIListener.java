@@ -1,6 +1,7 @@
 package curxxed.dev.icore.utils.GUI;
 
 import curxxed.dev.icore.Main;
+import curxxed.dev.icore.utils.NMSUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,8 +25,11 @@ public class RankGUIListener implements Listener {
         Player player = (Player) event.getWhoClicked();
         Inventory inv = event.getInventory();
 
+        // Use reflection to get the inventory title
+        String title = NMSUtils.getInventoryTitle(event);
+
         // Check if the clicked inventory is the "Set Rank for" GUI
-        if (!inv.getTitle().startsWith("Set Rank for ")) return;
+        if (title == null || !title.startsWith("Set Rank for ")) return;
 
         event.setCancelled(true);
 

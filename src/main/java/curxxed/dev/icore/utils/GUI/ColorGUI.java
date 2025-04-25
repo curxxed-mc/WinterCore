@@ -2,6 +2,7 @@ package curxxed.dev.icore.utils.GUI;
 
 
 
+import curxxed.dev.icore.utils.NMSUtils;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 
@@ -129,36 +130,25 @@ public class ColorGUI implements CommandExecutor, Listener {
 
 
     @EventHandler
-
     public void onInventoryClick(InventoryClickEvent event) {
-
         if (event.getWhoClicked() instanceof Player) {
-
             Player player = (Player) event.getWhoClicked();
-
             Inventory inv = event.getInventory();
 
+            // Use reflection to get the inventory title
+            String title = NMSUtils.getInventoryTitle(event);
 
-
-            if (inv.getTitle().equals("Select Chat Color")) {
-
+            if (title != null && title.equals("Select Chat Color")) {
                 event.setCancelled(true);
 
-
-
                 ItemStack clickedItem = event.getCurrentItem();
-
                 if (clickedItem != null && clickedItem.hasItemMeta()) {
                     ChatColor color = ChatColor.getByChar(clickedItem.getItemMeta().getDisplayName().charAt(1));
                     plugin.getRankManager().setMessageColorPreference(player, color);
                     player.sendMessage("Chat message color set to: " + color + color.name());
                     player.closeInventory();
-
                 }
-
             }
-
         }
-
     }
 }

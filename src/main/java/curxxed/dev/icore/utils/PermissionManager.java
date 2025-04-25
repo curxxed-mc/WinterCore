@@ -2,29 +2,59 @@ package curxxed.dev.icore.utils;
 
 import curxxed.dev.icore.Main;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.PermissionAttachment;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class PermissionManager {
 
     private final Main plugin;
+    private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
 
     public PermissionManager(Main plugin) {
         this.plugin = plugin;
     }
 
-    // ✅ Apply database permissions to the player (used in PlayerListener)
+    // ✅ Load and apply permissions for a player from the database
     public void loadAndApplyPermissions(Player player) {
+        // Clear existing permissions
+        clearPermissions(player);
+
+        // Load individual permissions from the database
         plugin.getDatabaseManager().getPlayerPermissions(player.getUniqueId(), permissions -> {
+            PermissionAttachment attachment = getOrCreateAttachment(player);
             for (String perm : permissions) {
-                player.addAttachment(plugin, perm, true);
+                attachment.setPermission(perm, true);
+            }
+        });
+
+        // Load rank-based permissions
+        plugin.getRankManager().getRank(player, rank -> {
+            List<String> rankPermissions = plugin.getConfig().getStringList("permissions." + rank);
+            PermissionAttachment attachment = getOrCreateAttachment(player);
+            for (String perm : rankPermissions) {
+                attachment.setPermission(perm, true);
             }
         });
     }
 
-    // ✅ Check if player has specific permission
+    // ✅ Add a permission to a player and persist it in the database
+    public void addPermission(Player player, String permission) {
+        PermissionAttachment attachment = getOrCreateAttachment(player);
+        attachment.setPermission(permission, true);
+        plugin.getDatabaseManager().addPermission(player.getUniqueId(), permission);
+    }
+
+    // ✅ Remove a permission from a player and update the database
+    public void removePermission(Player player, String permission) {
+        PermissionAttachment attachment = getOrCreateAttachment(player);
+        attachment.unsetPermission(permission);
+        plugin.getDatabaseManager().removePermission(player.getUniqueId(), permission);
+    }
+
+    // ✅ Check if a player has a specific permission
     public void playerHasPermission(Player player, String permission, Consumer<Boolean> callback) {
         plugin.getRankManager().getRank(player, rank -> {
             List<String> rankPermissions = plugin.getConfig().getStringList("permissions." + rank);
@@ -46,7 +76,7 @@ public class PermissionManager {
         });
     }
 
-    // ✅ Get all player permissions (including subsets)
+    // ✅ Get all permissions for a player, including subsets
     public void getAllPermissions(Player player, Consumer<List<String>> callback) {
         plugin.getRankManager().getRank(player, rank -> {
             List<String> rankPermissions = plugin.getConfig().getStringList("permissions." + rank);
@@ -61,5 +91,29 @@ public class PermissionManager {
 
             callback.accept(allPermissions);
         });
+    }
+
+    // ✅ Reapply permissions for a player (e.g., after rank change)
+    public void reapplyPermissions(Player player) {
+        clearPermissions(player);
+        loadAndApplyPermissions(player);
+    }
+
+    // ✅ Clear all permissions for a player
+    public void clearPermissions(Player player) {
+        PermissionAttachment attachment = attachments.remove(player.getUniqueId());
+        if (attachment != null) {
+            attachment.remove();
+        }
+    }
+
+    // ✅ Get or create a PermissionAttachment for a player
+    PermissionAttachment getOrCreateAttachment(Player player) {
+        return attachments.computeIfAbsent(player.getUniqueId(), uuid -> player.addAttachment(plugin));
+    }
+
+    // ✅ Handle player logout to clean up attachments
+    public void handlePlayerLogout(Player player) {
+        clearPermissions(player);
     }
 }

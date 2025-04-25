@@ -2,6 +2,7 @@ package curxxed.dev.icore.Commands.misc;
 
 import curxxed.dev.icore.Main;
 import curxxed.dev.icore.utils.RankManager;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -16,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 public class ListCommand implements CommandExecutor {
 
     private final Main plugin;
+    @Getter
     private final RankManager rankManager;
 
     public ListCommand(Main plugin, RankManager rankManager) {

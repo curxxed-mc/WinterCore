@@ -25,6 +25,9 @@ commands:
     description: Restore player health
   setrank:
     description: Set a player's rank
+    aliases:
+      - grant
+      - sr
   permission:
     description: Manage permissions for a player
     aliases:
@@ -98,7 +101,7 @@ commands:
   cleareffects:
     description: clears effects
   invsee:
-   description: allows you to see other player's inventory
+    description: allows you to see other player's inventory
   win:
     description: Shows the credits (when you've beaten the enderdragon) without skipping it.
   profile:
@@ -117,3 +120,7 @@ commands:
     description: Toggles staff mode
   idkwtidl:
     description: I don't know what this does, but it does something
+  discord:
+    description: Shows the discord link
+  rank:
+
