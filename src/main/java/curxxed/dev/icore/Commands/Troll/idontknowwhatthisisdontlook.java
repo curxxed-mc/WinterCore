@@ -1,10 +1,13 @@
 package curxxed.dev.icore.Commands.Troll;
 
-import curxxed.dev.icore.utils.BukkitReflection;
+import curxxed.dev.icore.utils.NMSUtils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public class idontknowwhatthisisdontlook implements CommandExecutor {
 
@@ -46,7 +49,7 @@ public class idontknowwhatthisisdontlook implements CommandExecutor {
                 }
                 try {
                     int value = Integer.parseInt(args[1]);
-                    int currentPing = BukkitReflection.getPing(player);
+                    int currentPing = NMSUtils.getPing(player);
                     setFakePing(player, currentPing + value);
                     player.sendMessage("Your fake ping has been increased by " + value + " ms.");
                 } catch (NumberFormatException e) {
@@ -61,7 +64,7 @@ public class idontknowwhatthisisdontlook implements CommandExecutor {
                 }
                 try {
                     int value = Integer.parseInt(args[1]);
-                    int currentPing = BukkitReflection.getPing(player);
+                    int currentPing = NMSUtils.getPing(player);
                     setFakePing(player, currentPing - value);
                     player.sendMessage("Your fake ping has been decreased by " + value + " ms.");
                 } catch (NumberFormatException e) {
@@ -84,8 +87,14 @@ public class idontknowwhatthisisdontlook implements CommandExecutor {
 
     private void setFakePing(Player player, int ping) {
         try {
-            Object handle = BukkitReflection.CRAFT_PLAYER_GET_HANDLE_METHOD.invoke(player);
-            BukkitReflection.ENTITY_PLAYER_PING_FIELD.setInt(handle, ping); // Set the fake ping directly
+            Object handle = NMSUtils.getEntityPlayer(player);
+            if (NMSUtils.IS_LEGACY) {
+                Field pingField = handle.getClass().getField("ping");
+                pingField.setInt(handle, ping);
+            } else {
+                Method setPing = handle.getClass().getMethod("setPing", int.class);
+                setPing.invoke(handle, ping);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -93,9 +102,15 @@ public class idontknowwhatthisisdontlook implements CommandExecutor {
 
     private void resetPing(Player player) {
         try {
-            Object handle = BukkitReflection.CRAFT_PLAYER_GET_HANDLE_METHOD.invoke(player);
-            int actualPing = BukkitReflection.getPing(player); // Fetch the actual ping
-            BukkitReflection.ENTITY_PLAYER_PING_FIELD.setInt(handle, actualPing); // Reset to actual ping
+            Object handle = NMSUtils.getEntityPlayer(player);
+            int actualPing = NMSUtils.getPing(player);
+            if (NMSUtils.IS_LEGACY) {
+                Field pingField = handle.getClass().getField("ping");
+                pingField.setInt(handle, actualPing);
+            } else {
+                Method setPing = handle.getClass().getMethod("setPing", int.class);
+                setPing.invoke(handle, actualPing);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

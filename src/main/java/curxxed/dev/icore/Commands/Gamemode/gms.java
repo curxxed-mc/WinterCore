@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Gamemode;
 
-import curxxed.dev.icore.Commands.Staff.StaffModeCommand;
+import curxxed.dev.icore.utils.Staff.StaffModeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -11,10 +11,10 @@ import org.bukkit.entity.Player;
 
 public class gms implements CommandExecutor {
 
-    private final StaffModeCommand staffModeCommand;
+    private final StaffModeManager staffModeManager;
 
-    public gms(StaffModeCommand staffModeCommand) {
-        this.staffModeCommand = staffModeCommand;
+    public gms(StaffModeManager staffModeManager) {
+        this.staffModeManager = staffModeManager;
     }
 
     @Override
@@ -26,8 +26,8 @@ public class gms implements CommandExecutor {
 
         Player player = (Player) sender;
 
-        // Check if the player is in staff mode
-        if (staffModeCommand.isInStaffMode(player)) {
+        // folosește managerul
+        if (staffModeManager.isInStaffMode(player)) {
             player.sendMessage(ChatColor.RED + "You cannot change your game mode while in staff mode!");
             return true;
         }
@@ -38,7 +38,6 @@ public class gms implements CommandExecutor {
         }
 
         Player target;
-
         if (args.length > 0) {
             target = Bukkit.getPlayer(args[0]);
             if (target == null) {

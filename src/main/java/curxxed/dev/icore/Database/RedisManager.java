@@ -6,6 +6,7 @@ import curxxed.dev.icore.Commands.Staff.VanishCommand;
 import curxxed.dev.icore.Main;
 import curxxed.dev.icore.utils.RankManager;
 import net.kyori.adventure.platform.facet.Facet;
+import curxxed.dev.icore.utils.NMSUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -296,7 +297,7 @@ public class RedisManager {
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
             try (Jedis jedis = plugin.getRedisPool().getResource()) {
                 String key = "server:" + serverName + ":info";
-                double[] tpsArray = getTPS();
+                double[] tpsArray = NMSUtils.getTPS();
                 double tps = tpsArray.length > 0 ? tpsArray[0] : 0.0;
 
                 jedis.hset(key, "tps", String.format("%.2f", tps));
@@ -330,18 +331,6 @@ public class RedisManager {
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to get online players: " + e.getMessage());
             return java.util.Collections.emptySet();
-        }
-    }
-
-
-    private double[] getTPS() {
-        try {
-            Object minecraftServer = Class.forName("org.bukkit.craftbukkit.v1_8_R3.CraftServer")
-                    .getMethod("getServer").invoke(org.bukkit.Bukkit.getServer());
-            return (double[]) minecraftServer.getClass().getField("recentTps").get(minecraftServer);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new double[]{0.0, 0.0, 0.0};
         }
     }
 
