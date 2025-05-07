@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Staff;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.utils.GUI.StaffListGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -11,9 +11,9 @@ import org.bukkit.entity.Player;
 
 public class StaffListCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
 
-    public StaffListCommand(Main plugin) {
+    public StaffListCommand(iCore plugin) {
         this.plugin = plugin;
     }
 

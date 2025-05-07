@@ -1,7 +1,7 @@
 package curxxed.dev.icore.utils;
 
 import curxxed.dev.icore.Database.RedisManager;
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -13,11 +13,11 @@ import java.util.*;
 
 public class SocialInput implements Listener {
 
-    private final Main plugin;
+    private final iCore plugin;
     private static final Map<UUID, SocialPrompt> awaiting = new HashMap<>();
 
     // Constructor registers the listener
-    public SocialInput(Main plugin) {
+    public SocialInput(iCore plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }

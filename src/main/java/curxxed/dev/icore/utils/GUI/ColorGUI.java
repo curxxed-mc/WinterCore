@@ -2,6 +2,7 @@ package curxxed.dev.icore.utils.GUI;
 
 
 
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.utils.NMSUtils;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -30,9 +31,6 @@ import org.bukkit.inventory.ItemStack;
 
 import org.bukkit.inventory.meta.ItemMeta;
 
-import curxxed.dev.icore.Main;
-
-
 
 import java.util.ArrayList;
 
@@ -42,13 +40,13 @@ import java.util.List;
 
 public class ColorGUI implements CommandExecutor, Listener {
 
-    private final Main plugin;
+    private final iCore plugin;
     @Getter
     public static final ColorGUI instance = getInstance();
 
 
 
-    public ColorGUI(Main plugin) {
+    public ColorGUI(iCore plugin) {
         this.plugin = plugin;
     }
 

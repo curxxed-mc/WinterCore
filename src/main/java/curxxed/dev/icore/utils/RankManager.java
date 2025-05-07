@@ -4,46 +4,61 @@ import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
 import curxxed.dev.icore.Database.DatabaseManager;
-import curxxed.dev.icore.Main;
-import curxxed.dev.icore.utils.NMSUtils;
+import curxxed.dev.icore.Nametags.NameTag;
+import curxxed.dev.icore.Nametags.NameTagAdapter;
+import curxxed.dev.icore.iCore;
 
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
-import org.bukkit.scoreboard.NameTagVisibility;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.Team;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.lang.reflect.*;
-
-import static curxxed.dev.icore.utils.NMSUtils.sendPacket;
 
 
 public class RankManager {
     @Getter
-    private final Main plugin;
+    private final iCore plugin;
     private final Map<UUID, String> playerRanks = new HashMap<>();
     private final Map<UUID, ChatColor> colorPreferences = new HashMap<>();
     private final Map<UUID, String> playerCache = new HashMap<>();
     private final Map<UUID, String> colorCache = new HashMap<>();
     private final Map<UUID, Player> targetPlayers = new HashMap<>();
+    private final NameTagAdapter nameTagAdapter;
     private final DatabaseManager databaseManager;
+    private FileConfiguration ranksConfig;
 
     private static final String DEFAULT_RANK = "Default";
     private static RankManager instance;
     private final Map<UUID, Long> lastRefresh = new HashMap<>();
 
 
-    public RankManager(Main plugin) {
+    public RankManager(iCore plugin) {
         this.plugin = plugin;
         this.databaseManager = plugin.getDatabaseManager();
+        this.nameTagAdapter = new NameTag();
+        File ranksFile = new File(plugin.getDataFolder(), "ranks.yml");
+        if (!ranksFile.exists()) {
+            plugin.saveResource("ranks.yml", false);
+        }
+        this.ranksConfig = YamlConfiguration.loadConfiguration(ranksFile);
+    }
+
+    public void saveRanksConfig() {
+        try {
+            ranksConfig.save(new File(plugin.getDataFolder(), "ranks.yml"));
+        } catch (IOException e) {
+            plugin.getLogger().severe("Failed to save ranks.yml: " + e.getMessage());
+        }
     }
 
 
@@ -54,7 +69,11 @@ public class RankManager {
         return instance;
     }
 
-    public static void initialize(Main plugin) {
+    public ConfigurationSection getRanksSection() {
+        return ranksConfig.getConfigurationSection("ranks");
+    }
+
+    public static void initialize(iCore plugin) {
         if (instance == null) {
             instance = new RankManager(plugin);
         }
@@ -73,27 +92,25 @@ public class RankManager {
             // Invalidate the player's rank cache
             invalidatePlayerCache(player);
 
-            // Refresh the player's display name and rank
-            getRankAsync(player, fetchedRank -> {
-                plugin.getLogger().info("Cache refreshed automatically after rank set for " + player.getName());
-                refreshPlayerDisplay(player);
-            });
+            // Refresh the player's display name and name tag immediately
+            refreshPlayerRankAndNameTag(player);
 
             // Notify the player and the giver
             player.sendMessage(ChatColor.GREEN + "Your rank has been set to " + rank + " by " + giver.getName() + ".");
             giver.sendMessage(ChatColor.GREEN + "You have successfully set the rank of " + player.getName() + " to " + rank + ".");
-
-            // Update the player's rank and name tag
-            updatePlayerRank(player);
-            setRankAboveHead(player);
-
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to set rank for " + player.getName() + ": " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-
+    private void refreshPlayerRankAndNameTag(Player player) {
+        getRank(player, rank -> getColorPreference(rank, rankColor -> {
+            String formattedColor = ChatColor.translateAlternateColorCodes('&', rankColor);
+            updatePlayerRank(player); // Update display name and permissions
+            nameTagAdapter.setNameTag(player, "", ChatColor.getByChar(formattedColor.replace("&", "").charAt(0))); // Update name tag color
+        }));
+    }
 
     private void invalidatePlayerCache(Player player) {
         playerRanks.remove(player.getUniqueId());
@@ -101,9 +118,9 @@ public class RankManager {
     }
 
     public void createRank(String rankName) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null) {
-            ranks = plugin.getConfig().createSection("ranks");
+            ranks = ranksConfig.createSection("ranks");
         }
 
         if (ranks.contains(rankName)) {
@@ -119,7 +136,7 @@ public class RankManager {
     }
 
     public void deleteRank(String rankName) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null || !ranks.contains(rankName)) {
             throw new IllegalArgumentException("Rank does not exist!");
         }
@@ -129,7 +146,7 @@ public class RankManager {
     }
 
     public void addPermission(String rankName, String permission) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null || !ranks.contains(rankName)) {
             throw new IllegalArgumentException("Rank does not exist!");
         }
@@ -144,7 +161,7 @@ public class RankManager {
     }
 
     public void removePermission(String rankName, String permission, boolean inherit) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null || !ranks.contains(rankName)) {
             throw new IllegalArgumentException("Rank does not exist!");
         }
@@ -166,7 +183,7 @@ public class RankManager {
     }
 
     public void setPrefix(String rankName, String prefix) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null || !ranks.contains(rankName)) {
             throw new IllegalArgumentException("Rank does not exist!");
         }
@@ -177,7 +194,7 @@ public class RankManager {
     }
 
     public List<String> getPermissions(String rankName) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null || !ranks.contains(rankName)) {
             throw new IllegalArgumentException("Rank does not exist!");
         }
@@ -187,17 +204,17 @@ public class RankManager {
     }
 
     public void setColor(String rankName, String color) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null || !ranks.contains(rankName)) {
             throw new IllegalArgumentException("Rank does not exist!");
         }
         ConfigurationSection rankSection = ranks.getConfigurationSection(rankName);
-        rankSection.set("color", color);
+        rankSection.set("name-color", color);
         plugin.saveConfig();
     }
 
     public void setWeight(String rankName, int weight) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null || !ranks.contains(rankName)) {
             throw new IllegalArgumentException("Rank does not exist!");
         }
@@ -305,15 +322,15 @@ public class RankManager {
 
 
     public void saveNewRank(String rankName, String rankPrefix) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null) {
-            ranks = plugin.getConfig().createSection("ranks");
+            ranks = ranksConfig.createSection("ranks");
         }
 
         int nextWeight = getNextAvailableWeight(ranks);
         ConfigurationSection newRank = ranks.createSection(rankName);
-        newRank.set("prefix", rankPrefix);
-        newRank.set("weight", nextWeight);
+        newRank.set("prefix", rankPrefix != null ? rankPrefix : "");
+        newRank.set("weight", getNextAvailableWeight(ranks));
         newRank.set("name-color", "&f");
 
         plugin.saveConfig();
@@ -335,7 +352,7 @@ public class RankManager {
 
     public List<String> getSortedRanks() {
         List<String> sortedRanks = new ArrayList<>();
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
 
         if (ranks != null) {
             List<Map.Entry<String, Integer>> rankEntries = new ArrayList<>();
@@ -374,7 +391,7 @@ public class RankManager {
             for (String permission : permissions) {
                 attachment.setPermission(permission, true);
             }
-            String nameColor = plugin.getConfig().getString("ranks." + rank + ".name-color", "&f");
+            String nameColor = ranksConfig.getString("ranks." + rank + ".name-color", "&f");
             String coloredName = ChatColor.translateAlternateColorCodes('&', nameColor) + player.getName() + ChatColor.RESET;
 
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -385,9 +402,6 @@ public class RankManager {
             });
         });
     }
-
-
-
 
     private void grantPermissionsAsync(Player player, String rank) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -404,9 +418,9 @@ public class RankManager {
 
 
     public List<String> getPermissionsForRank(String rank) {
-        ConfigurationSection ranksSection = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranksSection = ranksConfig.getConfigurationSection("ranks");
         if (ranksSection == null) {
-            plugin.getLogger().warning("Ranks section is missing in config.yml");
+            plugin.getLogger().warning("Ranks section is missing in ranks.yml");
             return new ArrayList<>();
         }
 
@@ -437,30 +451,33 @@ public class RankManager {
         }
     }
 
-    public String fetchRankPrefix(Player player) {
-        String rank = getRankSync(player);
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
-        if (ranks == null) {
-            plugin.getLogger().warning("Ranks section is missing in config.yml");
-            return "";
-        }
+    public void fetchRankPrefix(Player player, Consumer<String> callback) {
+        getRankAsync(player, rank -> {
+            ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
+            if (ranks == null) {
+                plugin.getLogger().warning("Ranks section is missing in ranks.yml");
+                callback.accept("");
+                return;
+            }
 
-        ConfigurationSection rankSection = ranks.getConfigurationSection(rank);
-        if (rankSection != null) {
-            String prefix = rankSection.getString("prefix", "");
-            return ChatColor.translateAlternateColorCodes('&', prefix);
-        } else {
-            return "";
-        }
+            ConfigurationSection rankSection = ranks.getConfigurationSection(rank);
+            if (rankSection != null) {
+                String prefix = rankSection.getString("prefix", "");
+                String coloredPrefix = ChatColor.translateAlternateColorCodes('&', prefix);
+                callback.accept(coloredPrefix);
+            } else {
+                callback.accept("");
+            }
+        });
     }
 
 
 
     public void getRankPrefix(Player player, Consumer<String> callback) {
         getRankAsync(player, rank -> {
-            ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+            ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
             if (ranks == null) {
-                plugin.getLogger().warning("Ranks section is missing in config.yml");
+                plugin.getLogger().warning("Ranks section is missing in ranks.yml");
                 callback.accept("");
                 return;
             }
@@ -481,21 +498,14 @@ public class RankManager {
         String rank = playerCache.getOrDefault(player.getUniqueId(), "Default");
         if (rank == null) return "&f";
 
-        ConfigurationSection ranksConfig = plugin.getConfig().getConfigurationSection("ranks");
-        if (ranksConfig == null) {
-            plugin.getLogger().warning("Ranks section is missing in config.yml");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
+        if (ranks == null) {
+            plugin.getLogger().warning("Ranks section is missing in ranks.yml");
             return "&f";
         }
 
-        String color = ranksConfig.getString(rank + ".name-color", "&f");
-        return ChatColor.translateAlternateColorCodes('&', color);
+        return ranks.getString(rank + ".name-color", "&f");
     }
-
-
-
-
-
-
 
     public String getRankPrefixSync(Player player) {
         final CompletableFuture<String> future = new CompletableFuture<>();
@@ -514,7 +524,7 @@ public class RankManager {
 
     public List<String> getAvailableRanks() {
         List<String> availableRanks = new ArrayList<>();
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks != null) {
             availableRanks.addAll(ranks.getKeys(false));
         }
@@ -522,18 +532,18 @@ public class RankManager {
     }
 
     public boolean isValidRank(String rank) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks == null) {
-            plugin.getLogger().warning("Ranks section is missing in config.yml");
+            plugin.getLogger().warning("Ranks section is missing in ranks.yml");
             return false;
         }
         return ranks.contains(rank);
     }
 
     public void getColorPreference(String rank, Consumer<String> callback) {
-        ConfigurationSection ranksConfig = plugin.getConfig().getConfigurationSection("ranks");
-        if (ranksConfig != null && ranksConfig.contains(rank + ".name-color")) {
-            String color = ranksConfig.getString(rank + ".name-color", "&f");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
+        if (ranks != null && ranks.contains(rank + ".name-color")) {
+            String color = ranks.getString(rank + ".name-color", "&f");
             callback.accept(color);
         } else {
             callback.accept("&f");
@@ -555,21 +565,22 @@ public class RankManager {
     }
 
     public void refreshPlayerDisplay(Player player) {
-        getRankPrefix(player, prefix -> {
-            String color = getColorPreferenceSync(player);
-            String fullDisplayName = prefix + " " + color + player.getName();
-            player.setDisplayName(fullDisplayName);
-            plugin.getLogger().info("Display name refreshed for " + player.getName() + " → " + fullDisplayName);
+        getRank(player, rank -> {
+            getColorPreference(rank, rankColor -> {
+                String formattedName = ChatColor.translateAlternateColorCodes('&', rankColor) + player.getName();
+
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    player.setDisplayName(formattedName); // Display name in chat
+                    player.setPlayerListName(formattedName); // Name in tab list
+                    player.setCustomName(formattedName); // Name above the player's head
+                    player.setCustomNameVisible(true);
+                });
+            });
         });
     }
 
-
-
-
-
-
     private void fetchColorFromRank(String rank, Consumer<String> callback) {
-        ConfigurationSection ranks = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
         if (ranks != null) {
             ConfigurationSection rankSection = ranks.getConfigurationSection(rank);
             if (rankSection != null) {
@@ -612,9 +623,9 @@ public class RankManager {
     }
 
     public List<String> getLowerRanks(String playerRank) {
-        ConfigurationSection ranksSection = plugin.getConfig().getConfigurationSection("ranks");
+        ConfigurationSection ranksSection = ranksConfig.getConfigurationSection("ranks");
         if (ranksSection == null) {
-            plugin.getLogger().warning("Ranks section is missing in config.yml");
+            plugin.getLogger().warning("Ranks section is missing in ranks.yml");
             return new ArrayList<>();
         }
 
@@ -633,144 +644,22 @@ public class RankManager {
     }
 
     public void setRankAboveHead(Player player) {
-        boolean showRank = plugin.getConfig().getBoolean("show-rank-above-head", true);
+        boolean showRank = ranksConfig.getBoolean("show-rank-above-head", true);
 
         if (showRank) {
-            getRank(player, rank -> getColorPreference(rank, rankColor -> {
-                String coloredName = ChatColor.translateAlternateColorCodes('&', rankColor) + player.getName();
-
-                player.setCustomName(coloredName);
-                player.setCustomNameVisible(true);
-
-                updateNameTagColor(player, rankColor);
-            }));
+            getRank(player, rank -> getColorPreference(rank, rankColor -> fetchRankPrefix(player, prefix -> {
+                String formattedColor = ChatColor.translateAlternateColorCodes('&', rankColor);
+                nameTagAdapter.setNameTag(player, prefix, ChatColor.getByChar(formattedColor.replace("&", "").charAt(0)));
+            })));
         } else {
-            player.setCustomName(player.getName());
-            player.setCustomNameVisible(true);
-            resetNameTagColor(player);
+            nameTagAdapter.resetNameTag(player);
         }
     }
 
-
-
-    public void updateNameTagColor(Player player, String rankColor) {
-        try {
-            String teamName = player.getName();
-
-            Class<?> scoreboardTeamClass = NMSUtils.getNMSClass("ScoreboardTeam");
-            if (NMSUtils.IS_LEGACY) {
-                // Legacy NMS logic
-                Object scoreboardTeam = scoreboardTeamClass.getConstructor(String.class).newInstance(teamName);
-
-                Method setPrefixMethod = scoreboardTeamClass.getMethod("setPrefix", String.class);
-                Method setSuffixMethod = scoreboardTeamClass.getMethod("setSuffix", String.class);
-                setPrefixMethod.invoke(scoreboardTeam, ChatColor.translateAlternateColorCodes('&', rankColor));
-                setSuffixMethod.invoke(scoreboardTeam, "");
-
-                Class<?> enumChatFormatClass = NMSUtils.getNMSClass("EnumChatFormat");
-                Object enumChatFormat = Enum.valueOf((Class<Enum>) enumChatFormatClass, NMSUtils.getEnumNameFromColorCode(rankColor.charAt(1)));
-                Method setColorMethod = scoreboardTeamClass.getMethod("setColor", enumChatFormatClass);
-                setColorMethod.invoke(scoreboardTeam, enumChatFormat);
-
-                Class<?> packetClass = NMSUtils.getNMSClass("PacketPlayOutScoreboardTeam");
-                Object packetCreate = NMSUtils.createInstance(packetClass, scoreboardTeam, 0);
-                Object packetUpdate = NMSUtils.createInstance(packetClass, scoreboardTeam, 2);
-                NMSUtils.sendPacket(player, packetCreate);
-                NMSUtils.sendPacket(player, packetUpdate);
-
-            } else {
-                // Modern NMS logic
-                Class<?> scoreboardClass = NMSUtils.getNMSClass("Scoreboard");
-                Class<?> enumChatFormatClass = NMSUtils.getNMSClass("EnumChatFormat");
-                Class<?> packetClass = NMSUtils.getNMSClass("PacketPlayOutScoreboardTeam");
-
-                Object scoreboard = scoreboardClass.getDeclaredConstructor().newInstance();
-                Constructor<?> teamConstructor = scoreboardTeamClass.getConstructor(scoreboardClass, String.class);
-                Object scoreboardTeam = teamConstructor.newInstance(scoreboard, teamName);
-
-                Method setPrefixMethod = scoreboardTeamClass.getMethod("setPrefix", String.class);
-                Method setSuffixMethod = scoreboardTeamClass.getMethod("setSuffix", String.class);
-                setPrefixMethod.invoke(scoreboardTeam, ChatColor.translateAlternateColorCodes('&', rankColor));
-                setSuffixMethod.invoke(scoreboardTeam, "");
-
-                Object enumChatFormat = Enum.valueOf((Class<Enum>) enumChatFormatClass, NMSUtils.getEnumNameFromColorCode(rankColor.charAt(1)));
-                Method setColorMethod = scoreboardTeamClass.getMethod("setColor", enumChatFormatClass);
-                setColorMethod.invoke(scoreboardTeam, enumChatFormat);
-
-                Object packetCreate = NMSUtils.createInstance(packetClass, scoreboardTeam, 0);
-                Object packetUpdate = NMSUtils.createInstance(packetClass, scoreboardTeam, 2);
-                NMSUtils.sendPacket(player, packetCreate);
-                NMSUtils.sendPacket(player, packetUpdate);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private void refreshNameTag(Player player, Team team) {
-        try {
-            Object nmsScoreboard = NMSUtils.getCraftBukkitClass("scoreboard.CraftScoreboard")
-                    .getMethod("getHandle")
-                    .invoke(Bukkit.getScoreboardManager().getMainScoreboard());
-
-            Object nmsTeam = nmsScoreboard.getClass()
-                    .getMethod("getTeam", String.class)
-                    .invoke(nmsScoreboard, team.getName());
-
-            if (nmsTeam != null) {
-                Class<?> packetClass = NMSUtils.getNMSClass("PacketPlayOutScoreboardTeam");
-                Object packet1 = NMSUtils.createInstance(packetClass, nmsTeam, 1);
-                Object packet2 = NMSUtils.createInstance(packetClass, nmsTeam, 0);
-                NMSUtils.sendPacket(player, packet1);
-                NMSUtils.sendPacket(player, packet2);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void resetNameTagColor(Player player) {
-        try {
-            Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
-            Team team = scoreboard.getTeam(player.getName());
-
-            if (team == null) {
-                team = scoreboard.registerNewTeam(player.getName());
-            }
-
-            team.setPrefix(ChatColor.translateAlternateColorCodes('&', "&f"));
-            team.setSuffix("");
-            team.setNameTagVisibility(NameTagVisibility.ALWAYS);
-
-            if (NMSUtils.IS_LEGACY) {
-                Object nmsScoreboard = NMSUtils.getCraftBukkitClass("scoreboard.CraftScoreboard")
-                        .getMethod("getHandle")
-                        .invoke(Bukkit.getScoreboardManager().getMainScoreboard());
-
-                Object nmsTeam = nmsScoreboard.getClass()
-                        .getMethod("getTeam", String.class)
-                        .invoke(nmsScoreboard, team.getName());
-
-                if (nmsTeam != null) {
-                    Class<?> packetClass = NMSUtils.getNMSClass("PacketPlayOutScoreboardTeam");
-                    Object packet1 = NMSUtils.createInstance(packetClass, nmsTeam, 2);
-                    Object packet2 = NMSUtils.createInstance(packetClass, nmsTeam, 0);
-                    NMSUtils.sendPacket(player, packet1);
-                    NMSUtils.sendPacket(player, packet2);
-                }
-            } else {
-                Class<?> scoreboardTeamClass = NMSUtils.getNMSClass("ScoreboardTeam");
-                Object nmsTeam = scoreboardTeamClass.getConstructor(String.class).newInstance(team.getName());
-
-                Class<?> packetClass = NMSUtils.getNMSClass("PacketPlayOutScoreboardTeam");
-                Object packet1 = NMSUtils.createInstance(packetClass, nmsTeam, 2);
-                Object packet2 = NMSUtils.createInstance(packetClass, nmsTeam, 0);
-                NMSUtils.sendPacket(player, packet1);
-                NMSUtils.sendPacket(player, packet2);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void updateNameTagColor(Player player, ChatColor color) {
+        fetchRankPrefix(player, prefix -> {
+            String formattedPrefix = ChatColor.translateAlternateColorCodes('&', prefix);
+            nameTagAdapter.setNameTag(player, formattedPrefix, color);
+        });
     }
 }

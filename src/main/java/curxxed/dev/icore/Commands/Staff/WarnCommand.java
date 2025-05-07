@@ -1,6 +1,7 @@
 package curxxed.dev.icore.Commands.Staff;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.Database.DatabaseManager;
+import curxxed.dev.icore.iCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -9,10 +10,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class WarnCommand implements CommandExecutor {
-    private final Main plugin;
+    private final iCore plugin;
+    private final DatabaseManager databaseManager;
 
-    public WarnCommand(Main plugin) {
+    public WarnCommand(iCore plugin) {
         this.plugin = plugin;
+        this.databaseManager = plugin.getDatabaseManager();
     }
 
     @Override
@@ -26,8 +29,8 @@ public class WarnCommand implements CommandExecutor {
         String reason = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
         String issuer = sender.getName();
 
-        // Add the warning to punishment data
-        plugin.getPunishmentManager().addPunishment(playerName, "warnings", reason, issuer, null);
+        // Add the warning to the database
+        databaseManager.addWarning(playerName, reason, issuer);
 
         // Notify the issuer and the warned player if online
         sender.sendMessage(ChatColor.GREEN + "You have warned " + playerName + " for: " + reason);

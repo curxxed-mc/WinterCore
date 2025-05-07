@@ -1,8 +1,8 @@
 name: iCore
-version: '0.5.2'
-main: curxxed.dev.icore.Main
+version: '0.8.5'
+main: curxxed.dev.icore.iCore
 authors: [ curxxe ]
-softdepend:
+depend:
   - PlaceholderAPI
 commands:
   chatcolor:
@@ -64,10 +64,6 @@ commands:
     description: unmutes a player
   ban:
     description: bans a player
-  tban:
-    description: temporarily bans a player
-    aliases:
-      - tempban
   kick:
     description: kicks a player
   history:
@@ -102,8 +98,6 @@ commands:
     description: clears effects
   invsee:
     description: allows you to see other player's inventory
-  win:
-    description: Shows the credits (when you've beaten the enderdragon) without skipping it.
   profile:
     description: Shows your or another player's profile
   tps:
@@ -123,4 +117,10 @@ commands:
   discord:
     description: Shows the discord link
   rank:
+  nms:
+    description: Shows the NMS version of the server
+  sudo:
+    description: Allows you to run commands as another player
+  unban:
+    description: Unban a player
 

@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Staff;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.utils.RankManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -12,9 +12,9 @@ import org.bukkit.entity.Player;
 public class RankCommand implements CommandExecutor {
 
     private final RankManager rankManager;
-    private final Main plugin;
+    private final iCore plugin;
 
-    public RankCommand(Main plugin, RankManager rankManager) {
+    public RankCommand(iCore plugin, RankManager rankManager) {
         this.rankManager = rankManager;
         this.plugin = plugin;
     }

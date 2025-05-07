@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.misc;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.listeners.PlayerListener;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -10,10 +10,10 @@ import java.util.*;
 
 public class MessageCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
     private final PlayerListener playerListener;
 
-    public MessageCommand(Main plugin) {
+    public MessageCommand(iCore plugin) {
         this.plugin = plugin;
         this.playerListener = plugin.getPlayerListener();
     }

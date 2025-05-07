@@ -1,6 +1,6 @@
 /*package hyp.ilfov.i.icore.Commands;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import listeners.curxxed.dev.icore.PlayerListener;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,10 +9,10 @@ import org.bukkit.entity.Player;
 
 public class ReplyCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
     private final PlayerListener playerListener;
 
-    public ReplyCommand(Main plugin) {
+    public ReplyCommand(iCore plugin) {
         this.plugin = plugin;
         this.playerListener = plugin.getPlayerListener();
     }

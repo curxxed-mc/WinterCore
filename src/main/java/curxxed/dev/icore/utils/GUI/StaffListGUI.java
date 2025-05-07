@@ -1,7 +1,7 @@
 package curxxed.dev.icore.utils.GUI;
 
 import curxxed.dev.icore.Database.RedisManager;
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.utils.RankManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -20,10 +20,10 @@ import java.util.concurrent.CompletableFuture;
 
 public class StaffListGUI implements Listener {
 
-    private final Main plugin;
+    private final iCore plugin;
     private final RankManager rankManager;
 
-    public StaffListGUI(Main plugin) {
+    public StaffListGUI(iCore plugin) {
         this.plugin = plugin;
         this.rankManager = plugin.getRankManager();
     }

@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Utility;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -12,9 +12,9 @@ import org.bukkit.command.CommandSender;
 
 public class FixCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
 
-    public FixCommand(Main plugin) {
+    public FixCommand(iCore plugin) {
         this.plugin = plugin;
     }
 

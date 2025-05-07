@@ -1,0 +1,37 @@
+ranks:
+  Owner:
+    prefix: "&7[&4Owner&7] "
+    weight: 100
+    name-color: "&4&o"
+  Developer:
+    prefix: "&7[&bDeveloper&7] "
+    weight: 95
+    name-color: "&b&o"
+  Admin:
+    prefix: "&7[&cAdmin&7] "
+    weight: 90
+    name-color: "&c&o"
+  Media-Owner:
+    prefix: "&7[&4Media-Owner&7] "
+    weight: 80
+    name-color: "&4"
+  Moderator:
+    prefix: "&7[&9Moderator&7] "
+    weight: 75
+    name-color: "&9&o"
+  Helper:
+    prefix: "&7[&eHelper&7] "
+    weight: 70
+    name-color: "&e&o"
+  YouTuber:
+    prefix: "&7[&dYouTube&7] "
+    weight: 60
+    name-color: "&d&o"
+  King:
+    prefix: "&7[&3King&7] "
+    weight: 45
+    name-color: "&3"
+  Default:
+    prefix: ""
+    weight: 1
+    name-color: "&a"
