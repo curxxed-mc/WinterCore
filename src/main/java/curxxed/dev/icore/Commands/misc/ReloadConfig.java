@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.misc;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -8,9 +8,9 @@ import org.bukkit.command.CommandSender;
 
 public class ReloadConfig implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
 
-    public ReloadConfig(Main plugin) {
+    public ReloadConfig(iCore plugin) {
         this.plugin = plugin;
     }
 

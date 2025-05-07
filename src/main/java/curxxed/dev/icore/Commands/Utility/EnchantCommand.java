@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Utility;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -15,9 +15,9 @@ import java.util.Map;
 
 public class EnchantCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
 
-    public EnchantCommand(Main plugin) {
+    public EnchantCommand(iCore plugin) {
         this.plugin = plugin;
     }
 

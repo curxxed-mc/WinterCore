@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Placeholders;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.utils.RankManager;
 import lombok.Getter;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
@@ -9,11 +9,11 @@ import org.jetbrains.annotations.NotNull;
 
 public class Placeholder extends PlaceholderExpansion {
 
-    private final Main plugin;
+    private final iCore plugin;
     @Getter
     private static Placeholder instance;
 
-    public Placeholder(Main plugin) {
+    public Placeholder(iCore plugin) {
         this.plugin = plugin;
     }
 
@@ -39,7 +39,7 @@ public class Placeholder extends PlaceholderExpansion {
 
     @Override
     public boolean persist() {
-        return true; 
+        return true;
     }
 
     @Override

@@ -1,8 +1,9 @@
 package curxxed.dev.icore.listeners;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.Database.DatabaseManager;
+import curxxed.dev.icore.Placeholders.Placeholder;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.utils.GUI.ColorGUI;
-import curxxed.dev.icore.utils.NMSUtils;
 import curxxed.dev.icore.utils.RankManager;
 import curxxed.dev.icore.Commands.Staff.FreezeCommand;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -11,7 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -20,34 +21,37 @@ import java.util.Map;
 import java.util.UUID;
 
 public class PlayerListener implements Listener {
-    private final Main plugin;
+    private final iCore plugin;
     private final RankManager rankManager;
     private final FreezeCommand freezeCommand;
+    private final DatabaseManager databaseManager;
     private final Map<UUID, String> lastServer = new HashMap<>();
     public static final ColorGUI colorGUI = ColorGUI.getInstance();
 
-    public PlayerListener(Main plugin) {
+    public PlayerListener(iCore plugin) {
         this.plugin = plugin;
 
 
         this.rankManager = new RankManager(plugin);
         this.freezeCommand = plugin.getFreezeCommand();
+        this.databaseManager = plugin.getDatabaseManager();
     }
 
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         event.setJoinMessage(null);
+
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
         plugin.getPermissionManager().loadAndApplyPermissions(player);
-
         rankManager.refreshPlayerDisplay(player);
         rankManager.setRankAboveHead(player);
 
         rankManager.getRank(player, rank -> {
             rankManager.getColorPreference(rank, rankColor -> {
-                rankManager.updateNameTagColor(player, rankColor);
+                org.bukkit.ChatColor color = org.bukkit.ChatColor.getByChar(rankColor.replace("&", "").charAt(0));
+                rankManager.updateNameTagColor(player, color);
 
                 if (player.hasPermission("iCore.staff") || player.hasPermission("iCore.admin") || player.hasPermission("iCore.manager")) {
                     String serverName = plugin.getConfig().getString("server-name", "hub-restricted");
@@ -62,10 +66,44 @@ public class PlayerListener implements Listener {
                 }
             });
         });
+
+        databaseManager.getBanDetails(uuid, banDetails -> {
+            if (banDetails != null && !banDetails.isEmpty()) {
+                Long expiration = (Long) banDetails.get("expiration");
+                String reason = (String) banDetails.get("reason");
+
+                if (expiration != null) {
+                    long timeLeft = expiration - System.currentTimeMillis();
+                    String timeMessage;
+                    if (timeLeft < 60000) {
+                        timeMessage = (timeLeft / 1000) + " seconds";
+                    } else if (timeLeft < 3600000) {
+                        timeMessage = (timeLeft / 60000) + " minutes";
+                    } else if (timeLeft < 86400000) {
+                        timeMessage = (timeLeft / 3600000) + " hours";
+                    } else {
+                        timeMessage = (timeLeft / 86400000) + " days";
+                    }
+
+                    String banMessage = ChatColor.RED + "You are temporarily banned from the server " + "for: " + timeMessage + "\n" +
+                            ChatColor.RED + "Reason: " + ChatColor.AQUA + (reason != null ? reason : "No reason provided");
+                    player.sendMessage(banMessage);
+                } else {
+                    String banMessage = ChatColor.RED + "You are permanently banned from the server.\n" +
+                            ChatColor.RED + "Reason: " + ChatColor.AQUA + (reason != null ? reason : "No reason provided");
+                    player.sendMessage(banMessage);
+                }
+            }
+        });
     }
-
-
-
+    public void isPlayerMuted(Player player, java.util.function.Consumer<Boolean> callback) {
+        databaseManager.isPlayerMuted(player.getUniqueId(), isMuted -> {
+            if (isMuted) {
+                player.sendMessage(ChatColor.RED + "You are muted and cannot send messages.");
+            }
+            callback.accept(isMuted);
+        });
+    }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -104,121 +142,93 @@ public class PlayerListener implements Listener {
         }, 2L); // Wait 1 second
     }
 
-
-
-
-
-
     @EventHandler
-    public void onPlayerChat(PlayerChatEvent event) {
+    public void onAsyncPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
         String message = event.getMessage();
-        String displayName = player.getDisplayName();
-        ChatColor messageColor = plugin.getRankManager().getMessageColorPreference(player).asBungee();
-        String formattedMessage = displayName + ChatColor.WHITE + ": " + messageColor + message;
 
-        // Check if the message starts with "!"
-        if (message.startsWith("!")) {
-            event.setCancelled(true);
-            String content = message.substring(1).trim();
+        // Cancel vanilla formatting
+        event.setCancelled(true);
 
-            if (content.isEmpty()) {
-                event.setCancelled(false);
-                event.setFormat(formattedMessage);
+        isPlayerMuted(player, isMuted -> {
+            if (isMuted) return;
+
+            // Handle channel prefixes (!, @, #)
+            if (message.startsWith("!")) {
+                handleStaffChat(player, message.substring(1).trim());
                 return;
             }
 
-            // If the player has the permission for staff chat
-            if (player.hasPermission("iCore.Staff") || player.hasPermission("iCore.Admin") || player.hasPermission("iCore.Manager")) {
-                getStaffChatMessage(player, content, formatted -> {
-                    if (formatted != null) {
-                        plugin.getServer().getOnlinePlayers().stream()
-                                .filter(p -> p.hasPermission("iCore.Staff") || p.hasPermission("iCore.Admin") || p.hasPermission("iCore.Manager"));
-
-                        plugin.getRedisManager().broadcastStaffMessage(formatted);
-                    } else {
-                        player.sendMessage(ChatColor.RED + "You do not have permission to use staff chat.");
-                    }
-                });
-            } else {
-                player.sendMessage(ChatColor.RED + "You do not have permission to use staff chat.");
-            }
-
-            return;
-        }
-
-        // Check if the message starts with "@"
-        if (message.startsWith("@")) {
-            event.setCancelled(true);
-            String content = message.substring(1).trim();
-
-            if (content.isEmpty()) {
-                event.setCancelled(false);
-                event.setFormat(formattedMessage);
+            if (message.startsWith("@")) {
+                handleAdminChat(player, message.substring(1).trim());
                 return;
             }
 
-            // If the player has the permission for admin chat
-            if (player.hasPermission("iCore.Admin") || player.hasPermission("iCore.Manager")) {
-                getAdminChatMessage(player, content, formatted -> {
-                    if (formatted != null) {
-                        plugin.getServer().getOnlinePlayers().stream()
-                                .filter(p -> p.hasPermission("iCore.Admin") || p.hasPermission("iCore.Manager"));
-
-
-                        plugin.getRedisManager().broadcastAdminMessage(formatted);
-                    } else {
-                        player.sendMessage(ChatColor.RED + "You do not have permission to use admin chat.");
-                    }
-                });
-            } else {
-                player.sendMessage(ChatColor.RED + "You do not have permission to use admin chat.");
-            }
-
-            return;
-        }
-
-        // Check if the message starts with "#"
-        if (message.startsWith("#")) {
-            event.setCancelled(true);
-            String content = message.substring(1).trim();
-
-            if (content.isEmpty()) {
-                event.setCancelled(false);
-                event.setFormat(formattedMessage);
+            if (message.startsWith("#")) {
+                handleManagerChat(player, message.substring(1).trim());
                 return;
             }
 
-            // If the player has the permission for manager chat
-            if (player.hasPermission("iCore.Manager")) {
-                getManagerChatMessage(player, content, formatted -> {
-                    if (formatted != null) {
-                        plugin.getServer().getOnlinePlayers().stream()
-                                .filter(p -> p.hasPermission("iCore.Manager"));
+            plugin.getRankManager().getRankPrefix(player, prefix -> {
+                String color = plugin.getRankManager().getColorPreferenceSync(player);
+                String formattedName = prefix + ChatColor.translateAlternateColorCodes('&', color) + player.getName();
+                ChatColor messageColor = plugin.getRankManager().getMessageColorPreference(player).asBungee();
+                String formattedMessage = formattedName + ChatColor.WHITE + ": " + messageColor + message;
 
-                        plugin.getRedisManager().broadcastManagerMessage(formatted);
-                    } else {
-                        player.sendMessage(ChatColor.RED + "You do not have permission to use manager chat.");
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        p.sendMessage(formattedMessage);
                     }
                 });
-            } else {
-                player.sendMessage(ChatColor.RED + "You do not have permission to use manager chat.");
-            }
-
-            return;
-        }
-
-        // Default message formatting
-        event.setFormat(formattedMessage);
+            });
+        });
     }
 
+    private void handleStaffChat(Player player, String content) {
+        if (content.isEmpty()) return;
 
+        if (player.hasPermission("iCore.Staff") || player.hasPermission("iCore.Admin") || player.hasPermission("iCore.Manager")) {
+            getStaffChatMessage(player, content, formatted -> {
+                if (formatted != null) {
+                    // Broadcast only via Redis
+                    plugin.getRedisManager().broadcastStaffMessage(formatted);
+                }
+            });
+        } else {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use staff chat.");
+        }
+    }
 
+    private void handleAdminChat(Player player, String content) {
+        if (content.isEmpty()) return;
 
+        if (player.hasPermission("iCore.Admin") || player.hasPermission("iCore.Manager")) {
+            getAdminChatMessage(player, content, formatted -> {
+                if (formatted != null) {
+                    // Broadcast only via Redis
+                    plugin.getRedisManager().broadcastAdminMessage(formatted);
+                }
+            });
+        } else {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use admin chat.");
+        }
+    }
 
-    // Send private message between two players
+    private void handleManagerChat(Player player, String content) {
+        if (content.isEmpty()) return;
+
+        if (player.hasPermission("iCore.Manager")) {
+            getManagerChatMessage(player, content, formatted -> {
+                if (formatted != null) {
+                    // Broadcast only via Redis
+                    plugin.getRedisManager().broadcastManagerMessage(formatted);
+                }
+            });
+        } else {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use manager chat.");
+        }
+    }
     public void sendPrivateMessage(Player sender, Player recipient, String message) {
-        // Fetch sender and recipient colors asynchronously
         rankManager.getRank(sender, senderRank -> {
             rankManager.getColorPreference(senderRank, senderColor -> {
                 rankManager.getRank(recipient, recipientRank -> {
@@ -266,11 +276,10 @@ public class PlayerListener implements Listener {
 
     public void getStaffChatMessage(Player player, String message, java.util.function.Consumer<String> callback) {
         if (player.hasPermission("iCore.Staff") || player.hasPermission("iCore.Admin") || player.hasPermission("iCore.Manager")) {
-            String playerName = player.getDisplayName();
-
-            plugin.getRankManager().getRankPrefix(player, rankPrefix -> {
+            rankManager.getRankPrefix(player, rankPrefix -> {
+                String playerName = player.getDisplayName();
                 String chatMessage = ChatColor.BLUE + message + ChatColor.RESET;
-                String finalMessage = ChatColor.BLUE + "[SC] " + playerName + ": " + chatMessage;
+                String finalMessage = ChatColor.BLUE + "[SC] " + rankPrefix + playerName + ": " + chatMessage;
 
                 callback.accept(finalMessage);
             });
@@ -278,15 +287,13 @@ public class PlayerListener implements Listener {
             callback.accept(null);
         }
     }
-
 
     public void getAdminChatMessage(Player player, String message, java.util.function.Consumer<String> callback) {
         if (player.hasPermission("iCore.Manager") || player.hasPermission("iCore.Admin")) {
-            String playerName = player.getDisplayName();
-
-            plugin.getRankManager().getRankPrefix(player, rankPrefix -> {
+            rankManager.getRankPrefix(player, rankPrefix -> {
+                String playerName = player.getDisplayName();
                 String chatMessage = ChatColor.RED + message + ChatColor.RESET;
-                String finalMessage = ChatColor.RED + "[AC] "  + playerName + ": " + chatMessage;
+                String finalMessage = ChatColor.RED + "[AC] " + rankPrefix + playerName + ": " + chatMessage;
 
                 callback.accept(finalMessage);
             });
@@ -295,14 +302,12 @@ public class PlayerListener implements Listener {
         }
     }
 
-
     public void getManagerChatMessage(Player player, String message, java.util.function.Consumer<String> callback) {
         if (player.hasPermission("iCore.Manager")) {
-            String playerName = player.getDisplayName();
-
-            plugin.getRankManager().getRankPrefix(player, rankPrefix -> {
+            rankManager.getRankPrefix(player, rankPrefix -> {
+                String playerName = player.getDisplayName();
                 String chatMessage = ChatColor.DARK_RED + message + ChatColor.RESET;
-                String finalMessage = ChatColor.DARK_RED + "[MC] " + playerName + ": " + chatMessage;
+                String finalMessage = ChatColor.DARK_RED + "[MC] " + rankPrefix + playerName + ": " + chatMessage;
 
                 callback.accept(finalMessage);
             });

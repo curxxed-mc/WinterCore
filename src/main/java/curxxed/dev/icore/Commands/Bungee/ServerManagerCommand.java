@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Bungee;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.*;
@@ -11,9 +11,9 @@ import java.util.*;
 
 public class ServerManagerCommand implements CommandExecutor, TabCompleter {
 
-    private final Main plugin;
+    private final iCore plugin;
 
-    public ServerManagerCommand(Main plugin) {
+    public ServerManagerCommand(iCore plugin) {
         this.plugin = plugin;
         plugin.getCommand("servermanager").setTabCompleter(this);
     }

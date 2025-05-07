@@ -1,5 +1,6 @@
 package curxxed.dev.icore.Commands.Utility;
 
+import curxxed.dev.icore.utils.NMSUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -18,10 +19,11 @@ public class TPSCommand implements CommandExecutor {
             return true;
         }
 
-        double[] tps = getServerTPS();
+        double[] tps = NMSUtils.getTPS(); // Use NMSUtils to get TPS
         Runtime runtime = Runtime.getRuntime();
         long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
         long allocatedMemory = runtime.totalMemory() / (1024 * 1024);
+
         sender.sendMessage(ChatColor.AQUA + "Server Performance:");
         sender.sendMessage(ChatColor.GOLD + "TPS: "
                 + getTPSColor(tps[0]) + formatTPS(tps[0]) + ChatColor.GRAY + " (1m) "
@@ -31,17 +33,6 @@ public class TPSCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "CPU Usage: " + ChatColor.GREEN + String.format("%.2f", getCPUUsage()) + "%");
 
         return true;
-    }
-
-    private double[] getServerTPS() {
-        try {
-            Object minecraftServer = Class.forName("org.bukkit.craftbukkit.v1_8_R3.CraftServer")
-                    .getMethod("getServer").invoke(org.bukkit.Bukkit.getServer());
-            return (double[]) minecraftServer.getClass().getField("recentTps").get(minecraftServer);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new double[]{0.0, 0.0, 0.0};
-        }
     }
 
     private double getCPUUsage() {

@@ -4,7 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,11 +16,11 @@ import java.util.*;
 public class StaffModeListener implements Listener {
 
     private final StaffModeManager staffModeManager;
-    private final Main plugin;
+    private final iCore plugin;
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private static final long COOLDOWN_TIME = 950;
 
-    public StaffModeListener(Main plugin, StaffModeManager manager) {
+    public StaffModeListener(iCore plugin, StaffModeManager manager) {
         this.plugin = plugin;
         this.staffModeManager = manager;
         setupProtocolLib();

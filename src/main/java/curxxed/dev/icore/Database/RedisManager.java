@@ -3,9 +3,7 @@ package curxxed.dev.icore.Database;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import curxxed.dev.icore.Commands.Staff.VanishCommand;
-import curxxed.dev.icore.Main;
-import curxxed.dev.icore.utils.RankManager;
-import net.kyori.adventure.platform.facet.Facet;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.utils.NMSUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -21,11 +19,11 @@ import java.util.UUID;
 
 public class RedisManager {
 
-    private final Main plugin;
+    private final iCore plugin;
     private final String serverName;
     private final Gson gson;
 
-    public RedisManager(Main plugin) {
+    public RedisManager(iCore plugin) {
         this.plugin = plugin;
         this.serverName = plugin.getConfig().getString("server-name", "Unknown");
         this.gson = new Gson();
@@ -335,16 +333,13 @@ public class RedisManager {
     }
 
     public void publishStaffActivity(String type, String playerName, String color, String fromServer, String toServer) {
-        plugin.getLogger().info("[RedisDebug] Trying to publish staff activity:");
-        plugin.getLogger().info("[RedisDebug] Type: " + type);
-        plugin.getLogger().info("[RedisDebug] Payload: " + playerName + ", " + color + ", " + fromServer + ", " + toServer);
+
 
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             String payload = type + "|" + playerName + "|" + color + "|" + fromServer + "|" + toServer;
             jedis.publish("staff-activity", payload);
-            plugin.getLogger().info("[RedisDebug] Redis publish successful: " + payload);
         } catch (Exception e) {
-            plugin.getLogger().warning("[RedisDebug] Failed to publish staff activity: " + e.getMessage());
+
             e.printStackTrace();
         }
     }
@@ -353,15 +348,10 @@ public class RedisManager {
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.hasPermission("iCore.staff") || online.hasPermission("iCore.admin") || online.hasPermission("iCore.manager") || online.isOp()) continue;
         }
-        plugin.getLogger().info("[RedisDebug] Trying to publish staff activity:");
-        plugin.getLogger().info("[RedisDebug] Type: " + type);
-        plugin.getLogger().info("[RedisDebug] Payload: " + json.toString());
 
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.publish("staff-activity", json.toString());
-            plugin.getLogger().info("[RedisDebug] Redis publish successful: " + json.toString());
         } catch (Exception e) {
-            plugin.getLogger().warning("[RedisDebug] Failed to publish staff activity: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -369,7 +359,6 @@ public class RedisManager {
 
 
     private void handleStaffActivityMessage(String message) {
-        plugin.getLogger().info("[RedisDebug] Received staff-activity message: " + message);
         String[] parts = message.split("\\|");
         if (parts.length < 5) return;
 
@@ -452,7 +441,6 @@ public class RedisManager {
             jedis.del(key);
             jedis.setex(key, 5, "1");
             long ttl = jedis.ttl(key);
-            plugin.getLogger().info("[RedisDebug] markPendingSwitch -> Set " + key + " with TTL " + ttl + "s");
         }
     }
 
@@ -462,7 +450,6 @@ public class RedisManager {
             String key = "pendingSwitch:" + uuid.toString();
             boolean exists = jedis.exists(key);
             long ttl = jedis.ttl(key);
-            plugin.getLogger().info("[RedisDebug] isStillPendingSwitch -> " + key + " exists: " + exists + ", TTL: " + ttl + "s");
             return exists && ttl > 0;
         }
     }
@@ -473,7 +460,6 @@ public class RedisManager {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             String key = "pendingSwitch:" + uuid.toString();
             jedis.del(key);
-            plugin.getLogger().info("[RedisDebug] clearPendingSwitch -> Removed " + key);
         }
     }
 }

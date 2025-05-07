@@ -1,6 +1,6 @@
 /*package hyp.ilfov.i.icore.Commands;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import GUI.utils.curxxed.dev.icore.DisguiseGUI;
 import utils.curxxed.dev.icore.RankManager;
 import org.bukkit.Bukkit;
@@ -17,12 +17,12 @@ import java.util.List;
 
 public class DisguiseCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
     private final RankManager rankManager;
     private final DisguiseGUI disguiseGUI;
 
 
-    public DisguiseCommand(Main plugin, DisguiseGUI disguiseGUI, RankManager rankManager) {
+    public DisguiseCommand(iCore plugin, DisguiseGUI disguiseGUI, RankManager rankManager) {
         this.rankManager = rankManager;
         this.plugin = plugin;
         this.disguiseGUI = disguiseGUI;

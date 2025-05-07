@@ -5,7 +5,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import curxxed.dev.icore.Commands.Staff.VanishCommand;
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -18,7 +18,7 @@ public class StaffModeManager {
     private final Map<UUID, ItemStack[]> savedInventories = new HashMap<>();
     private final Map<UUID, GameMode> savedGameModes = new HashMap<>();
     private final Set<UUID> staffModePlayers = new HashSet<>();
-    private final Main plugin;
+    private final iCore plugin;
 
     private static final String PUSH_FORWARD    = ChatColor.GOLD + "Push Forward";
     private static final String STAFF_LIST      = ChatColor.YELLOW + "Staff List";
@@ -28,7 +28,7 @@ public class StaffModeManager {
     private static final String VANISH          = ChatColor.GREEN + "Vanish";
     private static final String UNVANISH        = ChatColor.GRAY + "Un-Vanish";
 
-    public StaffModeManager(Main plugin) {
+    public StaffModeManager(iCore plugin) {
         this.plugin = plugin;
     }
 

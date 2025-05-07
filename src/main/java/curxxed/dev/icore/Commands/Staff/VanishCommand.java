@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Staff;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -17,10 +17,10 @@ import java.util.function.Consumer;
 
 public class VanishCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
     public static final Set<UUID> vanishedPlayers = new HashSet<>();
 
-    public VanishCommand(Main plugin) {
+    public VanishCommand(iCore plugin) {
         this.plugin = plugin;
     }
 
@@ -48,7 +48,7 @@ public class VanishCommand implements CommandExecutor {
         return true;
     }
 
-    public static void toggleVanish(Player player, Main plugin, Consumer<Boolean> callback) {
+    public static void toggleVanish(Player player, iCore plugin, Consumer<Boolean> callback) {
         UUID playerId = player.getUniqueId();
 
         plugin.getRankManager().getRank(player, rank -> plugin.getRankManager().getColorPreference(rank, rankColor -> {
@@ -82,7 +82,7 @@ public class VanishCommand implements CommandExecutor {
         }));
     }
 
-    private static void sendStaffNotificationStatic(Player player, String rankColor, boolean vanished, Main plugin) {
+    private static void sendStaffNotificationStatic(Player player, String rankColor, boolean vanished, iCore plugin) {
         String messageTemplate = vanished
                 ? plugin.getConfig().getString("StaffVanishMessages.vanish", "&9[S] %player% &bhas vanished!")
                 : plugin.getConfig().getString("StaffVanishMessages.unvanish", "&9[S] %player% &bhas reappeared!");

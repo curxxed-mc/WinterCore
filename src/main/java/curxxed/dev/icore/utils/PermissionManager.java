@@ -1,19 +1,18 @@
 package curxxed.dev.icore.utils;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class PermissionManager {
 
-    private final Main plugin;
+    private final iCore plugin;
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
 
-    public PermissionManager(Main plugin) {
+    public PermissionManager(iCore plugin) {
         this.plugin = plugin;
     }
 

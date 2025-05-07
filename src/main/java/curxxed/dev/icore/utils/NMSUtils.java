@@ -1,8 +1,10 @@
 package curxxed.dev.icore.utils;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.scoreboard.Scoreboard;
 
 import java.lang.reflect.*;
 import java.util.HashMap;
@@ -15,6 +17,9 @@ public class NMSUtils {
     public static final boolean IS_LEGACY;
     private static final Map<Character, String> COLOR_CODE_TO_ENUM_NAME = new HashMap<>();
     private static final Map<Character, String> FORMAT_CODE_TO_ENUM_NAME = new HashMap<>();
+    private static Method getPingMethod = null;
+    private static Field pingField = null;
+    public static final String PING_ERROR = ChatColor.RED  +"Error while getting ping, either your version is not supported or there is an exception!";
 
     static {
         SERVER_VERSION = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
@@ -23,6 +28,20 @@ public class NMSUtils {
 
     public static String getServerVersion() {
         return SERVER_VERSION;
+    }
+
+    public static Object getScoreboardHandle(Scoreboard scoreboard) throws Exception {
+        if (IS_LEGACY) {
+            // Legacy CraftBukkit class
+            Class<?> craftScoreboardClass = getCraftBukkitClass("scoreboard.CraftScoreboard");
+            Method getHandleMethod = craftScoreboardClass.getMethod("getHandle");
+            return getHandleMethod.invoke(craftScoreboardClass.cast(scoreboard));
+        } else {
+            // Modern NMS class
+            Class<?> craftScoreboardClass = getCraftBukkitClass("scoreboard.CraftScoreboard");
+            Method getHandleMethod = craftScoreboardClass.getMethod("getHandle");
+            return getHandleMethod.invoke(scoreboard);
+        }
     }
 
     public static double[] getTPS() {
@@ -60,9 +79,9 @@ public class NMSUtils {
                 case "ScoreboardTeam":
                     return Class.forName("net.minecraft.world.scores." + name);
                 case "Scoreboard":
-                    return Class.forName("net.minecraft.world.scores." + name); // Add this mapping
+                    return Class.forName("net.minecraft.world.scores." + name);
                 case "Packet":
-                    return Class.forName("net.minecraft.network.protocol.Packet");
+                    return Class.forName("net.minecraft.network.protocol." + name);
                 case "Container":
                     return Class.forName("net.minecraft.world.inventory." + name);
                 case "PlayerInventory":
@@ -71,11 +90,16 @@ public class NMSUtils {
                     return Class.forName("net.minecraft.world.inventory." + name);
                 case "EnumChatFormat":
                     return Class.forName("net.minecraft." + name);
+                case "IChatBaseComponent":
+                case "ChatComponentText":
+                case "Component":
+                    return Class.forName("net.minecraft.network.chat.IChatBaseComponent");
                 default:
                     throw new ClassNotFoundException("Unsupported class for modern NMS: " + name);
             }
         }
     }
+
 
     public static Class<?> getCraftBukkitClass(String path) throws ClassNotFoundException {
         if (IS_LEGACY) {
@@ -91,21 +115,38 @@ public class NMSUtils {
         return getHandle.invoke(craftPlayer.cast(player));
     }
 
+
+
     public static int getPing(Player player) {
         try {
-            Object ep = getEntityPlayer(player);
+            Object entityPlayer = getEntityPlayer(player);
+
             if (IS_LEGACY) {
-                Field pingField = ep.getClass().getField("ping");
-                return pingField.getInt(ep);
+                if (pingField == null) {
+                    pingField = entityPlayer.getClass().getField("ping");
+                }
+                return pingField.getInt(entityPlayer);
             } else {
-                Method getPing = player.getClass().getMethod("getPing");
-                return (int) getPing.invoke(player);
+                if (getPingMethod == null) {
+                    try {
+                        getPingMethod = entityPlayer.getClass().getMethod("e_");
+                    } catch (NoSuchMethodException e) {
+                        try {
+                            getPingMethod = entityPlayer.getClass().getMethod("getLatency");
+                        } catch (NoSuchMethodException ex) {
+                            getPingMethod = entityPlayer.getClass().getMethod("getPing");
+                        }
+                    }
+                }
+                return (int) getPingMethod.invoke(entityPlayer);
             }
         } catch (Exception e) {
             e.printStackTrace();
             return -1;
         }
     }
+
+
 
     public static void sendPacket(Player player, Object packet) {
         try {

@@ -1,7 +1,7 @@
 package curxxed.dev.icore.Commands.Staff;
 
-import curxxed.dev.icore.Main;
-import curxxed.dev.icore.utils.PunishmentManager;
+import curxxed.dev.icore.Database.DatabaseManager;
+import curxxed.dev.icore.iCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -9,38 +9,46 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class UnmuteCommand implements CommandExecutor {
-    private final Main plugin;
+import java.util.UUID;
 
-    public UnmuteCommand(Main plugin) {
+public class UnmuteCommand implements CommandExecutor {
+    private final iCore plugin;
+    private final DatabaseManager databaseManager;
+
+    public UnmuteCommand(iCore plugin) {
         this.plugin = plugin;
+        this.databaseManager = plugin.getDatabaseManager();
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!sender.hasPermission("iCore.unmute")) {
+            sender.sendMessage(ChatColor.RED + "You do not have permission to unmute players.");
+            return false;
+        }
+
         if (args.length < 1) {
             sender.sendMessage(ChatColor.RED + "Usage: /unmute <player>");
             return false;
         }
 
         String playerName = args[0];
-        PunishmentManager punishmentManager = plugin.getPunishmentManager();
+        UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
 
-        // Check if the player is muted
-        if (!punishmentManager.isPlayerMuted(playerName)) {
-            sender.sendMessage(ChatColor.RED + "Player " + playerName + " is not muted.");
-            return false;
-        }
+        databaseManager.isPlayerMuted(targetUUID, isMuted -> {
+            if (!isMuted) {
+                sender.sendMessage(ChatColor.RED + "Player " + playerName + " is not muted.");
+                return;
+            }
 
-        // Remove the mute
-        punishmentManager.removePunishment(playerName, "mutes");
+            databaseManager.unmutePlayer(targetUUID);
+            sender.sendMessage(ChatColor.GREEN + "You have unmuted " + playerName + ".");
 
-        // Notify the sender and the player if online
-        sender.sendMessage(ChatColor.GREEN + "You have unmuted " + playerName + ".");
-        Player target = Bukkit.getPlayerExact(playerName);
-        if (target != null) {
-            target.sendMessage(ChatColor.GREEN + "You have been unmuted.");
-        }
+            Player target = Bukkit.getPlayerExact(playerName);
+            if (target != null) {
+                target.sendMessage(ChatColor.GREEN + "You have been unmuted.");
+            }
+        });
 
         return true;
     }
