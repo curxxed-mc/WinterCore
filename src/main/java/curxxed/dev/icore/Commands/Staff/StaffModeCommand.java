@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Staff;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.utils.Staff.StaffModeManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -10,10 +10,10 @@ import org.bukkit.entity.Player;
 
 public class StaffModeCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
     private final StaffModeManager staffModeManager;
 
-    public StaffModeCommand(Main plugin, StaffModeManager staffModeManager) {
+    public StaffModeCommand(iCore plugin, StaffModeManager staffModeManager) {
         this.plugin = plugin;
         this.staffModeManager = staffModeManager;
     }

@@ -1,6 +1,7 @@
 package curxxed.dev.icore.utils.GUI;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.Placeholders.Placeholder;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.utils.NMSUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -12,9 +13,9 @@ import org.bukkit.inventory.ItemStack;
 
 public class RankGUIListener implements Listener {
 
-    private final Main plugin;
+    private final iCore plugin;
 
-    public RankGUIListener(Main plugin) {
+    public RankGUIListener(iCore plugin) {
         this.plugin = plugin;
     }
 
@@ -52,10 +53,10 @@ public class RankGUIListener implements Listener {
             return;
         }
 
-        // Ensure the clicked rank exists in the config (case-sensitive)
-        if (plugin.getConfig().getConfigurationSection("ranks").contains(clickedRank)) {
+        // Ensure the clicked rank exists in the ranks.yml file (case-sensitive)
+        if (plugin.getRankManager().getRanksSection().contains(clickedRank)) {
             // Set the target player's rank and notify both players
-            plugin.getRankManager().setRank(targetPlayer, clickedRank, player);  // Pass the player who gave the rank
+            plugin.getRankManager().setRank(targetPlayer, clickedRank, player);
             player.closeInventory();
         } else {
             player.sendMessage(ChatColor.RED + "Invalid rank selected.");

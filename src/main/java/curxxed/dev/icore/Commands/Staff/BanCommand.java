@@ -1,32 +1,38 @@
 package curxxed.dev.icore.Commands.Staff;
 
-import curxxed.dev.icore.Main;
-import curxxed.dev.icore.utils.PunishmentManager;
+import curxxed.dev.icore.Database.DatabaseManager;
+import curxxed.dev.icore.iCore;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class BanCommand implements CommandExecutor {
-    private final Main plugin;
+import java.time.Duration;
+import java.time.Instant;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.UUID;
 
-    public BanCommand(Main plugin) {
+public class BanCommand implements CommandExecutor {
+    private final iCore plugin;
+    private final DatabaseManager databaseManager;
+
+    public BanCommand(iCore plugin) {
         this.plugin = plugin;
+        this.databaseManager = plugin.getDatabaseManager();
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        // Ensure the sender is a player and has permission to ban
-        Player player = (Player) sender;
-
-        if (!player.hasPermission("iCore.ban")) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to ban players.");
+        if (!sender.hasPermission("iCore.ban")) {
+            sender.sendMessage(ChatColor.RED + "You do not have permission to ban players.");
             return false;
         }
 
-        if (args.length == 0) {
-            player.sendMessage(ChatColor.RED + "Please specify a player to ban.");
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.RED + "Usage: /ban <player> [duration] <reason> [-s]");
             return false;
         }
 
@@ -34,26 +40,93 @@ public class BanCommand implements CommandExecutor {
         Player target = plugin.getServer().getPlayer(targetName);
 
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "Player " + targetName + " not found.");
+            sender.sendMessage(ChatColor.RED + "Player " + targetName + " not found.");
             return false;
         }
 
-        // Check if the target is already banned
-        PunishmentManager punishmentManager = new PunishmentManager(plugin);
-        if (punishmentManager.isPlayerBanned(targetName)) {
-            player.sendMessage(ChatColor.RED + "This player is already banned.");
+        String playerName = args[0];
+        UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
+        boolean silent = args[args.length - 1].equalsIgnoreCase("-s");
+        String durationString = args[1];
+        String reason;
+
+        // Check if the second argument is a duration or part of the reason
+        Duration duration = parseDuration(durationString);
+        if (duration != null) {
+            // If valid duration, extract the reason after it
+            if (args.length < 3) {
+                sender.sendMessage(ChatColor.RED + "You must provide a reason for the ban.");
+                return false;
+            }
+            reason = String.join(" ", java.util.Arrays.copyOfRange(args, 2, silent ? args.length - 1 : args.length));
+        } else {
+            // If no valid duration, treat the second argument as part of the reason
+            reason = String.join(" ", java.util.Arrays.copyOfRange(args, 1, silent ? args.length - 1 : args.length));
+        }
+
+        if (reason.isEmpty()) {
+            sender.sendMessage(ChatColor.RED + "You must provide a reason for the ban.");
             return false;
         }
 
-        // Add the ban to the punishment data (permanent ban)
-        punishmentManager.addPunishment(targetName, "ban", "Banned by " + player.getName(), player.getName(), null); // null means permanent ban
+        // Check if the player is already banned
+        databaseManager.isPlayerBanned(targetUUID, isBanned -> {
+            if (isBanned) {
+                sender.sendMessage(ChatColor.RED + "This player is already banned.");
+                return;
+            }
 
-        // Ban the player and kick them
-        target.kickPlayer(ChatColor.RED + "You have been banned by " + player.getName() + ". You will not be able to rejoin.");
-        plugin.getServer().getBanList(org.bukkit.BanList.Type.NAME).addBan(targetName, "Banned by " + player.getName(), null, null);
+            if (duration != null) {
+                // Temporary ban
+                Instant expirationTime = Instant.now().plus(duration);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String formattedExpiration = sdf.format(Date.from(expirationTime));
 
-        player.sendMessage(ChatColor.GREEN + "Player " + targetName + " has been permanently banned.");
+                databaseManager.banPlayer(targetUUID, reason, expirationTime); // Pass expirationTime
+                target.kickPlayer(ChatColor.RED + "You have been temporarily banned by " + sender.getName() + ".\n" +
+                        "Reason: " + reason + "\n" +
+                        "Expires: " + formattedExpiration);
+
+                broadcastBanMessage(targetName, reason, "until " + formattedExpiration, sender.getName(), silent);
+            } else {
+                // Permanent ban
+                databaseManager.banPlayer(targetUUID, reason, null); // Pass null for permanent bans
+                target.kickPlayer(ChatColor.RED + "You have been permanently banned by " + sender.getName() + ".\nReason: " + reason);
+
+                broadcastBanMessage(targetName, reason, "permanently", sender.getName(), silent);
+            }
+        });
 
         return true;
+    }
+
+    private Duration parseDuration(String durationString) {
+        try {
+            if (durationString.endsWith("h")) {
+                return Duration.ofHours(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
+            } else if (durationString.endsWith("m")) {
+                return Duration.ofMinutes(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
+            } else if (durationString.endsWith("d")) {
+                return Duration.ofDays(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
+            } else if (durationString.endsWith("s")) {
+                return Duration.ofSeconds(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
+            } else {
+                return null;
+
+            }
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private void broadcastBanMessage(String targetName, String reason, String duration, String issuer, boolean silent) {
+        String message = ChatColor.RED + targetName + " has been banned " + duration + " by " + issuer + ". Reason: " + reason;
+        if (silent) {
+            Bukkit.getOnlinePlayers().stream()
+                    .filter(player -> player.hasPermission("iCore.staff"))
+                    .forEach(player -> player.sendMessage(message));
+        } else {
+            Bukkit.broadcastMessage(message);
+        }
     }
 }

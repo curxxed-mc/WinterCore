@@ -21,12 +21,20 @@ public class PingCommand implements CommandExecutor {
 
         if (args.length == 0) {
             int ping = NMSUtils.getPing(player);
-            player.sendMessage(ChatColor.AQUA + "Your ping: " + getColoredPing(ping));
+            if (ping == -1) {
+                player.sendMessage(NMSUtils.PING_ERROR);
+            } else {
+                player.sendMessage(ChatColor.AQUA + "Your ping: " + getColoredPing(ping));
+            }
         } else if (args.length == 1) {
             Player target = Bukkit.getPlayer(args[0]);
             if (target != null) {
                 int ping = NMSUtils.getPing(target);
-                player.sendMessage(ChatColor.AQUA + target.getName() + "'s ping: " + getColoredPing(ping));
+                if (ping == -1) {
+                    player.sendMessage(NMSUtils.PING_ERROR);
+                } else {
+                    player.sendMessage(ChatColor.AQUA + target.getName() + "'s ping: " + getColoredPing(ping));
+                }
             } else {
                 player.sendMessage(ChatColor.RED + "Player not found.");
             }

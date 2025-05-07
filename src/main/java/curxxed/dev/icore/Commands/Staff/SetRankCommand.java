@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Staff;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -11,15 +11,16 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SetRankCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
 
-    public SetRankCommand(Main plugin) {
+    public SetRankCommand(iCore plugin) {
         this.plugin = plugin;
     }
 
@@ -56,14 +57,19 @@ public class SetRankCommand implements CommandExecutor {
     private void openRankGUI(Player player, Player target) {
         Inventory rankGUI = Bukkit.createInventory(null, 27, "Set Rank for " + target.getName());
 
+        ConfigurationSection ranksSection = plugin.getRankManager().getRanksSection();
+        if (ranksSection == null) {
+            player.sendMessage(ChatColor.RED + "No ranks found in the configuration.");
+            return;
+        }
+
         List<String> sortedRanks = plugin.getRankManager().getSortedRanks();
 
         int slot = 0;
         for (String rank : sortedRanks) {
             if (rank == null || rank.isEmpty()) continue;
-            if (rank.equals(rank.toLowerCase())) continue;
 
-            ItemStack rankItem = createRankItem(rank);
+            ItemStack rankItem = createRankItem(rank, ranksSection);
             rankGUI.setItem(slot++, rankItem);
         }
 
@@ -76,8 +82,8 @@ public class SetRankCommand implements CommandExecutor {
         player.openInventory(rankGUI);
     }
 
-    private ItemStack createRankItem(String rank) {
-        String colorCode = plugin.getConfig().getString("ranks." + rank + ".name-color", "&f");
+    private ItemStack createRankItem(String rank, ConfigurationSection ranksSection) {
+        String colorCode = ranksSection.getString(rank + ".name-color", "&f");
         String translatedColorCode = ChatColor.translateAlternateColorCodes('&', colorCode);
 
         ItemStack rankItem = new ItemStack(Material.WOOL);
@@ -95,22 +101,22 @@ public class SetRankCommand implements CommandExecutor {
 
     private byte getDyeColorDataFromChatColor(ChatColor chatColor) {
         switch (chatColor) {
-            case RED: return 12;
-            case BLUE: return 9;
-            case GREEN: return 10;
-            case YELLOW: return 14;
-            case AQUA: return 11;
-            case LIGHT_PURPLE: return 13;
-            case WHITE: return 15;
-            case BLACK: return 0;
-            case DARK_GRAY: return 8;
-            case GRAY: return 7;
-            case DARK_RED: return 4;
-            case DARK_GREEN: return 2;
-            case DARK_BLUE: return 1;
-            case DARK_AQUA: return 3;
-            case GOLD: return 6;
-            default: return 15;
+            case RED: return 14;
+            case BLUE: return 11;
+            case GREEN: return 13;
+            case YELLOW: return 4;
+            case AQUA: return 3;
+            case LIGHT_PURPLE: return 2;
+            case WHITE: return 0;
+            case BLACK: return 15;
+            case DARK_GRAY: return 7;
+            case GRAY: return 8;
+            case DARK_RED: return 1;
+            case DARK_GREEN: return 5;
+            case DARK_BLUE: return 6;
+            case DARK_AQUA: return 9;
+            case GOLD: return 4;
+            default: return 0;
         }
     }
 }

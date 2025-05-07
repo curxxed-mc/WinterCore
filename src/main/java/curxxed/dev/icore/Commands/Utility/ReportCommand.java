@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.Utility;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.listeners.PlayerListener;
 import curxxed.dev.icore.utils.RankManager;
 import org.bukkit.Bukkit;
@@ -11,10 +11,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class ReportCommand implements CommandExecutor {
-    private final Main plugin;
+    private final iCore plugin;
     private final RankManager rankManager;
 
-    public ReportCommand(Main plugin) {
+    public ReportCommand(iCore plugin) {
         this.plugin = plugin;
         this.rankManager = new RankManager(plugin);
     }

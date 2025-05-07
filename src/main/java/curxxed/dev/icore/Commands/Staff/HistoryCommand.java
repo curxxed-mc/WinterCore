@@ -1,7 +1,7 @@
 package curxxed.dev.icore.Commands.Staff;
 
-import curxxed.dev.icore.Main;
-import curxxed.dev.icore.utils.PunishmentManager;
+import curxxed.dev.icore.Database.DatabaseManager;
+import curxxed.dev.icore.iCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.Map;
 
 public class HistoryCommand implements CommandExecutor, Listener {
-    private final Main plugin;
+    private final iCore plugin;
+    private final DatabaseManager databaseManager;
 
-    public HistoryCommand(Main plugin) {
+    public HistoryCommand(iCore plugin) {
         this.plugin = plugin;
+        this.databaseManager = plugin.getDatabaseManager();
     }
 
     @Override
@@ -52,81 +54,75 @@ public class HistoryCommand implements CommandExecutor, Listener {
         Inventory inv = Bukkit.createInventory(null, 9, "Punishment History");
 
         // Adding categories to the GUI
-        inv.addItem(createGuiItem("Warnings", Material.BOOK, "Click to view warnings.", "warnings"));
-        inv.addItem(createGuiItem("Mutes", Material.PAPER, "Click to view mutes.", "mutes"));
-        inv.addItem(createGuiItem("Kicks", Material.BARRIER, "Click to view kicks.", "kicks"));
-        inv.addItem(createGuiItem("Bans", Material.REDSTONE_BLOCK, "Click to view bans.", "bans"));
+        inv.addItem(createGuiItem("Warnings", Material.BOOK, "Click to view warnings.", playerName, "warnings"));
+        inv.addItem(createGuiItem("Mutes", Material.PAPER, "Click to view mutes.", playerName, "mutes"));
+        inv.addItem(createGuiItem("Kicks", Material.BARRIER, "Click to view kicks.", playerName, "kicks"));
+        inv.addItem(createGuiItem("Bans", Material.REDSTONE_BLOCK, "Click to view bans.", playerName, "bans"));
 
         // Open the inventory for the player
         player.openInventory(inv);
     }
 
-    private ItemStack createGuiItem(String name, Material material, String lore, String category) {
+    private ItemStack createGuiItem(String name, Material material, String lore, String playerName, String category) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(ChatColor.GOLD + name);
-        meta.setLore(Arrays.asList(ChatColor.GRAY + lore, ChatColor.GRAY + "Category: " + category));
+        meta.setLore(Arrays.asList(ChatColor.GRAY + lore, ChatColor.GRAY + "Player: " + playerName, ChatColor.GRAY + "Category: " + category));
         item.setItemMeta(meta);
         return item;
     }
 
-    public void openPunishmentListGui(Player player, String playerName, String category) {
+    private void openPunishmentListGui(Player player, String playerName, String category) {
         Inventory inv = Bukkit.createInventory(null, 36, category + " History");
 
-        PunishmentManager punishmentManager = plugin.getPunishmentManager();
-        Map<String, Object> punishments = punishmentManager.getPunishmentData(playerName);
-        Map<?, ?> punishmentCategory = (Map<?, ?>) punishments.get(category);
-
-        if (punishmentCategory != null && punishmentCategory.containsKey(playerName)) {
-            List<?> list = (List<?>) punishmentCategory.get(playerName);
-            if (list != null && !list.isEmpty()) {
-                for (Object entry : list) {
-                    Map<?, ?> punishment = (Map<?, ?>) entry;
-                    String reason = (String) punishment.get("reason");
-                    String date = (String) punishment.get("date");
-                    String issuer = (String) punishment.get("issuer");
-                    String status = getPunishmentStatus(punishment);
-
-                    // Create an item for each punishment
-                    ItemStack item = new ItemStack(Material.PAPER);
-                    ItemMeta meta = item.getItemMeta();
-                    meta.setDisplayName(ChatColor.YELLOW + reason);
-                    meta.setLore(Arrays.asList(
-                            ChatColor.GRAY + "Date: " + date,
-                            ChatColor.GRAY + "Issuer: " + issuer,
-                            ChatColor.RED + "Status: " + status
-                    ));
-                    item.setItemMeta(meta);
-
-                    inv.addItem(item);
-                }
-            } else {
-                ItemStack item = new ItemStack(Material.BARRIER);
-                ItemMeta meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.RED + "No punishments found.");
-                item.setItemMeta(meta);
-                inv.addItem(item);
+        // Fetch the UUID of the player
+        databaseManager.getUUIDByName(playerName, uuid -> {
+            if (uuid == null) {
+                player.sendMessage(ChatColor.RED + "Player not found.");
+                return;
             }
-        } else {
+
+            switch (category.toLowerCase()) {
+                case "warnings":
+                    databaseManager.getWarnings(playerName, warnings -> populatePunishmentGui(inv, warnings));
+                    break;
+                case "mutes":
+                    databaseManager.getMutes(uuid, mutes -> populatePunishmentGui(inv, mutes));
+                    break;
+                case "kicks":
+                    databaseManager.getKicks(playerName, kicks -> populatePunishmentGui(inv, kicks));
+                    break;
+                case "bans":
+                    databaseManager.getBans(playerName, bans -> populatePunishmentGui(inv, bans));
+                    break;
+            }
+
+            player.openInventory(inv);
+        });
+    }
+
+    private void populatePunishmentGui(Inventory inv, List<Map<String, String>> punishments) {
+        if (punishments.isEmpty()) {
             ItemStack item = new ItemStack(Material.BARRIER);
             ItemMeta meta = item.getItemMeta();
             meta.setDisplayName(ChatColor.RED + "No punishments found.");
             item.setItemMeta(meta);
             inv.addItem(item);
+        } else {
+            for (Map<String, String> punishment : punishments) {
+                ItemStack item = new ItemStack(Material.PAPER);
+                ItemMeta meta = item.getItemMeta();
+                meta.setDisplayName(ChatColor.YELLOW + punishment.get("reason"));
+                meta.setLore(Arrays.asList(
+                        ChatColor.GRAY + "Date: " + punishment.get("date"),
+                        ChatColor.GRAY + "Issuer: " + punishment.get("issuer")
+                ));
+                item.setItemMeta(meta);
+                inv.addItem(item);
+            }
         }
-
-        player.openInventory(inv);
     }
 
-    private String getPunishmentStatus(Map<?, ?> punishment) {
-        String duration = (String) punishment.get("duration");
-        if (duration != null && !duration.equalsIgnoreCase("permanent")) {
-            return "Expired"; // For simplicity, you can check expiry based on duration
-        }
-        return "Active";
-    }
-
-    // Event handler for inventory clicks to cancel interactions in the punishment history GUI
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Inventory inv = event.getInventory();

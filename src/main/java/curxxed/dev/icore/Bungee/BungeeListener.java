@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Bungee;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -10,9 +10,9 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 public class BungeeListener implements PluginMessageListener {
-    private final Main plugin;
+    private final iCore plugin;
 
-    public BungeeListener(Main plugin) {
+    public BungeeListener(iCore plugin) {
         this.plugin = plugin;
     }
 

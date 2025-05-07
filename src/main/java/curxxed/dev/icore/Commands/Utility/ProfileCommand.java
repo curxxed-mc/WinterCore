@@ -2,7 +2,7 @@ package curxxed.dev.icore.Commands.Utility;
 
 import curxxed.dev.icore.Commands.Staff.VanishCommand;
 import curxxed.dev.icore.Database.RedisManager;
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.listeners.FreezeListener;
 import curxxed.dev.icore.utils.NMSUtils;
 import curxxed.dev.icore.utils.RankManager;
@@ -22,12 +22,12 @@ import java.util.*;
 
 public class ProfileCommand implements CommandExecutor, Listener {
 
-    private final Main plugin;
+    private final iCore plugin;
     private final RankManager rankManager;
     private final RedisManager redis;
     private final Set<UUID> clickCooldown = new HashSet<>();
 
-    public ProfileCommand(Main plugin, RedisManager redis) {
+    public ProfileCommand(iCore plugin, RedisManager redis) {
         this.plugin = plugin;
         this.rankManager = plugin.getRankManager();
         this.redis = redis;

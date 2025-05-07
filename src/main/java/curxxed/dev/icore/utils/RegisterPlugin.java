@@ -12,11 +12,11 @@ import curxxed.dev.icore.Commands.Staff.*;
 import curxxed.dev.icore.Commands.Troll.idontknowwhatthisisdontlook;
 import curxxed.dev.icore.Commands.Utility.*;
 import curxxed.dev.icore.Commands.misc.*;
+import curxxed.dev.icore.iCore;
 import curxxed.dev.icore.listeners.FreezeListener;
 import curxxed.dev.icore.listeners.PlayerListener;
 import curxxed.dev.icore.Commands.Troll.TrollCommand;
-import curxxed.dev.icore.Commands.Troll.WinCommand;
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.listeners.ReachListener;
 import curxxed.dev.icore.utils.GUI.ColorGUI;
 import curxxed.dev.icore.utils.GUI.DisguiseGUI;
 import curxxed.dev.icore.utils.GUI.RankGUIListener;
@@ -30,9 +30,10 @@ public class RegisterPlugin {
     private FreezeListener freezeListener;
     private StaffModeManager staffModeManager;
     private RankManager rankManager;
+    private ReachListener reachListener;
 
 
-    public void registerPlugin(Main pl) {
+    public void registerPlugin(iCore pl) {
         RankManager.initialize(pl);
         DisguiseGUI ignoreddisguiseGUI = new DisguiseGUI(rankManager);
         this.staffModeManager = new StaffModeManager(pl);
@@ -43,7 +44,7 @@ public class RegisterPlugin {
         registerBungee(pl);
     }
 
-    public void registerBungee(Main pl) {
+    public void registerBungee(iCore pl) {
         Messenger bm = pl.getServer().getMessenger();
 
         /*
@@ -62,7 +63,7 @@ public class RegisterPlugin {
     }
 
 
-    public void registerListeners(Main pl) {
+    public void registerListeners(iCore pl) {
         PluginManager pm = pl.getServer().getPluginManager();
 
         playerListener = new PlayerListener(pl);
@@ -78,9 +79,10 @@ public class RegisterPlugin {
         pm.registerEvents(new StaffListGUI(pl), pl);
         pm.registerEvents(new StaffModeListener(pl, staffModeManager), pl);
         pm.registerEvents(new ColorGUI(pl), pl);
+
     }
 
-    public void registerCommands(Main pl) {
+    public void registerCommands(iCore pl) {
         // Ensure dependencies are initialized
         if (freezeListener == null) {
             freezeListener = new FreezeListener(playerListener);
@@ -90,7 +92,7 @@ public class RegisterPlugin {
         pl.getCommand("thru").setExecutor(new ThruCommand());
         /*pl.getCommand("alts").setExecutor(new AltsCommand(altManager));*/
         pl.getCommand("fly").setExecutor(new Fly());
-        pl.getCommand("troll").setExecutor(new TrollCommand());
+        pl.getCommand("troll").setExecutor(new TrollCommand(pl, reachListener));
         pl.getCommand("invsee").setExecutor(new InvSeeCommand());
         pl.getCommand("feed").setExecutor(new Feed());
         pl.getCommand("clearchat").setExecutor(new ClearChat());
@@ -114,7 +116,6 @@ public class RegisterPlugin {
         pl.getCommand("mute").setExecutor(new MuteCommand(pl));
         pl.getCommand("kick").setExecutor(new KickCommand(pl));
         pl.getCommand("ban").setExecutor(new BanCommand(pl));
-        pl.getCommand("tban").setExecutor(new TempBanCommand(pl));
         pl.getCommand("warn").setExecutor(new WarnCommand(pl));
         pl.getCommand("unmute").setExecutor(new UnmuteCommand(pl));
         pl.getCommand("history").setExecutor(new HistoryCommand(pl));
@@ -125,7 +126,6 @@ public class RegisterPlugin {
         pl.getCommand("message").setExecutor(new MessageCommand(pl));
         pl.getCommand("speed").setExecutor(new SpeedCommand());
         pl.getCommand("cleareffects").setExecutor(new ClearEffectsCommand());
-        pl.getCommand("win").setExecutor(new WinCommand());
         pl.getCommand("profile").setExecutor(new ProfileCommand(pl, pl.getRedisManager()));
         pl.getCommand("tps").setExecutor(new TPSCommand());
         pl.getCommand("servermanager").setExecutor(new ServerManagerCommand(pl));
@@ -134,6 +134,9 @@ public class RegisterPlugin {
         pl.getCommand("staffmode").setExecutor(new StaffModeCommand(pl, staffModeManager));
         pl.getCommand("idkwtidl").setExecutor(new idontknowwhatthisisdontlook());
         pl.getCommand("rank").setExecutor(new RankCommand(pl, RankManager.getInstance()));
+        pl.getCommand("nms").setExecutor(new CheckNMS());
+        pl.getCommand("sudo").setExecutor(new SudoCommand());
+        pl.getCommand("unban").setExecutor(new UnbanCommand(pl));
         /*pl.getCommand("disguise").setExecutor(new DisguiseCommand(pl, disguiseGUI, RankManager.getInstance()));*/
     }
 }

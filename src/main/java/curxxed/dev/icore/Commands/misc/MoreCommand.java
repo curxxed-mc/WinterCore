@@ -1,6 +1,6 @@
 package curxxed.dev.icore.Commands.misc;
 
-import curxxed.dev.icore.Main;
+import curxxed.dev.icore.iCore;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -11,9 +11,9 @@ import org.bukkit.command.CommandSender;
 
 public class MoreCommand implements CommandExecutor {
 
-    private final Main plugin;
+    private final iCore plugin;
 
-    public MoreCommand(Main plugin) {
+    public MoreCommand(iCore plugin) {
         this.plugin = plugin;
     }
 
