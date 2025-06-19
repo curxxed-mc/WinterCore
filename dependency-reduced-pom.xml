@@ -4,7 +4,7 @@
   <groupId>curxxed.dev</groupId>
   <artifactId>iCore</artifactId>
   <name>iCore</name>
-  <version>v0.5</version>
+  <version>v0.85</version>
   <build>
     <plugins>
       <plugin>
@@ -20,15 +20,19 @@
               <relocations>
                 <relocation>
                   <pattern>com.zaxxer.hikari</pattern>
-                  <shadedPattern>curxxed.dev.icore.libs.hikari</shadedPattern>
+                  <shadedPattern>net.curxxed.dev.icore.libs.hikari</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>com.google.common</pattern>
-                  <shadedPattern>curxxed.dev.icore.libs.google.common</shadedPattern>
+                  <shadedPattern>net.curxxed.dev.icore.libs.google.common</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>redis.clients</pattern>
-                  <shadedPattern>curxxed.dev.icore.libs.redis</shadedPattern>
+                  <shadedPattern>net.curxxed.dev.icore.libs.redis</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.github.curxxed-mc</pattern>
+                  <shadedPattern>net.curxxed.dev.icore.libs.commandapi</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -38,6 +42,14 @@
     </plugins>
   </build>
   <repositories>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+    <repository>
+      <id>mojang</id>
+      <url>https://libraries.minecraft.net/</url>
+    </repository>
     <repository>
       <id>spigotmc-repo</id>
       <url>https://hub.spigotmc.org/nexus/content/repositories/public/</url>
@@ -54,8 +66,18 @@
       <id>placeholderapi</id>
       <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
     </repository>
+    <repository>
+      <id>viaversion-repo</id>
+      <url>https://repo.viaversion.com/</url>
+    </repository>
   </repositories>
   <dependencies>
+    <dependency>
+      <groupId>com.viaversion</groupId>
+      <artifactId>viaversion</artifactId>
+      <version>4.8.1</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
@@ -85,6 +107,20 @@
       <artifactId>placeholderapi</artifactId>
       <version>2.11.6</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bukkit</groupId>
+      <artifactId>spigot</artifactId>
+      <version>1.7.10-R.01</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/libs/spigot-1.7.10-SNAPSHOT-b1657.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>net.curxxed.dev</groupId>
+      <artifactId>WinterSpigot</artifactId>
+      <version>1.8.8-R01-SNAPSHOT</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/libs/WinterSpigot-1.8.8-b2.0.7.jar</systemPath>
     </dependency>
   </dependencies>
 </project>
