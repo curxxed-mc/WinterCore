@@ -1,6 +1,6 @@
 name: iCore
 version: 'beta-1'
-main: curxxed.dev.icore.Main
+main: plugin.net.curxxed.dev.icore.iCore
 authors: [ curxxe ]
 softdepend:
   - PlaceholderAPI
@@ -42,13 +42,13 @@ commands:
   report:
     description: Report a player for a specific reason
   staffchat:
-    description: Send a message in Staff Chat
+    description: Send a message in staff Chat
   adminchat:
     description: Send a message in Admin Chat
   managerchat:
     description: Send a message in Manager Chat
   sc:
-    description: Send a message in Staff Chat
+    description: Send a message in staff Chat
   ac:
     description: Send a message in Admin Chat
   mc:
