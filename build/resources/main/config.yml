@@ -7,7 +7,7 @@ plugin-enabled: true
 # Defines the default rank or role for new players (optional)
 default-rank: Default
 
-# Rank-related settings
+# rank-related settings
 ranks:
   Owner:
     prefix: "&7[&4Owner&7] "
@@ -44,7 +44,7 @@ show-rank-in-tab: true
 # Whether to display player ranks above their head
 show-rank-above-head: true
 
-# Permissions settings (optional, depending on your plugin's needs)
+# permissions settings (optional, depending on your plugin's needs)
 permissions:
   Owner:
     permission: "core.owner"
@@ -72,7 +72,7 @@ messages:
   plugin-disabled: "iCore plugin disabled successfully!"
   no-permission: "&cYou do not have permission to use this command."
 
-# Staff
+# staff
 server-name: "Testing Servers"  # The name of your server
 join-message: "&9[S] %player% &bconnected to &e%server-name%"  # Message when player joins
 quit-message: "&9[S] %player% &bdisconnected from &e%server-name%"  # Message when player quits
@@ -83,4 +83,4 @@ StaffVanishMessages:
 logging:
   enabled: true
   log-file: "logs/icore.log"
-# Database configuration
+# database configuration
