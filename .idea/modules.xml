@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/iCore.iml" filepath="$PROJECT_DIR$/iCore.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/iCore.iml" filepath="$PROJECT_DIR$/.idea/iCore.iml" />
     </modules>
   </component>
 </project>
