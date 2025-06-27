@@ -15,7 +15,7 @@ StaffVanishMessages:
 mysql:
   host: "localhost"
   port: "3306"
-  database: "icore"
+  database: "wintercore"
   username: "root"
   password: "password"
 
