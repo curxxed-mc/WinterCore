@@ -1,4 +1,4 @@
-# iCore Plugin Configuration
+# WinterCore Plugin Configuration
 # config.yml
 # I tried making this as simple as possible to understand
 # Enables or disables the plugin's core features
@@ -62,14 +62,14 @@ permissions:
     permission: "core.helper"
 permissions-subsets:
   core.helper:
-    - "iCore.fly"
-    - "iCore.feed"
-    - "iCore.heal"
+    - "WinterCore.fly"
+    - "WinterCore.feed"
+    - "WinterCore.heal"
 
 # Server message settings (optional)
 messages:
-  plugin-enabled: "iCore plugin enabled successfully!"
-  plugin-disabled: "iCore plugin disabled successfully!"
+  plugin-enabled: "WinterCore plugin enabled successfully!"
+  plugin-disabled: "WinterCore plugin disabled successfully!"
   no-permission: "&cYou do not have permission to use this command."
 
 # staff
@@ -82,5 +82,5 @@ StaffVanishMessages:
 # Logging settings (optional)
 logging:
   enabled: true
-  log-file: "logs/icore.log"
+  log-file: "logs/wintercore.log"
 # database configuration

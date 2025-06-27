@@ -4,9 +4,9 @@ ranks:
     weight: 100
     name-color: "&4&o"
     permissions:
-      - permission: icore.*
-      - permission: icore.fly
-      - permission: icore.manager
+      - permission: wintercore.*
+      - permission: wintercore.fly
+      - permission: wintercore.manager
   Developer:
     prefix: "&8[&bDeveloper&8]"
     weight: 95

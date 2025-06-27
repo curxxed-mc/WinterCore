@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>curxxed.dev</groupId>
-  <artifactId>iCore</artifactId>
-  <name>iCore</name>
+  <groupId>net.curxxed.dev</groupId>
+  <artifactId>WinterCore</artifactId>
+  <name>WinterCore</name>
   <version>v0.85</version>
   <build>
     <plugins>
@@ -17,22 +17,32 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>kotlin/**</exclude>
+                    <exclude>META-INF/kotlin*.*</exclude>
+                    <exclude>**/kotlin/**</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <relocations>
                 <relocation>
                   <pattern>com.zaxxer.hikari</pattern>
-                  <shadedPattern>net.curxxed.dev.icore.libs.hikari</shadedPattern>
+                  <shadedPattern>net.curxxed.dev.wintercore.libs.hikari</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>com.google.common</pattern>
-                  <shadedPattern>net.curxxed.dev.icore.libs.google.common</shadedPattern>
+                  <shadedPattern>net.curxxed.dev.wintercore.libs.google.common</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>redis.clients</pattern>
-                  <shadedPattern>net.curxxed.dev.icore.libs.redis</shadedPattern>
+                  <shadedPattern>net.curxxed.dev.wintercore.libs.redis</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>com.github.curxxed-mc</pattern>
-                  <shadedPattern>net.curxxed.dev.icore.libs.commandapi</shadedPattern>
+                  <shadedPattern>net.curxxed.dev.wintercore.libs.commandapi</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -72,6 +82,12 @@
     </repository>
   </repositories>
   <dependencies>
+    <dependency>
+      <groupId>com.mojang</groupId>
+      <artifactId>authlib</artifactId>
+      <version>1.5.21</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>com.viaversion</groupId>
       <artifactId>viaversion</artifactId>
@@ -118,7 +134,7 @@
     <dependency>
       <groupId>net.curxxed.dev</groupId>
       <artifactId>WinterSpigot</artifactId>
-      <version>1.8.8-R01-SNAPSHOT</version>
+      <version>1.8.8-R0.1-SNAPSHOT</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/libs/WinterSpigot-1.8.8-b2.0.7.jar</systemPath>
     </dependency>
