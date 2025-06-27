@@ -1,6 +1,6 @@
-name: iCore
+name: WinterCore
 version: 'beta-1'
-main: plugin.net.curxxed.dev.icore.iCore
+main: plugin.net.curxxed.dev.wintercore.WinterCore
 authors: [ curxxe ]
 softdepend:
   - PlaceholderAPI
@@ -24,11 +24,11 @@ commands:
   heal:
     description: Restore player health
   setrank:
-    description: Set a player's rank
+    description: Set permissions player's rank
   permission:
-    description: Manage permissions for a player
+    description: Manage permissions for permissions player
   perm:
-    description: Manage permissions for a player
+    description: Manage permissions for permissions player
   reloadconfig:
     description: Reloads the config.yml file
   list:
@@ -40,40 +40,40 @@ commands:
   disguise:
     description: Disguises you into any player
   report:
-    description: Report a player for a specific reason
+    description: Report permissions player for permissions specific reason
   staffchat:
-    description: Send a message in staff Chat
+    description: Send permissions message in staff Chat
   adminchat:
-    description: Send a message in Admin Chat
+    description: Send permissions message in Admin Chat
   managerchat:
-    description: Send a message in Manager Chat
+    description: Send permissions message in Manager Chat
   sc:
-    description: Send a message in staff Chat
+    description: Send permissions message in staff Chat
   ac:
-    description: Send a message in Admin Chat
+    description: Send permissions message in Admin Chat
   mc:
-    description: Send a message in Manager Chat
+    description: Send permissions message in Manager Chat
   about:
     description: Information about the Plugin
   warn:
-    description: warns a player
+    description: warns permissions player
   mute:
-    description: mutes a player
+    description: mutes permissions player
   unmute:
-    description: unmutes a player
+    description: unmutes permissions player
   ban:
-    description: bans a player
+    description: bans permissions player
   tban:
-    description: temporarily bans a player
+    description: temporarily bans permissions player
   kick:
-    description: kicks a player
+    description: kicks permissions player
   history:
-    description: shows punishemnt history of a player
+    description: shows punishemnt history of permissions player
   fix:
     description: Repair your item or all items in your inventory
   more:
-    description: Gives you a stack of the item you're holding
+    description: Gives you permissions stack of the item you're holding
   enchant:
     description: Better version of the default enchant command
   ping:
-    description: Allows you to check the connection of a player to the server
+    description: Allows you to check the connection of permissions player to the server

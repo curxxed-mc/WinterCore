@@ -1,72 +1,99 @@
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Bungee\BungeeListener.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Bungee\ServerManagerCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Gamemode\gma.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Gamemode\gmc.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Gamemode\gms.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Gamemode\gmsp.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\AboutCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\DisguiseCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\ListCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\MessageCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\MoreCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\ReloadConfig.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\ReplyCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\misc\SpeedCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Social\DiscordCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\AdminChatCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\AltsCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\BanCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\ClearChat.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\FreezeCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\HistoryCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\InvSeeCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\KickCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\ManagePermissionCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\ManagerChatCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\MuteCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\RankCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\SetRankCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\StaffChatCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\StaffListCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\StaffModeCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\TempBanCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\UnmuteCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\VanishCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Staff\WarnCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Troll\idontknowwhatthisisdontlook.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Troll\TrollCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Troll\WinCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\ClearEffectsCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\EnchantCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\Feed.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\FixCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\Fly.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\Heal.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\JumpToPlayer.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\PingCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\ProfileCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\ReportCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\ThruCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Commands\Utility\TPSCommand.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Database\DatabaseManager.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Database\RankCache.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Database\RedisManager.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Database\RedisSocials.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\listeners\FreezeListener.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\listeners\PlayerListener.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Main.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\Placeholders\Placeholder.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\AltManager.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\GUI\ColorGUI.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\GUI\DisguiseGUI.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\GUI\RankGUIListener.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\GUI\StaffListGUI.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\NMSUtils.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\PermissionManager.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\PunishmentManager.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\RankManager.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\RegisterPlugin.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\SocialInput.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\Staff\StaffModeListener.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\Staff\StaffModeManager.java
-C:\Users\Cristi\Documents\iCore\src\main\java\curxxed\dev\icore\utils\WebhookManager.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\client\ClientBrand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\client\ClientBrandCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\bungee\ServerManagerCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\gamemode\gma.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\gamemode\gmc.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\gamemode\gms.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\gamemode\gmsp.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\AboutCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\ListCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\MessageCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\MoreCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\ReloadConfig.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\ReplyCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\SpeedCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\social\DiscordCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\AdminChatCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\AltsCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\BanCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\ClearChat.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\FreezeCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\GrantCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\HistoryCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\InvSeeCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\KickCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\ManagePermissionCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\ManagerChatCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\MuteCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\StaffChatCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\StaffListCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\StaffModeCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\SudoCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\UnbanCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\UnmuteCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\VanishCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\WarningCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\troll\idontknowwhatthisisdontlook.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\troll\TrollCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\CheckNMS.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\ClearEffectsCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\EnchantCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\Feed.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\FixCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\Fly.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\Heal.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\JumpToPlayer.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\PingCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\ProfileCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\ReportCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\ThruCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\database\DatabaseManager.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\database\RedisManager.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\database\RedisSocials.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\database\SocialInput.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\database\WebhookManager.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\disguise\callback\DisguiseCallback.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\disguise\commands\DisguiseCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\disguise\commands\UnDisguiseCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\disguise\DisguiseEventListener.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\disguise\DisguiseGUI.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\disguise\DisguiseHandler.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\disguise\DisguiseRegistry.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\disguise\impl\DefaultDisguiseHandler.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\disguise\player\DisguiseData.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\listeners\FreezeListener.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\listeners\PlayerListener.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\listeners\ReachListener.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\managers\events\PlayerDisguiseEvent.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\managers\events\PlayerUnDisguiseEvent.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\managers\events\WinterCoreEvents.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\managers\Handler.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\menus\ChatColorSelectionMenu.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\menus\HistroyMenuContext.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\menus\RankMenu.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\menus\StaffListMenu.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\nametags\DefaultNameTagAdapter.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\nametags\NameTag.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\nametags\NameTagAdapter.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\nametags\NameTagBoard.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\nametags\NameTagHandler.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\permissions\WinterCorePermissible.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\permissions\WinterCorePermissibleInjector.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\placeholders\Placeholder.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\plugin\WinterCore.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\rank\Rank.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\rank\RankChangeEvent.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\rank\RankCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\rank\RankManager.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\staff\StaffModeListener.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\staff\StaffModeManager.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\tags\Tag.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\tags\TagsCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\tags\TagsGUI.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\tags\TagsManager.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\utils\BanList.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\utils\BukkitSerialization.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\utils\CC.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\utils\EmptyCollections.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\utils\SkinFetcher.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\utils\Utilities.java

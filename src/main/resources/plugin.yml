@@ -1,5 +1,6 @@
-name: iCore
+name: WinterCore
 version: '0.8.5'
-main: net.curxxed.dev.icore.plugin.iCore
+main: net.curxxed.dev.wintercore.plugin.WinterCore
 authors: [ curxxed ]
-description: This plugin is an advanced Core plugin for Minecraft servers, providing a wide range of powerful commands and features for server management with a focus on performance and user experience and is very user-friendly.
+loadafter:
+  - FastBoard
