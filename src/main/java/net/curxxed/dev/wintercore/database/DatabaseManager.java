@@ -718,7 +718,7 @@ public class DatabaseManager {
         });
     }
 
-    // Remove a mute by UUID
+    
     public void removeMute(UUID uuid) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             String sql = "DELETE FROM player_mutes WHERE uuid = ?;";
@@ -732,7 +732,7 @@ public class DatabaseManager {
         });
     }
 
-    // Remove a ban by UUID
+
     public void removeBan(UUID uuid) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             String sql = "DELETE FROM player_bans WHERE uuid = ?;";
@@ -746,7 +746,7 @@ public class DatabaseManager {
         });
     }
 
-    // Remove a rank grant by its ID
+    
     public void removeRankGrant(int grantId) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             String sql = "DELETE FROM player_rank_grants WHERE id = ?;";
