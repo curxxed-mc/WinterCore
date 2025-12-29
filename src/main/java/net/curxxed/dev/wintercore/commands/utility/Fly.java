@@ -1,22 +1,29 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-public class Fly extends BaseCommand {
-
-    @Command(
-            name = "fly",
+@CommandInfo(
+        name = "fly",
             permission = "WinterCore.fly",
             description = "Toggle flight for yourself or another player.",
             usage = "/fly [player]",
             inGameOnly = true
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class Fly extends BaseCommand {
+
+    public Fly(WinterCore plugin) {
+        super(plugin);
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player senderPlayer = commandArgs.getPlayer();
         boolean isPlayer = commandArgs.isPlayer();
 
@@ -26,7 +33,7 @@ public class Fly extends BaseCommand {
             return;
         }
 
-        Player target = Bukkit.getPlayer(commandArgs.getArgs(0));
+        Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null) {
             commandArgs.getSender().sendMessage(ChatColor.RED + "Player not found!");
             return;

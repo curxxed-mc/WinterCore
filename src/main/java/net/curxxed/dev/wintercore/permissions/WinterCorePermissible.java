@@ -1,14 +1,11 @@
 package net.curxxed.dev.wintercore.permissions;
 
-import co.aikar.timings.SpigotTimings;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.*;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -67,8 +64,7 @@ public class WinterCorePermissible extends PermissibleBase {
     public boolean isPermissionSet(String name) {
         if (name == null) {
             if (Bukkit.getPluginManager().getPlugin("FastBoard") != null) {
-                Utilities.log("&aGo fuck yourself &4FastBoard&a, use &bWinterScoreboard instead &c<3");
-                Utilities.stopServerSmart();
+                Utilities.stop();
                 return false;
             }
             throw new IllegalArgumentException("Permission name cannot be null");
@@ -108,11 +104,6 @@ public class WinterCorePermissible extends PermissibleBase {
     @Override
     public boolean hasPermission(String name) {
         if (name == null) {
-            if (Bukkit.getPluginManager().getPlugin("FastBoard") != null) {
-                Utilities.log("&aGo fuck yourself &4FastBoard&a, use &bWinterScoreboard instead &c<3");
-                Utilities.stopServerSmart();
-                return false;
-            }
             throw new IllegalArgumentException("Permission name cannot be null");
         }
         String lower = name.toLowerCase(Locale.ENGLISH);
@@ -164,13 +155,8 @@ public class WinterCorePermissible extends PermissibleBase {
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
-        if (net.curxxed.dev.wintercore.plugin.WinterCore.isShuttingDown) return null;
+        if (WinterCore.isShuttingDown) return null;
         if (name == null) {
-            if (Bukkit.getPluginManager().getPlugin("FastBoard") != null) {
-                Utilities.log("&aGo fuck yourself &4FastBoard&a, use &bWinterScoreboard instead &c<3");
-                Utilities.stopServerSmart();
-                return null;
-            }
             throw new IllegalArgumentException("Permission name cannot be null");
         }
         if (plugin == null) throw new IllegalArgumentException("Plugin cannot be null");
@@ -183,7 +169,7 @@ public class WinterCorePermissible extends PermissibleBase {
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin) {
-        if (net.curxxed.dev.wintercore.plugin.WinterCore.isShuttingDown) return null;
+        if (WinterCore.isShuttingDown) return null;
         if (plugin == null) throw new IllegalArgumentException("Plugin cannot be null");
         if (!plugin.isEnabled()) throw new IllegalArgumentException("Plugin " + plugin.getDescription().getFullName() + " is disabled");
         PermissionAttachment result = new PermissionAttachment(plugin, this.player);
@@ -194,7 +180,7 @@ public class WinterCorePermissible extends PermissibleBase {
 
     @Override
     public void removeAttachment(PermissionAttachment attachment) {
-        if (net.curxxed.dev.wintercore.plugin.WinterCore.isShuttingDown) return;
+        if (WinterCore.isShuttingDown) return;
         if (attachment == null) throw new IllegalArgumentException("Attachment cannot be null");
         if (attachments.contains(attachment)) {
             attachments.remove(attachment);
@@ -209,7 +195,7 @@ public class WinterCorePermissible extends PermissibleBase {
     @Override
     public void recalculatePermissions() {
         // Prevent NPE during construction
-        if (player == null || permissions == null || rawPermissions == null || attachments == null) return;
+        if (player == null) return;
 
         clearPermissions();
 

@@ -24,6 +24,7 @@ public class ClientBrand implements PluginMessageListener {
             return;
         }
 
+
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             String clientBrand = new String(message, StandardCharsets.UTF_8);
             String friendlyName = getFriendlyClientName(clientBrand);

@@ -1,8 +1,9 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -12,6 +13,14 @@ import org.bukkit.inventory.ItemStack;
 import java.util.HashMap;
 import java.util.Map;
 
+@CommandInfo(
+        name = "enchant",
+            permission = "WinterCore.enchant",
+            description = "Enchant the item in your hand.",
+            usage = "/enchant <enchantment> [level]",
+            inGameOnly = true
+    
+    )
 public class EnchantCommand extends BaseCommand {
 
     private static final Map<String, Enchantment> ENCHANTMENT_MAP = new HashMap<>();
@@ -38,17 +47,14 @@ public class EnchantCommand extends BaseCommand {
         ENCHANTMENT_MAP.put("smite", Enchantment.DAMAGE_UNDEAD);
         ENCHANTMENT_MAP.put("luck", Enchantment.LUCK);
         ENCHANTMENT_MAP.put("lure", Enchantment.LURE);
-        // Add more as needed
     }
 
-    @Command(
-            name = "enchant",
-            permission = "WinterCore.enchant",
-            description = "Enchant the item in your hand.",
-            usage = "/enchant <enchantment> [level]",
-            inGameOnly = true
-    )
-    public void onCommand(CommandArgs commandArgs) {
+    public EnchantCommand(WinterCore plugin) {
+        super(plugin);
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
 

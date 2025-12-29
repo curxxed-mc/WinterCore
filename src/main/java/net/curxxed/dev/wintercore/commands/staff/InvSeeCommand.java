@@ -1,23 +1,30 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
-public class InvSeeCommand extends BaseCommand {
-
-    @Command(
-            name = "invsee",
+@CommandInfo(
+        name = "invsee",
             permission = "wintercore.invsee",
             description = "View another player's inventory.",
             usage = "/invsee <player>",
             inGameOnly = true
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class InvSeeCommand extends BaseCommand {
+
+    public InvSeeCommand(WinterCore plugin) {
+        super(plugin);
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
 
         if (commandArgs.length() != 1) {
@@ -25,7 +32,7 @@ public class InvSeeCommand extends BaseCommand {
             return;
         }
 
-        Player target = Bukkit.getPlayer(commandArgs.getArgs(0));
+        Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null || !target.isOnline()) {
             player.sendMessage(ChatColor.RED + "Player not found or offline.");
             return;

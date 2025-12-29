@@ -87,12 +87,14 @@ public class DisguiseRegistry {
 
     /**
      * Store disguise info in Redis for permissions player.
+     * Now includes SKIN to ensure correct texture is loaded on other servers.
      */
-    public void setDisguiseInfo(Player player, String disguiseName, String disguiseRank, String color, String prefix) {
+    public void setDisguiseInfo(Player player, String disguiseName, String disguiseRank, String skin, String color, String prefix) {
         // Build JSON for disguise info
         com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
         obj.addProperty("name", disguiseName);
         obj.addProperty("rank", disguiseRank);
+        obj.addProperty("skin", skin); // Added Skin persistence
         obj.addProperty("color", color);
         obj.addProperty("prefix", prefix);
         redisManager.setDisguise(player.getUniqueId(), obj.toString());
@@ -204,9 +206,7 @@ public class DisguiseRegistry {
             }
             colorCache.put(uuid, color);
             // Update scoreboard for this player for all viewers
-            Bukkit.getScheduler().runTask(WinterCore.INSTANCE, () -> {
-                WinterCore.INSTANCE.getNameTagHandler().updateNameTagFor(player);
-            });
+            Bukkit.getScheduler().runTask(WinterCore.INSTANCE, () -> WinterCore.INSTANCE.getNameTagHandler().updateNameTagFor(player));
         });
     }
 

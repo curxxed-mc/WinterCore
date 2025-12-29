@@ -1,27 +1,30 @@
 package net.curxxed.dev.wintercore.commands.misc;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.ChatColor;
 
+@CommandInfo(
+        name = "reloadconfig",
+        permission = "WinterCore.reloadconfig",
+        description = "Reloads the plugin configuration files.",
+        usage = "/reloadconfig",
+        inGameOnly = false
+)
 public class ReloadConfig extends BaseCommand {
 
     private final WinterCore plugin;
 
-    public ReloadConfig(WinterCore plugin) {
-        this.plugin = plugin;
+    public ReloadConfig(WinterCore pl) {
+       super(pl);
+       this.plugin = pl;
     }
 
-    @Command(
-            name = "reloadconfig",
-            permission = "WinterCore.reloadconfig",
-            description = "Reloads the plugin configuration files.",
-            usage = "/reloadconfig",
-            inGameOnly = false
-    )
-    public void onCommand(CommandArgs commandArgs) {
+    @Override
+    public void execute(CommandArguments commandArgs) {
         if (!commandArgs.getSender().hasPermission("WinterCore.reloadconfig")) {
             commandArgs.getSender().sendMessage(ChatColor.RED + "You do not have permission to use this command.");
             return;

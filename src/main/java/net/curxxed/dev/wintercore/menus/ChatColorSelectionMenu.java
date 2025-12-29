@@ -1,12 +1,12 @@
 package net.curxxed.dev.wintercore.menus;
 
-import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.Utilities;
-import net.curxxed.dev.wintercore.utils.CC;
 import lombok.Getter;
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -17,8 +17,18 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+@CommandInfo(
+        name = "chatcolor",
+        permission = "WinterCore.commands.chatcolor",
+        description = "Open the chat color selection menus.",
+        usage = "/colorgui",
+        inGameOnly = true
+)
 public class ChatColorSelectionMenu extends BaseCommand implements Listener {
     @Getter
     public static ChatColorSelectionMenu Instance;
@@ -58,17 +68,12 @@ public class ChatColorSelectionMenu extends BaseCommand implements Listener {
     }
 
     public ChatColorSelectionMenu(WinterCore plugin) {
+        super(plugin);
         this.plugin = plugin;
     }
 
-    @Command(
-            name = "chatcolor",
-            permission = "WinterCore.commands.chatcolor",
-            description = "Open the chat color selection menus.",
-            usage = "/colorgui",
-            inGameOnly = true
-    )
-    public void onCommand(CommandArgs commandArgs) {
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         openColorGUI(player);
     }
