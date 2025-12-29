@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -10,22 +10,25 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-public class FixCommand extends BaseCommand {
-
-    private final WinterCore plugin;
-
-    public FixCommand(WinterCore plugin) {
-        this.plugin = plugin;
-    }
-
-    @Command(
+@CommandInfo(
         name = "fix",
         permission = "WinterCore.fix",
         description = "Repair the item in your hand or all items in your inventory.",
         usage = "/fix [all]",
         inGameOnly = true
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class FixCommand extends BaseCommand {
+
+    private final WinterCore plugin;
+
+    public FixCommand(WinterCore plugin) {
+        super(plugin);
+        this.plugin = plugin;
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
         if (player == null) {

@@ -1,10 +1,11 @@
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\client\ClientBrand.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\client\ClientBrandCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\api\BaseCommand.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\api\CommandArguments.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\api\CommandHandler.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\api\CommandInfo.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\bungee\ServerManagerCommand.java
-E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\gamemode\gma.java
-E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\gamemode\gmc.java
-E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\gamemode\gms.java
-E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\gamemode\gmsp.java
+E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\gamemode\GameModeCommand.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\AboutCommand.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\ListCommand.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\misc\MessageCommand.java
@@ -33,7 +34,6 @@ E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\UnmuteCommand.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\VanishCommand.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\staff\WarningCommand.java
-E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\troll\idontknowwhatthisisdontlook.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\troll\TrollCommand.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\CheckNMS.java
 E:\Intellij Plugins\WinterCore\src\main\java\net\curxxed\dev\wintercore\commands\utility\ClearEffectsCommand.java

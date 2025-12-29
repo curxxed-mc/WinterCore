@@ -1,23 +1,30 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 
-public class ClearEffectsCommand extends BaseCommand {
-
-    @Command(
-            name = "cleareffects",
+@CommandInfo(
+        name = "cleareffects",
             permission = "wintercore.cleareffects",
             description = "Clear potion effects from yourself or another player.",
             usage = "/cleareffects [player|@a]",
             inGameOnly = true
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class ClearEffectsCommand extends BaseCommand {
+
+    public ClearEffectsCommand(WinterCore plugin) {
+        super(plugin);
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player sender = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
 

@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
 public class DefaultDisguiseHandler extends DisguiseHandler {
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private final Map<java.util.UUID, String> disguiseRanks = new ConcurrentHashMap<>();
     private final DisguiseRegistry disguiseRegistry;
 
@@ -72,8 +73,18 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         try {
             CompletableFuture<SkinFetcher.SkinProperty> future = CompletableFuture.supplyAsync(() -> fetchSkinData(skin));
             skinProperty = future.get();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
+
+        // --- Added: Ensure registry knows about the disguise locally ---
+        if (skinProperty != null) {
+            disguiseRegistry.setDisguised(player, skinProperty);
+        } else {
+            // If fetch failed, we should still mark them disguised, maybe with null skin or current
+            disguiseRegistry.setDisguised(player, null);
+        }
+        // -------------------------------------------------------------
+
         String value = "ewogICJ0aW1lc3RhbXAiIDogMTU5OTkxNzE1OTc4NiwKICAicHJvZmlsZUlkIiA6ICJhZDI1N2Q0ZmJmZjc0YWRhOTY3ZDM0YWZjM2Q5NTcyNCIsCiAgInByb2ZpbGVOYW1lIiA6ICJGYWNlU2xhcF8iLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmQzYjA2YzM4NTA0ZmZjMDIyOWI5NDkyMTQ3YzY5ZmNmNTlmZDJlZDc4ODVmNzg1MDIxNTJmNzdiNGQ1MGRlMSIKICAgIH0KICB9Cn0=";
         String signature = "ICq7KLYfdYPI4v3aFxEvpYadhFoYptjKtEhybC4vFnHd081JHiLTuSIqtYPwpqCSkIG+ooUrUMJ/Qka+ieKuOqefmQ+03apVmCeQVnqcYVMyzJTvp69q1Q1TPlc7G/tLgtyF+Ct/E6u/kZ6Dc494VsuXQj6wfLg7+yqqb2Y9PAr2Np91x0AbKithM1vOqvXAcvZRGILp/BAhZ817myXa/CkrvTxFEbiXbD8isWw+tIXLlPi+3Ck5r6KS3tHBGH7/IeY2WM7DN5/vRATfkKGo2F+H6s8IB9t/2bIWG39TKmxYg6wX0daa/FkpEhXb7O61HvhOnpmewKs0b40sK+E5+IC+tx9SlDLsFFeTALjpc2qwOOQ25ITFN4EgdHaP9bO4PGrcIHB7lz7fIRwJSxxHAsxfqc5nzRogy3cXFvsa8pByPGSSdvNzysYN2wGOyIaY+oMXPCfrnGVuno1cJk4L/8noGCX9pLRUd/Ow2WSjTl6zaIfgiEa4d7JWdxdL9/+UQja6oKoQldbMpRTwQPL5uyGbkrirPMNud1s1qaBVrrDUDQoJM0XrYxSF+TtUWRd3kWTN7x7QWdh+8hFECB9H5Kl6k0TyLTSAJkFbKE6aKSLXnSPW7Rb7F/6D3/NRFuDKLDm1exdKBRG3qr0ThB1LhOSE8nOOztETDoPkZJEwWho=";
         if (skinProperty != null) {
@@ -83,12 +94,8 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         gameProfile.getProperties().clear();
         gameProfile.getProperties().put("textures", new Property("textures", value, signature));
         Bukkit.getScheduler().runTask(plugin, () -> {
-            Bukkit.getOnlinePlayers().forEach(online -> {
-                online.hidePlayer(player);
-            });
-            Bukkit.getOnlinePlayers().forEach(online -> {
-                online.showPlayer(player);
-            });
+            Bukkit.getOnlinePlayers().forEach(online -> online.hidePlayer(player));
+            Bukkit.getOnlinePlayers().forEach(online -> online.showPlayer(player));
         });
         final Class<?> packetPlayOutPlayerInfo = getNMSClass("PacketPlayOutPlayerInfo");
         final Class<?> enumPlayerInfoAction = doesClassExists("PacketPlayOutPlayerInfo$EnumPlayerInfoAction")
@@ -162,7 +169,11 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         String nameColor = plugin.getRankManager().getRanksSection().getConfigurationSection(rank) != null
                 ? plugin.getRankManager().getRanksSection().getConfigurationSection(rank).getString("name-color", "&f")
                 : "&f";
-        disguiseRegistry.setDisguiseInfo(player, name, rank, nameColor, coloredPrefix);
+
+        // --- Updated: Now passing SKIN to the registry so it saves to Redis ---
+        disguiseRegistry.setDisguiseInfo(player, name, rank, skin, nameColor, coloredPrefix);
+        // ---------------------------------------------------------------------
+
         disguiseRegistry.getEffectiveColor(player, color -> {
             if (plugin.getNameTagHandler() != null && plugin.getNameTagHandler().getNameTagAdapter() != null) {
                 plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, color);
@@ -201,12 +212,8 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         }
 
         Bukkit.getScheduler().runTask(plugin, () -> {
-            Bukkit.getOnlinePlayers().forEach(online -> {
-                online.hidePlayer(player);
-            });
-            Bukkit.getOnlinePlayers().forEach(online -> {
-                online.showPlayer(player);
-            });
+            Bukkit.getOnlinePlayers().forEach(online -> online.hidePlayer(player));
+            Bukkit.getOnlinePlayers().forEach(online -> online.showPlayer(player));
         });
 
         final Class<?> packetPlayOutPlayerInfo = getNMSClass("PacketPlayOutPlayerInfo");
@@ -290,6 +297,9 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
         disguiseRanks.remove(player.getUniqueId());
 
+        // Clear from registry local cache
+        disguiseRegistry.clear(player);
+
         plugin.getRankManager().refreshPlayerDisplay(player);
 
         plugin.getRedisManager().clearDisguise(player.getUniqueId());
@@ -358,7 +368,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     }
 
     private char extractFirstColorChar(String input) {
-        if (input == null) return 'f'; // default to white
+        if (input == null) return 'f';
         for (int i = 0; i < input.length() - 1; i++) {
             char c = input.charAt(i);
             char code = input.charAt(i + 1);
@@ -371,7 +381,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
     private void updateTabListAndTeam(Player player, String name) {
         disguiseRegistry.getEffectiveColor(player, color -> {
-            if (player == null || !player.isOnline()) return;
+            if (!player.isOnline()) return;
             if (plugin.getNameTagHandler() != null && plugin.getNameTagHandler().getNameTagAdapter() != null) {
                 plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, color);
             }

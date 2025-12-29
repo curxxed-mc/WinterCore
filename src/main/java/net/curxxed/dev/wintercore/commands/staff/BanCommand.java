@@ -1,38 +1,42 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 
 
-public class BanCommand extends BaseCommand {
-    private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
-
-    public BanCommand(WinterCore plugin) {
-        this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
-    }
-
-    @Command(
+@CommandInfo(
         name = "ban",
         permission = "WinterCore.ban",
         description = "Ban a player from the server.",
         usage = "/ban <player> [duration] <reason> [-s/-r]",
         inGameOnly = false
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class BanCommand extends BaseCommand {
+    private final WinterCore plugin;
+    private final DatabaseManager databaseManager;
+
+    public BanCommand(WinterCore plugin) {
+        super(plugin);
+        this.plugin = plugin;
+        this.databaseManager = plugin.getDatabaseManager();
+    }
+
+    @Override
+
+    public void execute(CommandArguments commandArgs) {
         if (!commandArgs.getSender().hasPermission("WinterCore.ban")) {
             commandArgs.getSender().sendMessage(CC.translate("&cYou do not have permission to ban players."));
             return;
@@ -51,6 +55,7 @@ public class BanCommand extends BaseCommand {
         String durationString = args[1];
         String reason;
         Duration duration = parseDuration(durationString);
+        final int i = silent ? args.length - 1 : args.length;
         if (duration != null) {
             if (args.length < 3) {
                 commandArgs.getSender().sendMessage(CC.translate("&cYou must provide a reason for the ban."));

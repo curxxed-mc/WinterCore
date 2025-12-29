@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
@@ -11,24 +11,27 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class WarningCommand extends BaseCommand {
-    private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
-
-    public WarningCommand(WinterCore plugin) {
-        this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
-    }
-
-    @Command(
+@CommandInfo(
         name = "warning",
         permission = "WinterCore.warning",
         description = "Warn a player.",
         aliases = {"warn"},
         usage = "/warn <player> <reason>",
         inGameOnly = false
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class WarningCommand extends BaseCommand {
+    private final WinterCore plugin;
+    private final DatabaseManager databaseManager;
+
+    public WarningCommand(WinterCore plugin) {
+        super(plugin);
+        this.plugin = plugin;
+        this.databaseManager = plugin.getDatabaseManager();
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         String[] args = commandArgs.getArgs();
         if (args.length < 2) {
             commandArgs.getSender().sendMessage(ChatColor.RED + "Usage: /warn <player> <reason>");

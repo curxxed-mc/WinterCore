@@ -1,22 +1,29 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-public class Feed extends BaseCommand {
-
-    @Command(
-            name = "feed",
+@CommandInfo(
+        name = "feed",
             permission = "WinterCore.feed",
             description = "Feed yourself or another player.",
             usage = "/feed [player]",
             inGameOnly = false
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class Feed extends BaseCommand {
+
+    public Feed(WinterCore plugin) {
+        super(plugin);
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         if (commandArgs.length() == 0) {
             if (!commandArgs.isPlayer()) {
                 commandArgs.getSender().sendMessage(ChatColor.RED + "Only players can use this command on themselves!");
@@ -29,7 +36,7 @@ public class Feed extends BaseCommand {
             return;
         }
 
-        Player target = Bukkit.getPlayer(commandArgs.getArgs(0));
+        Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null || !target.isOnline()) {
             commandArgs.getSender().sendMessage(ChatColor.RED + "Player not found!");
             return;

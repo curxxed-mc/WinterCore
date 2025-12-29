@@ -171,10 +171,9 @@ public class RedisManager {
         final String sourceServer = parts[0];
         final boolean isOnline = parts[1].equalsIgnoreCase("online");
         if (sourceServer.equals(serverName)) return;
-        final String statusPrefix = CC.translate("&7[&8&ri&bCore&7] ");
-        final String statusMessage = statusPrefix + (isOnline
+        final String statusMessage = isOnline
                 ? CC.translate("&7Server &b" + sourceServer + "&7 has just came &aonline&7 and will be &b&ljoinable in 5 seconds!")
-                : CC.translate("&7Server &b" + sourceServer + "&7 has just went &4offline&7 and is no longer &4&ljoinable!"));
+                : CC.translate("&7Server &b" + sourceServer + "&7 has just went &4offline&7 and is no longer &4&ljoinable!");
 
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (Player p : Bukkit.getOnlinePlayers()) {
@@ -336,22 +335,15 @@ public class RedisManager {
     }
 
     public void publishStaffActivity(String type, String playerName, String color, String fromServer, String toServer) {
-
-
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             String payload = type + "|" + playerName + "|" + color + "|" + fromServer + "|" + toServer;
             jedis.publish("staff-activity", payload);
         } catch (Exception e) {
-
             e.printStackTrace();
         }
     }
 
     public void publishStaffActivity(String type, JsonObject json) {
-        for (Player online : Bukkit.getOnlinePlayers()) {
-            if (online.hasPermission("WinterCore.staff") || online.hasPermission("WinterCore.admin") || online.hasPermission("WinterCore.manager") || online.isOp()) continue;
-        }
-
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.publish("staff-activity", json.toString());
         } catch (Exception e) {
@@ -359,17 +351,33 @@ public class RedisManager {
         }
     }
 
-    public void publishDisguiseActivity(String type, String playerName, String color, String fromServer, String toServer) {
+    /**
+     * Publishes disguise activity.
+     * Note: This now uses JSON format to match handleDisguiseActivityMessage expectation.
+     */
+    public void publishDisguiseActivity(UUID uuid, boolean disguised) {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("uuid", uuid.toString());
+        obj.addProperty("disguised", disguised);
+        // Added optional fields if needed for legacy compatibility or debugging
+        obj.addProperty("timestamp", System.currentTimeMillis());
+
         try (redis.clients.jedis.Jedis jedis = plugin.getRedisPool().getResource()) {
-            String payload = type + "|" + playerName + "|" + color + "|" + fromServer + "|" + toServer;
-            jedis.publish("disguise-activity", payload);
+            jedis.publish("disguise-activity", obj.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-
-
+    // Kept for backward compatibility but fixed to send JSON
+    public void publishDisguiseActivity(String type, String playerName, String color, String fromServer, String currentServer) {
+        // This method signature was problematic because the handler expects JSON with UUID
+        // We will try to resolve the UUID from the player name if possible, or send a simplified JSON
+        Player p = Bukkit.getPlayer(playerName);
+        if (p != null) {
+            publishDisguiseActivity(p.getUniqueId(), true); // Assumes switch implies remaining disguised
+        }
+    }
 
     private void handleStaffActivityMessage(String message) {
         String[] parts = message.split("\\|");
@@ -426,7 +434,7 @@ public class RedisManager {
                 }
             });
         } catch (Exception e) {
-            plugin.getLogger().warning("Failed to handle disguise activity message: " + e.getMessage());
+            plugin.getLogger().warning("Failed to handle disguise activity message: " + e.getMessage() + " | Raw: " + message);
         }
     }
 
@@ -484,7 +492,6 @@ public class RedisManager {
             String key = "pendingSwitch:" + uuid.toString();
             jedis.del(key);
             jedis.setex(key, 5, "1");
-            long ttl = jedis.ttl(key);
         }
     }
 
@@ -498,6 +505,22 @@ public class RedisManager {
         }
     }
 
+    public void updateLastSeen(UUID uuid) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            jedis.hset("staff:last-seen", uuid.toString(), String.valueOf(System.currentTimeMillis()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public long getLastSeen(UUID uuid) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            String val = jedis.hget("staff:last-seen", uuid.toString());
+            return val == null ? 0L : Long.parseLong(val);
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
 
 
     public void clearPendingSwitch(UUID uuid) {

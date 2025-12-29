@@ -7,9 +7,9 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.listeners.ReachListener;
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
@@ -17,6 +17,14 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
+@CommandInfo(
+        name = "troll",
+            permission = "WinterCore.troll",
+            description = "troll a player with various effects.",
+            usage = "/troll <player> <demo|win|boatspam|reach|daynight>",
+            inGameOnly = true
+    
+    )
 public class TrollCommand extends BaseCommand {
 
     private final ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
@@ -27,30 +35,25 @@ public class TrollCommand extends BaseCommand {
     private static final List<String> SUBCOMMANDS = Arrays.asList("demo", "win", "boatspam", "reach", "daynight");
 
     public TrollCommand(WinterCore plugin, ReachListener reachListener) {
+        super(plugin);
         this.plugin = plugin;
         this.reachListener = reachListener;
     }
 
-    @Command(
-            name = "troll",
-            permission = "WinterCore.troll",
-            description = "troll a player with various effects.",
-            usage = "/troll <player> <demo|win|boatspam|reach|daynight>",
-            inGameOnly = true
-    )
-    public void onCommand(CommandArgs commandArgs) {
+    @Override
+    public void execute(CommandArguments commandArgs) {
         if (commandArgs.length() != 2) {
             commandArgs.getSender().sendMessage(ChatColor.RED + "Usage: /troll <player> <" + String.join("|", SUBCOMMANDS) + ">");
             return;
         }
         Player player = commandArgs.getPlayer();
-        Player target = Bukkit.getPlayer(commandArgs.getArgs(0));
+        Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null || !target.isOnline()) {
             player.sendMessage(ChatColor.RED + "Player not found or offline.");
             return;
         }
 
-        String type = commandArgs.getArgs(1).toLowerCase();
+        String type = commandArgs.getArgs()[1].toLowerCase();
         switch (type) {
             case "demo":
                 sendGameStateChange(target, 5, 0.0f);
@@ -140,7 +143,6 @@ public class TrollCommand extends BaseCommand {
 
         BukkitRunnable dayNightLoopTask = new BukkitRunnable() {
             private long time = 0;
-
             @Override
             public void run() {
                 time = (time + 1000) % 24000;

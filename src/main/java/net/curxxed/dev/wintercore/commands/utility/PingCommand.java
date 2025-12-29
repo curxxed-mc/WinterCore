@@ -1,41 +1,41 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-public class PingCommand extends BaseCommand {
-
-    @Command(
-            name = "ping",
+@CommandInfo(
+        name = "ping",
             description = "Check your or another player's ping.",
             usage = "/ping [player]",
             inGameOnly = true
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class PingCommand extends BaseCommand {
+
+    public PingCommand(WinterCore plugin) {
+        super(plugin);
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
 
         if (args.length == 0) {
             int ping = Utilities.getPing(player);
-            if (ping == -1) {
-                player.sendMessage(Utilities.PING_ERROR);
-            } else {
                 player.sendMessage(ChatColor.AQUA + "Your ping: " + getColoredPing(ping));
-            }
         } else if (args.length == 1) {
             Player target = Bukkit.getPlayer(args[0]);
             if (target != null && target.isOnline()) {
                 int ping = Utilities.getPing(target);
-                if (ping == -1) {
-                    player.sendMessage(Utilities.PING_ERROR);
-                } else {
+
                     player.sendMessage(ChatColor.AQUA + target.getName() + "'s ping: " + getColoredPing(ping));
-                }
             } else {
                 player.sendMessage(ChatColor.RED + "Player not found.");
             }

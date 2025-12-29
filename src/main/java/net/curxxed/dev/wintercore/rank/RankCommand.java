@@ -1,30 +1,32 @@
 package net.curxxed.dev.wintercore.rank;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.command.CommandSender;
 
+@CommandInfo(
+        name = "rank",
+        permission = "WinterCore.rank",
+        description = "Manage ranks.",
+        usage = "/rank",
+        inGameOnly = false
+)
 public class RankCommand extends BaseCommand {
 
     private final RankManager rankManager;
     private final WinterCore plugin;
 
     public RankCommand(WinterCore plugin, RankManager rankManager) {
+        super(plugin);
         this.rankManager = rankManager;
         this.plugin = plugin;
     }
 
-    @Command(
-        name = "rank",
-        permission = "WinterCore.rank",
-        description = "Manage ranks.",
-        usage = "/rank",
-        inGameOnly = false
-    )
-    public void onCommand(CommandArgs commandArgs) {
+
+    public void execute(CommandArguments commandArgs) {
         String[] args = commandArgs.getArgs();
         String subcommand = args.length > 0 ? args[0].toLowerCase() : "";
         org.bukkit.command.CommandSender sender = commandArgs.getSender();

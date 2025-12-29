@@ -1,29 +1,31 @@
 package net.curxxed.dev.wintercore.disguise.commands;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.disguise.DisguiseGUI;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
-import net.curxxed.dev.wintercore.disguise.DisguiseGUI;
 
+@CommandInfo(
+        name = "disguise",
+        description = "Disguise as another player.",
+        usage = "/disguise <name>",
+        inGameOnly = true,
+        permission = "wintercore.disguise"
+)
 public class DisguiseCommand extends BaseCommand {
     private final DisguiseHandler disguiseHandler;
 
-    public DisguiseCommand(DisguiseHandler disguiseHandler) {
+    public DisguiseCommand(DisguiseHandler disguiseHandler, WinterCore plugin) {
+        super(plugin);
         this.disguiseHandler = disguiseHandler;
     }
 
-    @Command(
-            name = "disguise",
-            description = "Disguise as another player.",
-            usage = "/disguise <name>",
-            inGameOnly = true,
-            permission = "wintercore.disguise"
-    )
-    public void onCommand(CommandArgs commandArgs) {
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
 
