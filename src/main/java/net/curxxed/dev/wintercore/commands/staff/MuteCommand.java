@@ -1,35 +1,39 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
-public class MuteCommand extends BaseCommand {
-    private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
-
-    public MuteCommand(WinterCore plugin) {
-        this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
-    }
-
-    @Command(
+@CommandInfo(
         name = "mute",
         permission = "WinterCore.mute",
         description = "Mute a player.",
         usage = "/mute <player> <reason> [duration]",
         inGameOnly = false
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class MuteCommand extends BaseCommand {
+    private final WinterCore plugin;
+    private final DatabaseManager databaseManager;
+
+    public MuteCommand(WinterCore plugin) {
+        super(plugin);
+        this.plugin = plugin;
+        this.databaseManager = plugin.getDatabaseManager();
+    }
+
+    @Override
+
+    public void execute(CommandArguments commandArgs) {
         if (!commandArgs.getSender().hasPermission("WinterCore.mute")) {
             commandArgs.getSender().sendMessage(CC.translate("&cYou do not have permission to mute players."));
             return;

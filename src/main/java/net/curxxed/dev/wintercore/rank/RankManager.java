@@ -106,17 +106,15 @@ public class RankManager {
             playerCache.put(player.getUniqueId(), rank);
             sendRankUpdateToBungee(player.getName(), rank);
 
-            // Fire the RankChangeEvent
             RankChangeEvent e = new RankChangeEvent(player, rank);
             Bukkit.getPluginManager().callEvent(e);
 
             // Fetch rank and color synchronously before updating visuals
             getRank(player, updatedRank -> getColorPreference(updatedRank, rankColor -> {
-                cachePlayerColor(player, rankColor); // Cache the color
-                refreshPlayerRankAndNameTag(player); // Update display name and permissions
-                setRankAboveHead(player); // Update the name tag above the player's head
+                cachePlayerColor(player, rankColor);
+                refreshPlayerRankAndNameTag(player);
+                setRankAboveHead(player);
 
-                // Update nametag using NameTagHandler
                 if (plugin.getNameTagHandler() != null) {
                     plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, rankColor);
                 }
@@ -133,7 +131,7 @@ public class RankManager {
 
     private void refreshPlayerRankAndNameTag(Player player) {
         getRank(player, rank -> getColorPreference(rank, rankColor -> {
-            updatePlayerRank(player); // Update display name and permissions
+            updatePlayerRank(player);
             if (plugin.getNameTagHandler() != null) {
                 plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, rankColor);
             }
@@ -248,7 +246,7 @@ public class RankManager {
 
 
     public String getRankSync(Player player) {
-        // Only return the real rank, do NOT check disguise here!
+        // Only return the real rank, do NOT check disguise here! -- curxxed
         if (!playerRanks.containsKey(player.getUniqueId())) {
             CompletableFuture<String> future = new CompletableFuture<>();
             getRankAsync(player, rank -> {
@@ -339,8 +337,6 @@ public class RankManager {
         return sortedRanks;
     }
 
-
-    // src/main/java/curxxed/dev/wintercore/rank/RankManager.java
     private void updatePlayerRank(Player player) {
         getRankAsync(player, rank -> {
             if (rank == null) {
@@ -350,7 +346,7 @@ public class RankManager {
             }
             try {
                 WinterCorePermissible permissible = (WinterCorePermissible) WinterCorePermissibleInjector.HUMAN_ENTITY_PERMISSIBLE_FIELD.get(player);
-                permissible.clearRawPermissions(); // Clear only raw permissions
+                permissible.clearRawPermissions();
                 List<String> permissions = getPermissionsForRank(rank);
                 for (String permission : permissions) {
                     permissible.addRawPermission(permission, true); // Use the method, not direct map put
@@ -411,15 +407,12 @@ public class RankManager {
 
     private void addInheritedPermissions(String rank, ConfigurationSection ranksSection, Set<String> permissions) {
         Rank rankObj = new Rank(rank, plugin);
-
-        // Extract permissions from the Map<String, String>
         for (Map<String, String> permissionMap : rankObj.getPermissions()) {
             if (permissionMap.containsKey("permission")) {
                 permissions.add(permissionMap.get("permission"));
             }
         }
 
-        // Add inherited permissions
         for (String inheritedRank : rankObj.getInheritance()) {
             addInheritedPermissions(inheritedRank, ranksSection, permissions);
         }
@@ -470,10 +463,6 @@ public class RankManager {
         }
     }
 
-
-
-
-
     public List<String> getAvailableRanks() {
         List<String> availableRanks = new ArrayList<>();
         ConfigurationSection ranks = ranksConfig.getConfigurationSection("ranks");
@@ -512,9 +501,9 @@ public class RankManager {
             String formattedName = CC.translate(rankColor) + player.getName();
 
             Bukkit.getScheduler().runTask(plugin, () -> {
-                player.setDisplayName(formattedName); // Display name in chat
-                player.setPlayerListName(formattedName); // Name in tab list
-                player.setCustomName(formattedName); // Name above the player's head
+                player.setDisplayName(formattedName);
+                player.setPlayerListName(formattedName);
+                player.setCustomName(formattedName);
                 player.setCustomNameVisible(true);
                 updatePlayerRank(player);
             });

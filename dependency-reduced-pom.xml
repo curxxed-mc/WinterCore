@@ -29,8 +29,8 @@
               </filters>
               <relocations>
                 <relocation>
-                  <pattern>com.zaxxer.hikari</pattern>
-                  <shadedPattern>net.curxxed.dev.wintercore.libs.hikari</shadedPattern>
+                  <pattern>org.mongodb</pattern>
+                  <shadedPattern>net.curxxed.dev.wintercore.libs.mongo</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>com.google.common</pattern>
@@ -111,12 +111,6 @@
       <artifactId>lombok</artifactId>
       <version>1.18.32</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>8.0.33</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>me.clip</groupId>

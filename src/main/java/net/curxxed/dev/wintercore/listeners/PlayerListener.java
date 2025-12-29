@@ -1,14 +1,14 @@
 package net.curxxed.dev.wintercore.listeners;
 
 import net.curxxed.dev.wintercore.client.ClientBrandCommand;
+import net.curxxed.dev.wintercore.commands.staff.FreezeCommand;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
+import net.curxxed.dev.wintercore.menus.ChatColorSelectionMenu;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.tags.TagsManager;
-import net.curxxed.dev.wintercore.menus.ChatColorSelectionMenu;
 import net.curxxed.dev.wintercore.rank.RankManager;
-import net.curxxed.dev.wintercore.commands.staff.FreezeCommand;
+import net.curxxed.dev.wintercore.tags.TagsManager;
 import net.curxxed.dev.wintercore.utils.CC;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -65,13 +65,13 @@ public class PlayerListener implements Listener {
         ClientBrandCommand.silenced.add(uuid);
         rankManager.refreshPlayerDisplay(player);
         rankManager.refreshPlayerDisplayForAll(player);
-        // Also update all online players' nametags for the joining player
         for (Player other : Bukkit.getOnlinePlayers()) {
             if (!other.getUniqueId().equals(player.getUniqueId())) {
                 rankManager.refreshPlayerDisplayForAll(other);
             }
         }
-        // Set nametag using NameTagHandler only (remove direct NameTagAdapter usage)
+
+        // Handle Nametags Initial Setup
         if (plugin.getNameTagHandler() != null) {
             if (plugin.getDisguiseRegistry().isDisguised(player)) {
                 plugin.getDisguiseRegistry().getEffectiveColor(player, c -> plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, c));
@@ -79,6 +79,8 @@ public class PlayerListener implements Listener {
                 rankManager.getColorPreference(rankManager.getRankSync(player), c -> plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, c));
             }
         }
+
+        // Handle Tab List Name
         if (plugin.getDisguiseRegistry().isDisguised(player)) {
             plugin.getDisguiseRegistry().getEffectivePrefix(player, prefix -> plugin.getDisguiseRegistry().getEffectiveColor(player, color -> {
                 if (plugin.getNameTagHandler().getNameTagAdapter() != null) {
@@ -90,38 +92,42 @@ public class PlayerListener implements Listener {
         } else {
             rankManager.setRankAboveHead(player);
         }
+
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            // Update Nametags
             if (plugin.getDisguiseRegistry().isDisguised(player)) {
-                rankManager.getDisguiseRank(player, rank -> rankManager.getColorPreference(rank, rankColor -> {
-                    rankManager.updateNameTagColor(player, rankColor);
-                    if (player.hasPermission("wintercore.staff") || player.hasPermission("wintercore.admin") || player.hasPermission("wintercore.manager") || player.isOp()) {
-                        String serverName = plugin.getConfig().getString("server-name", "hub-restricted");
-                        String last = plugin.getRedisManager().getLastServer(uuid);
-                        plugin.getRedisManager().updateLastServer(uuid, serverName);
-                        String realName = getRealName(player);
-                        if (last != null && !last.equals(serverName)) {
-                            plugin.getRedisManager().publishStaffActivity("switch", realName, rankColor.toString(), last, serverName);
-                        } else {
-                            plugin.getRedisManager().publishStaffActivity("join", realName, rankColor.toString(), "", serverName);
-                        }
-                    }
-                }));
+                // Use effective (disguised) rank color for nametags
+                rankManager.getDisguiseRank(player, rank -> rankManager.getColorPreference(rank, rankColor -> rankManager.updateNameTagColor(player, rankColor)));
             } else {
-                rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, rankColor -> {
-                    rankManager.updateNameTagColor(player, rankColor);
-                    if (player.hasPermission("wintercore.staff") || player.hasPermission("wintercore.admin") || player.hasPermission("wintercore.manager") || player.isOp()) {
-                        String serverName = plugin.getConfig().getString("server-name", "hub-restricted");
-                        String last = plugin.getRedisManager().getLastServer(uuid);
-                        plugin.getRedisManager().updateLastServer(uuid, serverName);
-                        String realName = getRealName(player);
-                        if (last != null && !last.equals(serverName)) {
-                            plugin.getRedisManager().publishStaffActivity("switch", realName, rankColor.toString(), last, serverName);
-                        } else {
-                            plugin.getRedisManager().publishStaffActivity("join", realName, rankColor.toString(), "", serverName);
-                        }
+                // Use real rank color for nametags
+                rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, rankColor -> rankManager.updateNameTagColor(player, rankColor)));
+            }
+
+            // Handle Staff Join/Switch Notifications
+            if (player.hasPermission("wintercore.staff") || player.hasPermission("wintercore.admin") || player.hasPermission("wintercore.manager") || player.isOp()) {
+                // Always fetch REAL rank for staff notifications
+                rankManager.getRankAsync(player, realRank -> rankManager.getColorPreference(realRank, realRankColor -> {
+                    String serverName = plugin.getConfig().getString("server-name", "hub-restricted");
+                    String last = plugin.getRedisManager().getLastServer(uuid);
+                    long lastSeen = plugin.getRedisManager().getLastSeen(uuid);
+                    long now = System.currentTimeMillis();
+
+                    // Update current server
+                    plugin.getRedisManager().updateLastServer(uuid, serverName);
+
+                    String realName = getRealName(player);
+
+                    // Logic: If last server exists AND is different AND last seen was < 30 seconds ago -> Switch
+                    boolean isSwitch = last != null && !last.equals(serverName) && (now - lastSeen < 30000);
+
+                    if (isSwitch) {
+                        plugin.getRedisManager().publishStaffActivity("switch", realName, realRankColor.toString(), last, serverName);
+                    } else {
+                        plugin.getRedisManager().publishStaffActivity("join", realName, realRankColor.toString(), "", serverName);
                     }
                 }));
             }
+
             if ((player.hasPermission("wintercore.admin") || player.hasPermission("wintercore.manager")) && !plugin.isPlaceholderAPIEnabled()) {
                 player.sendMessage(CC.translate("&cWarning: PlaceholderAPI is not installed on this server!"));
                 player.sendMessage(CC.translate("&ePlease install PlaceholderAPI to ensure full functionality."));
@@ -168,11 +174,16 @@ public class PlayerListener implements Listener {
         });
     }
 
-    @EventHandler
+    // Set priority to LOWEST to ensure we capture data before DisguiseEventListener cleans it up
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerQuit(PlayerQuitEvent event) {
         event.setQuitMessage(null);
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
+
+        // Capture the REAL name immediately, before disguise data is cleared by other listeners
+        final String realName = getRealName(player);
+
         // Reset nametag using NameTagHandler only
         if (plugin.getNameTagHandler() != null) {
             plugin.getNameTagHandler().getNameTagAdapter().resetNameTag(player);
@@ -181,11 +192,13 @@ public class PlayerListener implements Listener {
 
             boolean isPending = plugin.getRedisManager().isStillPendingSwitch(uuid);
 
+            // Mark last seen time so the next server knows when we left
+            plugin.getRedisManager().updateLastSeen(uuid);
+
             if (isPending) {
                 plugin.getRedisManager().clearPendingSwitch(uuid);
                 return;
             }
-
 
             if (player.hasPermission("WinterCore.staff") || player.hasPermission("WinterCore.admin") || player.hasPermission("WinterCore.manager")) {
                 rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, rankColor -> {
@@ -194,12 +207,14 @@ public class PlayerListener implements Listener {
 
                     plugin.getRedisManager().publishStaffActivity(
                             "quit",
-                            player.getName(),
+                            realName, // Use the captured real name
                             rankColor.toString(),
                             plugin.getConfig().getString("server-name"),
                             lastServer
                     );
-                    plugin.getRedisManager().removeLastServer(player.getUniqueId());
+
+                    // Do NOT remove last server here. We need it for switch detection on the next server.
+                    // plugin.getRedisManager().removeLastServer(player.getUniqueId());
                 }));
             }
         }, 2L);
@@ -209,10 +224,9 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onAsyncPlayerChat(AsyncPlayerChatEvent event) {
         if (event.isCancelled()) return;
+        event.setCancelled(true);
         Player player = event.getPlayer();
         String message = event.getMessage();
-        // Always cancel the event to prevent default chat
-        event.setCancelled(true);
         AreConditionsMet(player, isMuted -> {
             if (isMuted) {
                 return;
@@ -239,33 +253,41 @@ public class PlayerListener implements Listener {
                 } else {
                     tagPrefix = "";
                 }
+
+                // Helper consumer to avoid code duplication
+                java.util.function.BiConsumer<String, String> sendMessage = (prefix, color) -> {
+                    final String formattedPrefix = prefix.isEmpty() ? "" : prefix + " ";
+                    final String formattedName = formattedPrefix + CC.translate(color) + player.getName() + ChatColor.RESET + tagPrefix;
+                    final String colorCode = rankManager.getMessageColorPreference(player).toString();
+                    final ChatColor messageColor = ChatColor.getByChar(colorCode.replace("&", "").charAt(0));
+                    final String formattedMessage = formattedName + ChatColor.WHITE + ": " + messageColor + message;
+
+                    // Log to console/server log
+                    Bukkit.getConsoleSender().sendMessage(formattedMessage);
+
+                    // Broadcast directly (AsyncPlayerChatEvent is already async, no need for runTask)
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        p.sendMessage(formattedMessage);
+                    }
+                };
+
                 // Check if disguised
                 if (plugin.getDisguiseRegistry().isDisguised(player)) {
-                    plugin.getDisguiseRegistry().getEffectivePrefix(player, prefix -> plugin.getDisguiseRegistry().getEffectiveColor(player, color -> rankManager.getDisguiseRank(player, disguiseRank -> rankManager.getColorPreference(disguiseRank, nameColor -> {
-                        final String formattedPrefix = prefix.isEmpty() ? "" : prefix + " ";
-                        final String formattedName = formattedPrefix + CC.translate(nameColor) + player.getName() + ChatColor.RESET + tagPrefix;
-                        final String colorCode = rankManager.getMessageColorPreference(player).toString();
-                        final ChatColor messageColor = ChatColor.getByChar(colorCode.replace("&", "").charAt(0));
-                        final String formattedMessage = formattedName + ChatColor.WHITE + ": " + messageColor + message;
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            for (Player p : Bukkit.getOnlinePlayers()) {
-                                p.sendMessage(formattedMessage);
-                            }
-                        });
-                    }))));
+                    plugin.getDisguiseRegistry().getEffectivePrefix(player, prefix ->
+                            plugin.getDisguiseRegistry().getEffectiveColor(player, color ->
+                                    rankManager.getDisguiseRank(player, disguiseRank ->
+                                            rankManager.getColorPreference(disguiseRank, nameColor ->
+                                                    sendMessage.accept(prefix, nameColor)
+                                            )
+                                    )
+                            )
+                    );
                 } else {
-                    plugin.getDisguiseRegistry().getEffectivePrefix(player, prefix -> plugin.getDisguiseRegistry().getEffectiveColor(player, color -> {
-                        final String formattedPrefix = prefix.isEmpty() ? "" : prefix + " ";
-                        final String formattedName = formattedPrefix + CC.translate(color) + player.getName() + ChatColor.RESET + tagPrefix;
-                        final String colorCode = rankManager.getMessageColorPreference(player).toString();
-                        final ChatColor messageColor = ChatColor.getByChar(colorCode.replace("&", "").charAt(0));
-                        final String formattedMessage = formattedName + ChatColor.WHITE + ": " + messageColor + message;
-                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                            for (Player p : Bukkit.getOnlinePlayers()) {
-                                p.sendMessage(formattedMessage);
-                            }
-                        });
-                    }));
+                    plugin.getDisguiseRegistry().getEffectivePrefix(player, prefix ->
+                            plugin.getDisguiseRegistry().getEffectiveColor(player, color ->
+                                    sendMessage.accept(prefix, color)
+                            )
+                    );
                 }
             });
         });

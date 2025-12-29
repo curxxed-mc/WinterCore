@@ -128,34 +128,34 @@ public class RankMenu implements Listener {
     // Opens the duration selection GUI
     private void openDurationGUI(Player player, GrantState state) {
         Inventory gui = org.bukkit.Bukkit.createInventory(null, 27, "Set duration for " + org.bukkit.Bukkit.getOfflinePlayer(state.targetUUID).getName());
-        // Left: +1h, +1d, +1w, +1m
-        gui.setItem(0, createButton(Material.WATCH, CC.Green + "+1 Hour"));
-        gui.setItem(1, createButton(Material.WATCH, CC.Green + "+1 Day"));
-        gui.setItem(2, createButton(Material.WATCH, CC.Green + "+1 Week"));
-        gui.setItem(3, createButton(Material.WATCH, CC.Green + "+1 Month"));
+        // Left: +1h, +1d, +1m
+        gui.setItem(0, createButton(Material.WATCH, CC.translate("&a+1 Hour")));
+        gui.setItem(1, createButton(Material.WATCH, CC.translate("&a+1 Day")));
+        gui.setItem(2, createButton(Material.WATCH, CC.translate("&a+1 Week")));
+        gui.setItem(3, createButton(Material.WATCH, CC.translate("&a+1 Month")));
         // Right: -1h, -1d, -1w, -1m
-        gui.setItem(5, createButton(Material.WATCH, CC.Red + "-1 Hour"));
-        gui.setItem(6, createButton(Material.WATCH, CC.Red + "-1 Day"));
-        gui.setItem(7, createButton(Material.WATCH, CC.Red + "-1 Week"));
-        gui.setItem(8, createButton(Material.WATCH, CC.Red + "-1 Month"));
+        gui.setItem(5, createButton(Material.WATCH, CC.translate("&c-1 Hour")));
+        gui.setItem(6, createButton(Material.WATCH, CC.translate("&c-1 Day")));
+        gui.setItem(7, createButton(Material.WATCH, CC.translate("&c-1 Week")));
+        gui.setItem(8, createButton(Material.WATCH, CC.translate("&c-1 Month")));
         // Center: Permanent
-        gui.setItem(13, createButton(Material.BEDROCK, CC.Gold + "Permanent"));
+        gui.setItem(13, createButton(Material.BEDROCK, CC.translate("&6Permanent")));
         // Info: current duration
         ItemStack info = new ItemStack(Material.PAPER);
         ItemMeta meta = info.getItemMeta();
-        meta.setDisplayName(CC.Aqua + "Current Duration: " + (state.permanent ? CC.Gold + "Permanent" : CC.Yellow + formatDuration(state.durationMillis)));
+        meta.setDisplayName(CC.translate("&bCurrent Duration: " + (state.permanent ? "&6Permanent" : "&e" + formatDuration(state.durationMillis))));
         info.setItemMeta(meta);
         gui.setItem(22, info);
         // Continue button
         ItemStack cont = new ItemStack(Material.WOOL, 1, (short) 5);
         ItemMeta contMeta = cont.getItemMeta();
-        contMeta.setDisplayName(CC.Green + "Continue");
+        contMeta.setDisplayName(CC.translate("&aContinue"));
         cont.setItemMeta(contMeta);
         gui.setItem(26, cont);
         // Cancel button
         ItemStack cancel = new ItemStack(Material.BARRIER);
         ItemMeta cancelMeta = cancel.getItemMeta();
-        cancelMeta.setDisplayName(CC.Red + "Cancel");
+        cancelMeta.setDisplayName(CC.translate("&cCancel"));
         cancel.setItemMeta(cancelMeta);
         gui.setItem(18, cancel);
         player.openInventory(gui);

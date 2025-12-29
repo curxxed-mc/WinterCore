@@ -23,7 +23,7 @@ public class WinterCorePermissibleInjector {
 
     static {
         Field humanEntityPermissibleField = null;
-        Field permissibleBaseAttachmentsField = null;
+        Field permissibleBaseAttachmentsField;
         try {
             String version = Utilities.getServerVersion();
             String className = "org.bukkit.craftbukkit." + version + ".entity.CraftHumanEntity";

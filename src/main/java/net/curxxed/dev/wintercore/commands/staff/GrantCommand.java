@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.menus.RankMenu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
@@ -29,25 +29,28 @@ import java.util.UUID;
  *  </p>
  *  @see RankMenu
  */
-public class GrantCommand extends BaseCommand {
-
-    private final WinterCore plugin;
-
-    public GrantCommand(WinterCore plugin) {
-        this.plugin = plugin;
-    }
-
-    @Command(
-            name = "grant",
+@CommandInfo(
+        name = "grant",
             permission = "WinterCore.commands.grant",
             description = "Open the rank selection GUI for target player.",
             aliases = {"setrank"},
             usage = "/grant <player>",
             inGameOnly = true
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class GrantCommand extends BaseCommand {
+
+    private final WinterCore plugin;
+
+    public GrantCommand(WinterCore plugin) {
+        super(plugin);
+        this.plugin = plugin;
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player sender = commandArgs.getPlayer();
-        String targetName = commandArgs.getArgs(0);
+        String targetName = commandArgs.getArgs()[0];
         UUID targetUUID = Bukkit.getOfflinePlayer(targetName).getUniqueId();
         plugin.getRankManager().setTargetPlayerUUID(sender.getUniqueId(), targetUUID);
         openRankGUI(sender, targetName);
@@ -97,12 +100,12 @@ public class GrantCommand extends BaseCommand {
         ItemMeta meta = rankItem.getItemMeta();
         meta.setDisplayName(translatedColorCode + rank);
         List<String> lore = new ArrayList<>();
-        lore.add(CC.Gray + "§m------------------------");
-        lore.add(CC.Gold + "Preview:");
+        lore.add(CC.translate("&7&m------------------------"));
+        lore.add(CC.translate("&6Preview:"));
         String translatedPrefix = CC.translate(prefix);
-        lore.add(translatedPrefix + translatedColorCode + targetName + CC.White + ": " + CC.Gray + "Hi! This is what your message would look like.");
-        lore.add(CC.Gray + "§m------------------------");
-        lore.add(CC.Green + "Click to Grant this Rank to " + CC.Aqua + targetName + CC.Green + ".");
+        lore.add(translatedPrefix + translatedColorCode + targetName + CC.translate("&f") + ": " + CC.translate("&7") + "Hi! This is what your message would look like.");
+        lore.add(CC.translate("&7&m------------------------"));
+        lore.add(CC.translate("&aClick to Grant this Rank to &b" + targetName + "&a."));
         meta.setLore(lore);
         rankItem.setItemMeta(meta);
 

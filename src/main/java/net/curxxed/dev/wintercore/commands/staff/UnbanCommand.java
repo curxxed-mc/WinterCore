@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
@@ -10,23 +10,26 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import java.util.UUID;
 
-public class UnbanCommand extends BaseCommand {
-    private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
-
-    public UnbanCommand(WinterCore plugin) {
-        this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
-    }
-
-    @Command(
+@CommandInfo(
         name = "unban",
         permission = "WinterCore.unban",
         description = "Unban a player.",
         usage = "/unban <player>",
         inGameOnly = false
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class UnbanCommand extends BaseCommand {
+    private final WinterCore plugin;
+    private final DatabaseManager databaseManager;
+
+    public UnbanCommand(WinterCore plugin) {
+        super(plugin);
+        this.plugin = plugin;
+        this.databaseManager = plugin.getDatabaseManager();
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         if (!commandArgs.getSender().hasPermission("WinterCore.unban")) {
             commandArgs.getSender().sendMessage(CC.translate("&cYou do not have permission to unban players."));
             return;

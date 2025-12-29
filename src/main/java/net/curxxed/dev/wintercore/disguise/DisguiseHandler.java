@@ -2,12 +2,16 @@ package net.curxxed.dev.wintercore.disguise;
 
 import net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import net.curxxed.dev.wintercore.utils.SkinFetcher;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -17,6 +21,7 @@ import java.awt.image.BufferedImage;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -152,62 +157,62 @@ public abstract class DisguiseHandler {
     public void openRankSelectionGUI(Player player, String targetName) {
         Inventory gui = Bukkit.createInventory(null, 36, "Select disguise rank");
         List<String> ranks = plugin.getRankManager().getSortedRanks();
-        org.bukkit.configuration.ConfigurationSection ranksSection = plugin.getRankManager().getRanksSection();
+        ConfigurationSection ranksSection = plugin.getRankManager().getRanksSection();
         int slot = 0;
         for (String rank : ranks) {
             if (rank == null || rank.isEmpty()) continue;
             String colorCode = ranksSection.getString(rank + ".name-color", "&f");
-            String translatedColorCode = net.curxxed.dev.wintercore.utils.CC.translate(colorCode);
+            String translatedColorCode = CC.translate(colorCode);
             // Remove only italics from color code for preview, keep all other formats
             String cleanColorCode = colorCode.replaceAll("(?i)&o|§o", "");
-            String translatedColorCodeNoItalic = net.curxxed.dev.wintercore.utils.CC.translate(cleanColorCode);
+            String translatedColorCodeNoItalic = CC.translate(cleanColorCode);
             // Use translatedColorCodeNoItalic for the prefix preview
             String prefix = ranksSection.getString(rank + ".prefix", "");
-            org.bukkit.DyeColor dyeColor = getDyeColorFromChatColor(org.bukkit.ChatColor.getByChar(colorCode.replace("&", "").charAt(0)));
-            org.bukkit.inventory.ItemStack rankItem;
-            if (org.bukkit.ChatColor.getByChar(colorCode.replace("&", "").charAt(0)) == org.bukkit.ChatColor.DARK_RED) {
-                rankItem = new org.bukkit.inventory.ItemStack(org.bukkit.Material.STAINED_CLAY, 1, (short) 14);
+            DyeColor dyeColor = getDyeColorFromChatColor(ChatColor.getByChar(colorCode.replace("&", "").charAt(0)));
+            ItemStack rankItem;
+            if (ChatColor.getByChar(colorCode.replace("&", "").charAt(0)) == ChatColor.DARK_RED) {
+                rankItem = new ItemStack(Material.STAINED_CLAY, 1, (short) 14);
             } else {
-                rankItem = new org.bukkit.inventory.ItemStack(org.bukkit.Material.WOOL, 1, dyeColor.getWoolData());
+                rankItem = new ItemStack(Material.WOOL, 1, dyeColor.getWoolData());
             }
-            org.bukkit.inventory.meta.ItemMeta meta = rankItem.getItemMeta();
+            ItemMeta meta = rankItem.getItemMeta();
             meta.setDisplayName(translatedColorCode + rank);
-            java.util.List<String> lore = new java.util.ArrayList<>();
-            lore.add(net.curxxed.dev.wintercore.utils.CC.Gray + "§m------------------------");
-            lore.add(net.curxxed.dev.wintercore.utils.CC.Gold + "Prefix: " + net.curxxed.dev.wintercore.utils.CC.White + translatedColorCodeNoItalic + net.curxxed.dev.wintercore.utils.CC.translate(prefix));
-            lore.add(net.curxxed.dev.wintercore.utils.CC.Gray + "§m------------------------");
-            lore.add(net.curxxed.dev.wintercore.utils.CC.Green + "Click to Disguise as " + net.curxxed.dev.wintercore.utils.CC.Aqua + targetName + net.curxxed.dev.wintercore.utils.CC.Green + ".");
+            List<String> lore = new ArrayList<>();
+            lore.add(CC.translate("&7") + "§m------------------------");
+            lore.add(CC.translate("&6") + "Prefix: " + CC.translate("&f") + translatedColorCodeNoItalic + CC.translate(prefix));
+            lore.add(CC.translate("&7") + "§m------------------------");
+            lore.add(CC.translate("&a") + "Click to Disguise as " + CC.translate("&b") + targetName + CC.translate("&a") + ".");
             meta.setLore(lore);
             rankItem.setItemMeta(meta);
             gui.setItem(slot++, rankItem);
         }
-        org.bukkit.inventory.ItemStack cancelItem = new org.bukkit.inventory.ItemStack(org.bukkit.Material.BARRIER);
-        org.bukkit.inventory.meta.ItemMeta cancelMeta = cancelItem.getItemMeta();
-        cancelMeta.setDisplayName(net.curxxed.dev.wintercore.utils.CC.translate("&cCancel"));
+        ItemStack cancelItem = new ItemStack(Material.BARRIER);
+        ItemMeta cancelMeta = cancelItem.getItemMeta();
+        cancelMeta.setDisplayName(CC.translate("&cCancel"));
         cancelItem.setItemMeta(cancelMeta);
         gui.setItem(35, cancelItem);
         player.openInventory(gui);
     }
 
-    private org.bukkit.DyeColor getDyeColorFromChatColor(org.bukkit.ChatColor chatColor) {
+    private DyeColor getDyeColorFromChatColor(ChatColor chatColor) {
         switch (chatColor) {
-            case BLACK: return org.bukkit.DyeColor.BLACK;
-            case DARK_BLUE: return org.bukkit.DyeColor.BLUE;
-            case DARK_GREEN: return org.bukkit.DyeColor.GREEN;
-            case DARK_AQUA: return org.bukkit.DyeColor.CYAN;
-            case DARK_RED: return org.bukkit.DyeColor.RED;
-            case DARK_PURPLE: return org.bukkit.DyeColor.PURPLE;
-            case GOLD: return org.bukkit.DyeColor.ORANGE;
-            case GRAY: return org.bukkit.DyeColor.SILVER;
-            case DARK_GRAY: return org.bukkit.DyeColor.GRAY;
-            case BLUE: return org.bukkit.DyeColor.LIGHT_BLUE;
-            case GREEN: return org.bukkit.DyeColor.LIME;
-            case AQUA: return org.bukkit.DyeColor.LIGHT_BLUE;
-            case RED: return org.bukkit.DyeColor.RED;
-            case LIGHT_PURPLE: return org.bukkit.DyeColor.PINK;
-            case YELLOW: return org.bukkit.DyeColor.YELLOW;
-            case WHITE: return org.bukkit.DyeColor.WHITE;
-            default: return org.bukkit.DyeColor.WHITE;
+            case BLACK: return DyeColor.BLACK;
+            case DARK_BLUE: return DyeColor.BLUE;
+            case DARK_GREEN: return DyeColor.GREEN;
+            case DARK_AQUA: return DyeColor.CYAN;
+            case DARK_RED: return DyeColor.RED;
+            case DARK_PURPLE: return DyeColor.PURPLE;
+            case GOLD: return DyeColor.ORANGE;
+            case GRAY: return DyeColor.SILVER;
+            case DARK_GRAY: return DyeColor.GRAY;
+            case BLUE: return DyeColor.LIGHT_BLUE;
+            case GREEN: return DyeColor.LIME;
+            case AQUA: return DyeColor.LIGHT_BLUE;
+            case RED: return DyeColor.RED;
+            case LIGHT_PURPLE: return DyeColor.PINK;
+            case YELLOW: return DyeColor.YELLOW;
+            case WHITE: return DyeColor.WHITE;
+            default: return DyeColor.WHITE;
         }
     }
 }

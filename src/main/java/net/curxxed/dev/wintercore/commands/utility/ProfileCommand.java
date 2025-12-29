@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.staff.VanishCommand;
 import net.curxxed.dev.wintercore.database.RedisManager;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
@@ -20,6 +20,13 @@ import org.bukkit.inventory.meta.SkullMeta;
 import java.lang.reflect.Field;
 import java.util.*;
 
+@CommandInfo(
+        name = "profile",
+            description = "View your or another player's profile.",
+            usage = "/profile [player]",
+            inGameOnly = true
+    
+    )
 public class ProfileCommand extends BaseCommand implements Listener {
 
     private final WinterCore plugin;
@@ -28,18 +35,14 @@ public class ProfileCommand extends BaseCommand implements Listener {
     private final Set<UUID> clickCooldown = new HashSet<>();
 
     public ProfileCommand(WinterCore plugin, RedisManager redis) {
+        super(plugin);
         this.plugin = plugin;
         this.rankManager = plugin.getRankManager();
         this.redis = redis;
     }
 
-    @Command(
-            name = "profile",
-            description = "View your or another player's profile.",
-            usage = "/profile [player]",
-            inGameOnly = true
-    )
-    public void onCommand(CommandArgs commandArgs) {
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
 

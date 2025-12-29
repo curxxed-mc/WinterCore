@@ -1,8 +1,0 @@
-  title: "&6Hub"
-  lines:
-  - "&7&m----------------"           
-  - "· &6Rank: %wintercore_player_rank%"
-  - "· &6Players: &f%bungee_total%"
-  - " "                                                             
-  - "&6potion.lol"                  
-  - "&7&m----------------&f"       

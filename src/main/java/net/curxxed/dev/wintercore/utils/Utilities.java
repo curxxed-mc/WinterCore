@@ -5,21 +5,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Utilities {
 
     private static final String SERVER_VERSION;
     public static final boolean IS_LEGACY;
-    private static final Map<Character, String> COLOR_CODE_TO_ENUM_NAME = new HashMap<>();
-    private static final Map<Character, String> FORMAT_CODE_TO_ENUM_NAME = new HashMap<>();
-    private static Method getPingMethod = null;
     private static Field pingField = null;
-    public static final String PING_ERROR = CC.translate("&cError while getting ping, either your version is not supported or there is an exception!");
 
     static {
         SERVER_VERSION = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
@@ -32,6 +28,11 @@ public class Utilities {
 
     public static double[] getTPS() {
         try {
+            try {
+                Method paperGetTPS = Bukkit.getServer().getClass().getMethod("getTPS");
+                return (double[]) paperGetTPS.invoke(Bukkit.getServer());
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
+
             Object minecraftServer;
             if (IS_LEGACY) {
                 minecraftServer = Class.forName("net.minecraft.server." + SERVER_VERSION + ".MinecraftServer")
@@ -40,10 +41,12 @@ public class Utilities {
                 minecraftServer = Class.forName("net.minecraft.server.MinecraftServer")
                         .getMethod("getServer").invoke(null);
             }
-            return (double[]) minecraftServer.getClass().getField("recentTps").get(minecraftServer);
+
+            Field tpsField = minecraftServer.getClass().getField("recentTps");
+            return (double[]) tpsField.get(minecraftServer);
+
         } catch (Exception e) {
-            e.printStackTrace();
-            return new double[]{0.0, 0.0, 0.0};
+           return new double[] {-1,-1,-1};
         }
     }
 
@@ -55,7 +58,7 @@ public class Utilities {
         }
     }
 
-    public static Class<?> getNMSClass(String name) throws ClassNotFoundException {
+    /*public static Class<?> getNMSClass(String name) throws ClassNotFoundException {
         if (IS_LEGACY) {
             return Class.forName("net.minecraft.server." + SERVER_VERSION + "." + name);
         } else {
@@ -84,7 +87,7 @@ public class Utilities {
                     throw new ClassNotFoundException("Unsupported class for modern NMS: " + name);
             }
         }
-    }
+    }*/ //commented out as not used currently
 
 
     public static Class<?> getCraftBukkitClass(String path) throws ClassNotFoundException {
@@ -97,7 +100,7 @@ public class Utilities {
 
     public static Object getEntityPlayer(Player player) throws Exception {
         Class<?> craftPlayer = getCraftBukkitClass("entity.CraftPlayer");
-        Method getHandle = craftPlayer.getMethod("getHandle");
+        Method getHandle = craftPlayer.getMethod("getHandle"); // convert Bukkit Player to EntityPlayer
         return getHandle.invoke(craftPlayer.cast(player));
     }
 
@@ -113,18 +116,9 @@ public class Utilities {
                 }
                 return pingField.getInt(entityPlayer);
             } else {
-                if (getPingMethod == null) {
-                    try {
-                        getPingMethod = entityPlayer.getClass().getMethod("e_");
-                    } catch (NoSuchMethodException e) {
-                        try {
-                            getPingMethod = entityPlayer.getClass().getMethod("getLatency");
-                        } catch (NoSuchMethodException ex) {
-                            getPingMethod = entityPlayer.getClass().getMethod("getPing");
-                        }
-                    }
-                }
-                return (int) getPingMethod.invoke(entityPlayer);
+                //noinspection JavaReflectionMemberAccess -- modern versions have a getPing() method
+                Method getPing = Player.class.getMethod("getPing");
+                return (int) getPing.invoke(player);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -133,11 +127,7 @@ public class Utilities {
     }
 
     public static @NotNull List<Player> getOnlinePlayers() {
-        List<Player> players = new ArrayList<>();
-        for (Player player : Bukkit.getServer().getOnlinePlayers()) {
-            players.add(player);
-        }
-        return players;
+        return new ArrayList<>(Bukkit.getServer().getOnlinePlayers());
     }
 
     public static void logBootBanner() {
@@ -162,55 +152,7 @@ public class Utilities {
       Bukkit.getConsoleSender().sendMessage(CC.translate(message));
   }
 
-    public static void stopServerSmart() {
-        // Set shutdown flag
-        net.curxxed.dev.wintercore.plugin.WinterCore.isShuttingDown = true;
-
-        String nmsPackage = org.bukkit.Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-        Bukkit.getLogger().info("[WinterCore] stopServerSmart() called. Attempting shutdown...");
-        boolean instanceStopAttempted = false;
-        try {
-            boolean isPaper = false;
-            try { Class.forName("co.aikar.timings.Timings"); isPaper = true; } catch (ClassNotFoundException ignored) {}
-            Class<?> mcServerClass = Class.forName("net.minecraft.server." + nmsPackage + ".MinecraftServer");
-            if (isPaper) {
-                try {
-                    Bukkit.getLogger().info("[WinterCore] Detected PaperSpigot or fork. Trying MinecraftServer.stopServer()...");
-                    mcServerClass.getMethod("stopServer").invoke(null);
-                    Bukkit.getLogger().info("[WinterCore] Called MinecraftServer.stopServer() (Paper) - but will also call instance stop() as fallback.");
-                } catch (NoSuchMethodException e) {
-                    Bukkit.getLogger().warning("[WinterCore] MinecraftServer.stopServer() not found. Trying SpigotTimings.stopServer()...");
-                    try {
-                        Class<?> timingsClass = Class.forName("co.aikar.timings.SpigotTimings");
-                        timingsClass.getMethod("stopServer").invoke(null);
-                        Bukkit.getLogger().info("[WinterCore] Called SpigotTimings.stopServer() - but will also call instance stop() as fallback.");
-                    } catch (Exception e2) {
-                        Bukkit.getLogger().severe("[WinterCore] Exception calling SpigotTimings.stopServer(): " + e2.getMessage());
-                    }
-                } catch (Exception e) {
-                    Bukkit.getLogger().severe("[WinterCore] Exception calling MinecraftServer.stopServer(): " + e.getMessage());
-                }
-            }
-            // Always call instance stop() as a final fallback
-            try {
-                Bukkit.getLogger().info("[WinterCore] Calling MinecraftServer.getServer().stop() (instance method) as final fallback.");
-                Object server = mcServerClass.getMethod("getServer").invoke(null);
-                mcServerClass.getMethod("stop").invoke(server);
-                Bukkit.getLogger().info("[WinterCore] Called MinecraftServer.getServer().stop() successfully.");
-                Bukkit.shutdown();
-                instanceStopAttempted = true;
-            } catch (Exception e) {
-                Bukkit.getLogger().severe("[WinterCore] Exception calling instance stop(): " + e.getMessage());
-                e.printStackTrace();
-            }
-        } catch (Exception e) {
-            Bukkit.getLogger().severe("[WinterCore] Exception in stopServerSmart(): " + e.getMessage());
-            e.printStackTrace();
-        }
-        // As a last resort, force exit if nothing worked
-        if (!instanceStopAttempted) {
-            Bukkit.getLogger().severe("[WinterCore] Server did not shut down as expected. Forcing System.exit(0)");
-            System.exit(0);
-        }
+    public static void stop() {
+        Bukkit.shutdown();
     }
 }

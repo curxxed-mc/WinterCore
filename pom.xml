@@ -75,21 +75,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>4.0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.curxxed-mc</groupId>
-            <artifactId>CommandAPI</artifactId>
-            <version>1.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.33</version>
-            <scope>compile</scope>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>3.12.14</version>
         </dependency>
         <dependency>
             <groupId>me.clip</groupId>
@@ -164,8 +152,8 @@
                             </filters>
                             <relocations>
                                 <relocation>
-                                    <pattern>com.zaxxer.hikari</pattern>
-                                    <shadedPattern>net.curxxed.dev.wintercore.libs.hikari</shadedPattern>
+                                    <pattern>org.mongodb</pattern>
+                                    <shadedPattern>net.curxxed.dev.wintercore.libs.mongo</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.google.common</pattern>

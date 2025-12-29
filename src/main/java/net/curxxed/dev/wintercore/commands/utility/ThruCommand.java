@@ -1,24 +1,31 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
-public class ThruCommand extends BaseCommand {
-
-    @Command(
-            name = "thru",
+@CommandInfo(
+        name = "thru",
             permission = "WinterCore.thru",
             description = "Teleport through the block you are facing.",
             usage = "/thru",
             inGameOnly = true
+    
     )
-    public void onCommand(CommandArgs commandArgs) {
+public class ThruCommand extends BaseCommand {
+
+    public ThruCommand(WinterCore plugin) {
+        super(plugin);
+    }
+
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         BlockIterator iterator = new BlockIterator(player, 5);
         while (iterator.hasNext()) {

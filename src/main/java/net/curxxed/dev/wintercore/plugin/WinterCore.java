@@ -1,10 +1,10 @@
 package net.curxxed.dev.wintercore.plugin;
 
 import com.google.gson.Gson;
-import net.curxxed.dev.CommandAPI.CommandManager;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.var;
+import net.curxxed.dev.wintercore.commands.api.CommandHandler;
 import net.curxxed.dev.wintercore.nametags.NameTagHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -37,6 +37,7 @@ import net.curxxed.dev.wintercore.placeholders.*;
 import net.curxxed.dev.wintercore.utils.*;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.*;
 
 @Getter
@@ -67,34 +68,16 @@ public final class WinterCore extends JavaPlugin {
     private NameTagHandler nameTagHandler;
     private DisguiseEventListener disguiseEventListener;
     private PlayerListener playerListener = new PlayerListener(this, tagsManager);
-    private FreezeListener freezeListener;
+    private FreezeListener freezeListener = new FreezeListener(playerListener);
     private StaffModeManager staffModeManager;
     private ReachListener reachListener;
     private RankChangeEvent rankChangeEvent;
     private DisguiseHandler disguiseHandler;
     private RankMenu rankMenu;
+    private CommandHandler commandHandler;
 
     @Override
     public void onEnable() {
-        if (Bukkit.getPluginManager().getPlugin("FastBoard") != null) {
-            Utilities.log("&4SERVER IS SHUTTING DOWN DUE TO HIDEOUS PLUGIN DETECTION BEING TRIGGERED! PLUGIN DETECTED: &cFastBoard");
-            Utilities.log("&aGo fuck yourself &4FastBoard&a, use &bWinterScoreboard instead &c<3");
-            Utilities.stopServerSmart();
-            return;
-        }
-        if (Bukkit.getPluginManager().getPlugin("SpawnHub") != null) {
-            try {
-                Class.forName("net.curxxed.dev.spawnhub.plugin.SpawnHub");
-                SpawnHubDetected = true;
-                Utilities.log("&bSpawnHub found! Great choice &c<3");
-            } catch (ClassNotFoundException e) {
-                Utilities.log("&4SpawnHub plugin detected, but required class net.curxxed.dev.spawnhub.plugin.SpawnHub is missing! Stopping server.");
-                Utilities.stopServerSmart();
-                return;
-            }
-        }
-
-        new CommandManager(this);
         long start = System.currentTimeMillis();
         loadRanksFile();
         saveDefaultConfig();
@@ -122,7 +105,6 @@ public final class WinterCore extends JavaPlugin {
             Utilities.log("&bPlaceholderAPI successfully registered.");
         }
 
-        // On startup: If no server:* keys are present, delete all disguise:* keys (crash/force-kill cleanup)
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(10);
         poolConfig.setMaxIdle(5);
@@ -175,6 +157,10 @@ public final class WinterCore extends JavaPlugin {
         this.tagsManager = new TagsManager(this);
         this.tagsGUI = new TagsGUI(tagsManager);
         this.disguiseEventListener = new DisguiseEventListener(this, (DefaultDisguiseHandler) disguiseHandler);
+
+        // Initialize command handler before registering commands
+        this.commandHandler = new CommandHandler(this);
+
         registerListeners();
         registerCommands();
         registerBungee();
@@ -207,79 +193,80 @@ public final class WinterCore extends JavaPlugin {
         pm.registerEvents(tagsGUI, this);
         pm.registerEvents(this.disguiseEventListener, this);
         pm.registerEvents(new HistoryCommand(this), this);
+        pm.registerEvents(new BanList(this), this);
     }
 
     private void registerCommands() {
-        new CommandManager(this);
-        if (freezeListener == null) {
-            freezeListener = new FreezeListener(playerListener);
-        }
-        new FreezeCommand(freezeListener);
-        new ThruCommand();
-        new Fly();
-        new TrollCommand(this, reachListener);
-        new InvSeeCommand();
-        new Feed();
-        new ClearChat();
-        new ChatColorSelectionMenu(this);
-        new gmc(staffModeManager);
-        new gma(staffModeManager);
-        new gms(staffModeManager);
-        new gmsp(staffModeManager);
-        new DiscordCommand();
-        new Heal();
-        new GrantCommand(this);
-        new ManagePermissionCommand(this);
-        new ReloadConfig(this);
-        new ListCommand(this, rankManager);
-        new VanishCommand(this);
-        new ReportCommand(this, tagsManager);
-        new StaffChatCommand(this, playerListener);
-        new AdminChatCommand(this, playerListener);
-        new ManagerChatCommand(this, playerListener);
-        new AboutCommand(this);
-        new MuteCommand(this);
-        new KickCommand(this);
-        new BanCommand(this);
-        new WarningCommand(this);
-        new UnmuteCommand(this);
-        new HistoryCommand(this);
-        new FixCommand(this);
-        new MoreCommand(this);
-        new EnchantCommand();
-        new PingCommand();
-        new MessageCommand(this);
-        new SpeedCommand();
-        new ClearEffectsCommand();
-        new ProfileCommand(this, getRedisManager());
-        new ServerManagerCommand(this);
-        new JumpToPlayer();
-        new StaffListCommand(this);
-        new StaffModeCommand(this, staffModeManager);
-        new idontknowwhatthisisdontlook();
-        new RankCommand(this, RankManager.getInstance());
-        new CheckNMS();
-        new SudoCommand();
-        new UnbanCommand(this);
-        new ClientBrandCommand(this);
-        new TagsCommand(tagsGUI);
-        new DisguiseCommand(disguiseHandler);
-        new UnDisguiseCommand(disguiseHandler);
-        new ReplyCommand(this);
-        new AltsCommand(this);
+        // Commands that require additional constructor args or implement Listener are registered as instances
+        commandHandler.register(new FreezeCommand(freezeListener, this));
+        commandHandler.register(ThruCommand.class);
+        commandHandler.register(Fly.class);
+        commandHandler.register(new TrollCommand(this, reachListener));
+        commandHandler.register(InvSeeCommand.class);
+        commandHandler.register(Feed.class);
+        commandHandler.register(ClearChat.class);
+        // ChatColorSelectionMenu implements Listener - create single instance and register for both events and command
+        ChatColorSelectionMenu chatColor = new ChatColorSelectionMenu(this);
+        getServer().getPluginManager().registerEvents(chatColor, this);
+        commandHandler.register(chatColor);
+        commandHandler.register(new GameModeCommand(this, staffModeManager));
+        commandHandler.register(DiscordCommand.class);
+        commandHandler.register(Heal.class);
+        commandHandler.register(GrantCommand.class);
+        commandHandler.register(ManagePermissionCommand.class);
+        commandHandler.register(ReloadConfig.class);
+        commandHandler.register(new ListCommand(this, rankManager));
+        commandHandler.register(VanishCommand.class);
+        commandHandler.register(new ReportCommand(this, tagsManager));
+        commandHandler.register(new StaffChatCommand(this, playerListener));
+        commandHandler.register(new AdminChatCommand(this, playerListener));
+        commandHandler.register(new ManagerChatCommand(this, playerListener));
+        commandHandler.register(AboutCommand.class);
+        commandHandler.register(MuteCommand.class);
+        commandHandler.register(KickCommand.class);
+        commandHandler.register(BanCommand.class);
+        commandHandler.register(WarningCommand.class);
+        commandHandler.register(UnmuteCommand.class);
+        // HistoryCommand implements Listener - reuse single instance
+        HistoryCommand history = new HistoryCommand(this);
+        getServer().getPluginManager().registerEvents(history, this);
+        commandHandler.register(history);
+        commandHandler.register(FixCommand.class);
+        commandHandler.register(MoreCommand.class);
+        commandHandler.register(EnchantCommand.class);
+        commandHandler.register(PingCommand.class);
+        commandHandler.register(MessageCommand.class);
+        commandHandler.register(SpeedCommand.class);
+        commandHandler.register(ClearEffectsCommand.class);
+        // ProfileCommand implements Listener & requires RedisManager - reuse single instance
+        ProfileCommand profile = new ProfileCommand(this, getRedisManager());
+        getServer().getPluginManager().registerEvents(profile, this);
+        commandHandler.register(profile);
+        commandHandler.register(ServerManagerCommand.class);
+        commandHandler.register(JumpToPlayer.class);
+        commandHandler.register(StaffListCommand.class);
+        commandHandler.register(new StaffModeCommand(this, staffModeManager));
+        commandHandler.register(new RankCommand(this, RankManager.getInstance()));
+        commandHandler.register(CheckNMS.class);
+        commandHandler.register(SudoCommand.class);
+        commandHandler.register(UnbanCommand.class);
+        commandHandler.register(ClientBrandCommand.class);
+        commandHandler.register(new TagsCommand(tagsGUI, this));
+        commandHandler.register(new DisguiseCommand(disguiseHandler, this));
+        commandHandler.register(new UnDisguiseCommand(disguiseHandler, this));
+        commandHandler.register(ReplyCommand.class);
+        commandHandler.register(AltsCommand.class);
     }
 
     @Override
     public void onDisable() {
         getLogger().info("Disabling server, publishing offline status");
-        // Clear all disguise strings from Redis for disguised players
         if (disguiseRegistry != null && redisManager != null) {
             try {
-                // Access disguisedPlayers set from DisguiseRegistry
-                java.lang.reflect.Field disguisedPlayersField = disguiseRegistry.getClass().getDeclaredField("disguisedPlayers");
+                Field disguisedPlayersField = disguiseRegistry.getClass().getDeclaredField("disguisedPlayers");
                 disguisedPlayersField.setAccessible(true);
-                java.util.Set<java.util.UUID> disguisedPlayers = (java.util.Set<java.util.UUID>) disguisedPlayersField.get(disguiseRegistry);
-                for (java.util.UUID uuid : disguisedPlayers) {
+                Set<UUID> disguisedPlayers = (Set<UUID>) disguisedPlayersField.get(disguiseRegistry);
+                for (UUID uuid : disguisedPlayers) {
                     redisManager.clearDisguise(uuid);
                 }
             } catch (Exception e) {
@@ -304,7 +291,6 @@ public final class WinterCore extends JavaPlugin {
             }
         }
 
-        // Extra safety: Remove all disguise:* keys from Redis on shutdown
         if (redisPool != null) {
             try (var jedis = redisPool.getResource()) {
                 Set<String> keys = jedis.keys("disguise:*");

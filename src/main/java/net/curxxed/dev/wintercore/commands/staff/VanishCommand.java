@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -15,23 +15,26 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+@CommandInfo(
+        name = "vanish",
+            permission = "WinterCore.vanish",
+            description = "Toggle vanish mode.",
+            usage = "/vanish",
+            inGameOnly = true
+    
+    )
 public class VanishCommand extends BaseCommand {
 
     private final WinterCore plugin;
     public static final Set<UUID> vanishedPlayers = new HashSet<>();
 
     public VanishCommand(WinterCore plugin) {
+        super(plugin);
         this.plugin = plugin;
     }
 
-    @Command(
-            name = "vanish",
-            permission = "WinterCore.vanish",
-            description = "Toggle vanish mode.",
-            usage = "/vanish",
-            inGameOnly = true
-    )
-    public void onCommand(CommandArgs commandArgs) {
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
 
         toggleVanish(player, plugin, (vanished) -> {

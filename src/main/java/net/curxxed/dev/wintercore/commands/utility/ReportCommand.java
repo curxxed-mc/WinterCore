@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.tags.TagsManager;
 import net.curxxed.dev.wintercore.listeners.PlayerListener;
@@ -10,22 +10,25 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
+@CommandInfo(
+        name = "report",
+            description = "Report a player to the staff.",
+            usage = "/report <player> <reason>",
+            inGameOnly = true
+    
+    )
 public class ReportCommand extends BaseCommand {
     private final WinterCore plugin;
     private final TagsManager tagsManager;
 
     public ReportCommand(WinterCore plugin, TagsManager tagsManager) {
+        super(plugin);
         this.plugin = plugin;
         this.tagsManager = tagsManager;
     }
 
-    @Command(
-            name = "report",
-            description = "Report a player to the staff.",
-            usage = "/report <player> <reason>",
-            inGameOnly = true
-    )
-    public void onCommand(CommandArgs commandArgs) {
+    @Override
+    public void execute(CommandArguments commandArgs) {
         Player reporter = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
 

@@ -1,26 +1,34 @@
 package net.curxxed.dev.wintercore.commands.misc;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
-import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.listeners.PlayerListener;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.UUID;
 
+@CommandInfo(
+        name = "reply",
+        permission = "WinterCore.reply",
+        description = "Reply to the last private message.",
+        aliases = {"r", "respond"},
+        usage = "/reply <message>",
+        inGameOnly = true
+)
 public class ReplyCommand extends BaseCommand {
 
     private final WinterCore plugin;
     private final PlayerListener playerListener;
 
-    // Store last sender and timestamp for reply functionality
     private static final Map<UUID, LastMessageInfo> lastMessageMap = new java.util.concurrent.ConcurrentHashMap<>();
     private static final long REPLY_TIMEOUT_MILLIS = 180_000; // 3 minutes
 
     public ReplyCommand(WinterCore plugin) {
+        super(plugin);
         this.plugin = plugin;
         this.playerListener = plugin.getPlayerListener();
     }
@@ -57,15 +65,9 @@ public class ReplyCommand extends BaseCommand {
         }
     }
 
-    @Command(
-        name = "reply",
-        permission = "WinterCore.reply",
-        description = "Reply to the last private message.",
-        aliases = {"r", "respond"},
-        usage = "/reply <message>",
-        inGameOnly = true
-    )
-    public void onCommand(CommandArgs commandArgs) {
+    @Override
+
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         if (player == null) {
             commandArgs.getSender().sendMessage("Only players can send private messages.");
@@ -85,4 +87,4 @@ public class ReplyCommand extends BaseCommand {
         playerListener.sendPrivateMessage(player, lastSender, message);
         setLastSender(lastSender, player); // allow reply chain
     }
-}
+}

@@ -1,34 +1,43 @@
 package net.curxxed.dev.wintercore.commands.misc;
 
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.PluginDescriptionFile;
 
+@CommandInfo(
+        name = "about",
+        aliases = {"wintercore", "ver", "version"},
+        permission = "wintercore.command.about",
+        description = "Displays information about the WinterCore plugin.",
+        usage = "/about"
+)
 public class AboutCommand extends BaseCommand {
-    private final JavaPlugin plugin;
 
-    public AboutCommand(JavaPlugin plugin) {
-        this.plugin = plugin;
+    public AboutCommand(WinterCore plugin) {
+        super(plugin);
     }
 
-    @Command(
-        name = "about",
-        permission = "WinterCore.about",
-        description = "Show plugin information.",
-        usage = "/about",
-        inGameOnly = false
-    )
-    public void onCommand(CommandArgs commandArgs) {
-        String version = plugin.getDescription().getVersion();
-        commandArgs.getSender().sendMessage(CC.translate("&7&m----------------------------"));
-        commandArgs.getSender().sendMessage(CC.translate("&bPlugin Name: &f" + "WinterCore"));
-        commandArgs.getSender().sendMessage(CC.translate("&bVersion: &f" + version));
-        commandArgs.getSender().sendMessage(CC.translate("&bAuthor: &fCurxxed"));
-        commandArgs.getSender().sendMessage(CC.translate("&bDescription: &e" +  plugin.getDescription().getDescription()));
-        commandArgs.getSender().sendMessage(CC.translate("&bDiscord: &f@curxxe"));
-        commandArgs.getSender().sendMessage(CC.translate("&7&m----------------------------"));
+    @Override
+    public void execute(CommandArguments args) {
+        CommandSender sender = args.getSender();
+        PluginDescriptionFile desc = plugin.getDescription();
+
+        String description = desc.getDescription();
+
+        // Use a fallback description if the plugin.yml is missing one.
+        if (description == null || description.isEmpty()) {
+            description = "The core plugin for your server network.";
+        }
+
+        sender.sendMessage(CC.translate("&7&m----------------------------------------------------"));
+        sender.sendMessage(CC.translate(" &b&l" + desc.getName() + " &fv" + desc.getVersion()));
+        sender.sendMessage(CC.translate("  &7Authors: &f" + String.join(", ", desc.getAuthors())));
+        sender.sendMessage(CC.translate("  &7Description: &f" + description));
+        sender.sendMessage(CC.translate("&7&m----------------------------------------------------"));
     }
 }
 

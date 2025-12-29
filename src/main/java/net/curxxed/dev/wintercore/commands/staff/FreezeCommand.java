@@ -1,27 +1,31 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
+import net.curxxed.dev.wintercore.commands.api.BaseCommand;
+import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.listeners.FreezeListener;
-import net.curxxed.dev.CommandAPI.BaseCommand;
-import net.curxxed.dev.CommandAPI.Command;
-import net.curxxed.dev.CommandAPI.CommandArgs;
-import org.bukkit.Bukkit;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
+@CommandInfo(
+        name = "freeze",
+            permission = "WinterCore.commands.freeze",
+            description = "Freeze or unfreeze player",
+            usage = "/freeze <player>",
+            inGameOnly = true
+    )
 public class FreezeCommand extends BaseCommand {
     private final FreezeListener freezeListener;
     private final String discordLink = "discord.gg/example";
 
-    public FreezeCommand(FreezeListener freezeListener) {
+    public FreezeCommand(FreezeListener freezeListener, WinterCore plugin) {
+        super(plugin);
         this.freezeListener = freezeListener;
     }
-    @Command(name = "freeze",
-            permission = "WinterCore.commands.freeze",
-            description = "Freeze or unfreeze player",
-            usage = "/freeze <player>",
-            inGameOnly = true)
+
     @Override
-    public void onCommand(CommandArgs commandArgs) {
+    public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
 
         if (!player.hasPermission("WinterCore.freeze")) {
@@ -34,7 +38,7 @@ public class FreezeCommand extends BaseCommand {
             return;
         }
 
-        Player target = Bukkit.getPlayer(commandArgs.getArgs(0));
+        Player target = commandArgs.getOptionalPlayer(0).orElse(null);
         if (target == null) {
             player.sendMessage(ChatColor.RED + "Player not found.");
             return;

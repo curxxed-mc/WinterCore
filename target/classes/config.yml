@@ -1,32 +1,25 @@
 default-rank: Default
 show-rank-in-tab: true
 show-rank-above-head: true
-
-server-name: "Testing Servers"
-join-message: "&9[S] %player% &bconnected to &e%server-name%"
-switch-message: "&9[S] %player% &bconnected to &e%server-name% &bfrom &e%previous-server%"
-quit-message: "&9[S] %player% &bdisconnected from &e%server-name%"
-
+server-name: Testing Servers
+join-message: '&9[S] %player% &bconnected to &e%server-name%'
+switch-message: '&9[S] %player% &bconnected to &e%server-name% &bfrom &e%previous-server%'
+quit-message: '&9[S] %player% &bdisconnected from &e%server-name%'
 StaffVanishMessages:
-  vanish: "&9[S] %player% &bhas vanished!"
-  unvanish: "&9[S] %player% &bis no longer vanished!"
-
-
-mysql:
-  host: "localhost"
-  port: "3306"
-  database: "wintercore"
-  username: "root"
-  password: "password"
-
+  vanish: '&9[S] %player% &bhas vanished!'
+  unvanish: '&9[S] %player% &bis no longer vanished!'
 Redis:
-  host: "127.0.0.1"
+  host: 127.0.0.1
   port: 6379
-  password: ""
-
+  password: ''
 DiscordWebhook:
-  url: "https://discord.com/api/webhooks/.../..."
+  url: https://discord.com/api/webhooks/.../...
   VanishLogs: true
-
-
-
+mongodb:
+  uri: mongodb://root:password@localhost:27017
+  database: wintercore
+  collections:
+    punishments: punishments
+    grants: grants
+    players: players
+vanished_players: !!set {}
