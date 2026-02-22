@@ -42,7 +42,6 @@ public class DatabaseManager {
 
     private void setupDataSource() {
         try {
-            // Ensure you add "mongodb.uri" and "mongodb.database" to your config.yml
             String uri = plugin.getConfig().getString("mongodb.uri", "mongodb://localhost:27017");
             String dbName = plugin.getConfig().getString("mongodb.database", "wintercore");
 
@@ -61,6 +60,24 @@ public class DatabaseManager {
             mongoClient.close();
             plugin.getLogger().info("MongoDB connection closed.");
         }
+    }
+
+    // --- Helper for Commands ---
+
+    /**
+     * Synchronously fetches the player name from the database.
+     * Useful for async commands where Bukkit cache might be empty.
+     */
+    public String getPlayerName(UUID uuid) {
+        try {
+            Document doc = profiles.find(Filters.eq("_id", uuid.toString())).first();
+            if (doc != null && doc.containsKey("name")) {
+                return doc.getString("name");
+            }
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Could not fetch player name for " + uuid, e);
+        }
+        return null;
     }
 
     // --- Ranks ---
@@ -603,14 +620,6 @@ public class DatabaseManager {
         ));
     }
 
-    // Deprecated methods kept for compilation compatibility until commands are updated
-    public void removeWarning(int warningId) {
-        plugin.getLogger().warning("Legacy removeWarning(int) called - switch to removeWarning(String) for Mongo!");
-    }
-
-    public void removeRankGrant(int grantId) {
-        plugin.getLogger().warning("Legacy removeRankGrant(int) called - switch to removeRankGrant(String) for Mongo!");
-    }
 
     // --- Caches ---
 

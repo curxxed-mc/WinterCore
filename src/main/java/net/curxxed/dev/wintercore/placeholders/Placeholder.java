@@ -27,9 +27,6 @@ public class Placeholder extends PlaceholderExpansion implements Listener {
         this.plugin = plugin;
         this.disguiseRegistry = plugin.getDisguiseRegistry();
         instance = this;
-        if (!this.register()) {
-            plugin.getLogger().warning("Could not register the WinterCore expansion.");
-        }
     }
 
     @Override
@@ -67,7 +64,6 @@ public class Placeholder extends PlaceholderExpansion implements Listener {
         String disguisedRank = disguised ? disguiseData.getRank() : null;
         String disguisedColor = null;
         if (disguised) {
-            // Try to get color from disguiseData.info if present
             try {
                 if (disguiseData.getInfo() != null && disguiseData.getInfo().has("color") && !disguiseData.getInfo().get("color").isJsonNull()) {
                     disguisedColor = disguiseData.getInfo().get("color").getAsString();
@@ -148,22 +144,12 @@ public class Placeholder extends PlaceholderExpansion implements Listener {
         Player player = event.getPlayer();
         String newRank = event.getNewRank();
         RankManager rm = RankManager.getInstance();
-
-        // Only update if the rank actually changed
         String currentCached = rm.getRankSync(player);
         if (currentCached != null && currentCached.equals(newRank)) {
-            // No change, skip update
             return;
         }
-
-        // Update the rank in the cache
         rm.cachePlayerRank(player, newRank);
-
-        // Clear placeholder cache for this player
-        // Refresh player display for all (fixes nametag color for everyone)
         rm.refreshPlayerDisplayForAll(player);
-
-        // Only run PlaceholderAPI code if it's enabled
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             Bukkit.getScheduler().runTask(plugin, () -> PlaceholderAPI.setPlaceholders(player, "%wintercore_player_rank% %wintercore_player_color% %wintercore_player_rank_name% %wintercore_player_rank_weight%"));
         }

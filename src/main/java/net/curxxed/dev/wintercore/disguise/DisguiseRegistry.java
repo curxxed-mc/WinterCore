@@ -1,5 +1,7 @@
 package net.curxxed.dev.wintercore.disguise;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.curxxed.dev.wintercore.database.RedisManager;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
@@ -13,7 +15,7 @@ import java.util.logging.Logger;
 
 public class DisguiseRegistry {
     private final Map<UUID, SkinFetcher.SkinProperty> originalSkins = new ConcurrentHashMap<>();
-    private final Set<UUID> disguisedPlayers = ConcurrentHashMap.newKeySet();
+    public final Set<UUID> disguisedPlayers = ConcurrentHashMap.newKeySet();
     private final RedisManager redisManager;
     private final Logger logger;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -49,8 +51,7 @@ public class DisguiseRegistry {
             if (player != null && player.isOnline()) {
                 try {
                     undisguiseAction.accept(player);
-                } catch (Exception e) {
-                    logger.warning("Failed to undisguise player on shutdown: " + player.getName());
+                } catch (Exception ignored) {
                 }
             }
         }
@@ -91,7 +92,7 @@ public class DisguiseRegistry {
      */
     public void setDisguiseInfo(Player player, String disguiseName, String disguiseRank, String skin, String color, String prefix) {
         // Build JSON for disguise info
-        com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+        JsonObject obj = new JsonObject();
         obj.addProperty("name", disguiseName);
         obj.addProperty("rank", disguiseRank);
         obj.addProperty("skin", skin); // Added Skin persistence
@@ -111,11 +112,11 @@ public class DisguiseRegistry {
      * Get the effective rank for permissions player (disguise rank if present, else real rank).
      * This is async and returns via callback.
      */
-    public void getEffectiveRank(Player player, java.util.function.Consumer<String> callback) {
+    public void getEffectiveRank(Player player, Consumer<String> callback) {
         redisManager.getDisguise(player.getUniqueId(), disguiseJson -> {
             if (disguiseJson != null) {
                 try {
-                    com.google.gson.JsonObject obj = new com.google.gson.JsonParser().parse(disguiseJson).getAsJsonObject();
+                    JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
                     if (obj.has("rank") && !obj.get("rank").isJsonNull()) {
                         callback.accept(obj.get("rank").getAsString());
                         return;
@@ -132,11 +133,11 @@ public class DisguiseRegistry {
      * Get the effective color for permissions player (disguise color if present, else real color).
      * This is async and returns via callback.
      */
-    public void getEffectiveColor(Player player, java.util.function.Consumer<String> callback) {
+    public void getEffectiveColor(Player player, Consumer<String> callback) {
         redisManager.getDisguise(player.getUniqueId(), disguiseJson -> {
             if (disguiseJson != null) {
                 try {
-                    com.google.gson.JsonObject obj = new com.google.gson.JsonParser().parse(disguiseJson).getAsJsonObject();
+                    JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
                     if (obj.has("color") && !obj.get("color").isJsonNull()) {
                         callback.accept(obj.get("color").getAsString());
                         return;
@@ -157,7 +158,7 @@ public class DisguiseRegistry {
         String disguiseJson = redisManager.getDisguiseSync(player.getUniqueId());
         if (disguiseJson != null) {
             try {
-                com.google.gson.JsonObject obj = new com.google.gson.JsonParser().parse(disguiseJson).getAsJsonObject();
+                JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
                 if (obj.has("color") && !obj.get("color").isJsonNull()) {
                     return obj.get("color").getAsString();
                 }
@@ -171,11 +172,11 @@ public class DisguiseRegistry {
      * Get the effective prefix for permissions player (disguise prefix if present, else real prefix).
      * This is async and returns via callback.
      */
-    public void getEffectivePrefix(Player player, java.util.function.Consumer<String> callback) {
+    public void getEffectivePrefix(Player player, Consumer<String> callback) {
         redisManager.getDisguise(player.getUniqueId(), disguiseJson -> {
             if (disguiseJson != null) {
                 try {
-                    com.google.gson.JsonObject obj = new com.google.gson.JsonParser().parse(disguiseJson).getAsJsonObject();
+                    JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
                     if (obj.has("prefix") && !obj.get("prefix").isJsonNull()) {
                         callback.accept(obj.get("prefix").getAsString());
                         return;
@@ -194,7 +195,7 @@ public class DisguiseRegistry {
             String color = null;
             if (disguiseJson != null) {
                 try {
-                    com.google.gson.JsonObject obj = new com.google.gson.JsonParser().parse(disguiseJson).getAsJsonObject();
+                    JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
                     if (obj.has("color") && !obj.get("color").isJsonNull()) {
                         color = obj.get("color").getAsString();
                     }

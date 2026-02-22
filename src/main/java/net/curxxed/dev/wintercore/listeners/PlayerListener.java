@@ -25,6 +25,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 public class PlayerListener implements Listener {
     private final WinterCore plugin;
@@ -47,7 +48,6 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onLoginHandle(PlayerLoginEvent event) {
         Player player = event.getPlayer();
-        // Record player IP for alt detection
         String ip = event.getAddress().getHostAddress();
         databaseManager.recordPlayerIP(player.getUniqueId(), ip);
         try {
@@ -70,8 +70,6 @@ public class PlayerListener implements Listener {
                 rankManager.refreshPlayerDisplayForAll(other);
             }
         }
-
-        // Handle Nametags Initial Setup
         if (plugin.getNameTagHandler() != null) {
             if (plugin.getDisguiseRegistry().isDisguised(player)) {
                 plugin.getDisguiseRegistry().getEffectiveColor(player, c -> plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, c));
@@ -79,45 +77,35 @@ public class PlayerListener implements Listener {
                 rankManager.getColorPreference(rankManager.getRankSync(player), c -> plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, c));
             }
         }
-
-        // Handle Tab List Name
         if (plugin.getDisguiseRegistry().isDisguised(player)) {
-            plugin.getDisguiseRegistry().getEffectivePrefix(player, prefix -> plugin.getDisguiseRegistry().getEffectiveColor(player, color -> {
+            plugin.getDisguiseRegistry().getEffectiveColor(player, color -> {
                 if (plugin.getNameTagHandler().getNameTagAdapter() != null) {
                     plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, color);
                 }
-                String formattedName = (prefix.isEmpty() ? "" : prefix + " ") + CC.translate(color) + player.getName() + ChatColor.RESET;
+                String formattedName = CC.translate(color) + player.getName() + ChatColor.RESET;
                 player.setPlayerListName(formattedName);
-            }));
+            });
         } else {
             rankManager.setRankAboveHead(player);
         }
-
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            // Update Nametags
             if (plugin.getDisguiseRegistry().isDisguised(player)) {
-                // Use effective (disguised) rank color for nametags
                 rankManager.getDisguiseRank(player, rank -> rankManager.getColorPreference(rank, rankColor -> rankManager.updateNameTagColor(player, rankColor)));
+                plugin.getDisguiseRegistry().getEffectiveColor(player, color -> {
+                    String formattedName = CC.translate(color) + player.getName() + ChatColor.RESET;
+                    player.setPlayerListName(formattedName);
+                });
             } else {
-                // Use real rank color for nametags
                 rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, rankColor -> rankManager.updateNameTagColor(player, rankColor)));
             }
-
-            // Handle Staff Join/Switch Notifications
             if (player.hasPermission("wintercore.staff") || player.hasPermission("wintercore.admin") || player.hasPermission("wintercore.manager") || player.isOp()) {
-                // Always fetch REAL rank for staff notifications
                 rankManager.getRankAsync(player, realRank -> rankManager.getColorPreference(realRank, realRankColor -> {
                     String serverName = plugin.getConfig().getString("server-name", "hub-restricted");
                     String last = plugin.getRedisManager().getLastServer(uuid);
                     long lastSeen = plugin.getRedisManager().getLastSeen(uuid);
                     long now = System.currentTimeMillis();
-
-                    // Update current server
                     plugin.getRedisManager().updateLastServer(uuid, serverName);
-
                     String realName = getRealName(player);
-
-                    // Logic: If last server exists AND is different AND last seen was < 30 seconds ago -> Switch
                     boolean isSwitch = last != null && !last.equals(serverName) && (now - lastSeen < 30000);
 
                     if (isSwitch) {
@@ -133,7 +121,7 @@ public class PlayerListener implements Listener {
                 player.sendMessage(CC.translate("&ePlease install PlaceholderAPI to ensure full functionality."));
                 player.sendMessage(CC.translate("&eFor more information, visit:&ahttps://www.spigotmc.org/resources/placeholderapi.6245/"));
             }
-        }, 10L);
+        }, 20L);
 
         databaseManager.getBanDetails(uuid, banDetails -> {
             if (banDetails != null && !banDetails.isEmpty()) {
@@ -173,26 +161,17 @@ public class PlayerListener implements Listener {
             callback.accept(isMuted);
         });
     }
-
-    // Set priority to LOWEST to ensure we capture data before DisguiseEventListener cleans it up
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerQuit(PlayerQuitEvent event) {
         event.setQuitMessage(null);
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
-
-        // Capture the REAL name immediately, before disguise data is cleared by other listeners
         final String realName = getRealName(player);
-
-        // Reset nametag using NameTagHandler only
         if (plugin.getNameTagHandler() != null) {
             plugin.getNameTagHandler().getNameTagAdapter().resetNameTag(player);
         }
         Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
-
             boolean isPending = plugin.getRedisManager().isStillPendingSwitch(uuid);
-
-            // Mark last seen time so the next server knows when we left
             plugin.getRedisManager().updateLastSeen(uuid);
 
             if (isPending) {
@@ -201,20 +180,17 @@ public class PlayerListener implements Listener {
             }
 
             if (player.hasPermission("WinterCore.staff") || player.hasPermission("WinterCore.admin") || player.hasPermission("WinterCore.manager")) {
-                rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, rankColor -> {
+                rankManager.getRankAsync(player, realRank -> rankManager.getColorPreference(realRank, realRankColor -> {
                     String lastServer = plugin.getRedisManager().getLastServer(uuid);
                     if (lastServer == null) lastServer = "unknown";
 
                     plugin.getRedisManager().publishStaffActivity(
                             "quit",
-                            realName, // Use the captured real name
-                            rankColor.toString(),
+                            realName,
+                            realRankColor.toString(),
                             plugin.getConfig().getString("server-name"),
                             lastServer
                     );
-
-                    // Do NOT remove last server here. We need it for switch detection on the next server.
-                    // plugin.getRedisManager().removeLastServer(player.getUniqueId());
                 }));
             }
         }, 2L);
@@ -249,29 +225,21 @@ public class PlayerListener implements Listener {
             tagsManager.getPlayerTag(player.getUniqueId(), tag -> {
                 final String tagPrefix;
                 if (tag != null) {
-                    tagPrefix = " " + CC.translate(TagsManager.colorNameToCode(tag.getColor())) + tag.getPrefix() + org.bukkit.ChatColor.RESET;
+                    tagPrefix = " " + CC.translate(TagsManager.colorNameToCode(tag.getColor())) + tag.getPrefix() + ChatColor.RESET;
                 } else {
                     tagPrefix = "";
                 }
-
-                // Helper consumer to avoid code duplication
-                java.util.function.BiConsumer<String, String> sendMessage = (prefix, color) -> {
+                BiConsumer<String, String> sendMessage = (prefix, color) -> {
                     final String formattedPrefix = prefix.isEmpty() ? "" : prefix + " ";
                     final String formattedName = formattedPrefix + CC.translate(color) + player.getName() + ChatColor.RESET + tagPrefix;
                     final String colorCode = rankManager.getMessageColorPreference(player).toString();
                     final ChatColor messageColor = ChatColor.getByChar(colorCode.replace("&", "").charAt(0));
                     final String formattedMessage = formattedName + ChatColor.WHITE + ": " + messageColor + message;
-
-                    // Log to console/server log
                     Bukkit.getConsoleSender().sendMessage(formattedMessage);
-
-                    // Broadcast directly (AsyncPlayerChatEvent is already async, no need for runTask)
                     for (Player p : Bukkit.getOnlinePlayers()) {
                         p.sendMessage(formattedMessage);
                     }
                 };
-
-                // Check if disguised
                 if (plugin.getDisguiseRegistry().isDisguised(player)) {
                     plugin.getDisguiseRegistry().getEffectivePrefix(player, prefix ->
                             plugin.getDisguiseRegistry().getEffectiveColor(player, color ->
@@ -364,7 +332,7 @@ public class PlayerListener implements Listener {
         if (player.hasPermission("WinterCore.staff") || player.hasPermission("WinterCore.Admin") || player.hasPermission("WinterCore.Manager")) {
             plugin.getDisguiseRegistry().getEffectivePrefix(player, rankPrefix -> {
                 String playerName = player.getDisplayName();
-                String chatMessage = CC.translate("&9") + message + org.bukkit.ChatColor.RESET;
+                String chatMessage = CC.translate("&9") + message + ChatColor.RESET;
                 String finalMessage = CC.translate("&9[SC] ") + rankPrefix + playerName + ": " + chatMessage;
                 callback.accept(finalMessage);
             });
@@ -377,7 +345,7 @@ public class PlayerListener implements Listener {
         if (player.hasPermission("WinterCore.Manager") || player.hasPermission("WinterCore.Admin")) {
             plugin.getDisguiseRegistry().getEffectivePrefix(player, rankPrefix -> {
                 String playerName = player.getDisplayName();
-                String chatMessage = CC.translate("&c") + message + org.bukkit.ChatColor.RESET;
+                String chatMessage = CC.translate("&c") + message + ChatColor.RESET;
                 String finalMessage = CC.translate("&c[AC] ") + rankPrefix + playerName + ": " + chatMessage;
                 callback.accept(finalMessage);
             });
@@ -390,7 +358,7 @@ public class PlayerListener implements Listener {
         if (player.hasPermission("WinterCore.Manager")) {
             plugin.getDisguiseRegistry().getEffectivePrefix(player, rankPrefix -> {
                 String playerName = player.getDisplayName();
-                String chatMessage = CC.translate("&4") + message + org.bukkit.ChatColor.RESET;
+                String chatMessage = CC.translate("&4") + message + ChatColor.RESET;
                 String finalMessage = CC.translate("&4[MC] ") + rankPrefix + playerName + ": " + chatMessage;
                 callback.accept(finalMessage);
             });

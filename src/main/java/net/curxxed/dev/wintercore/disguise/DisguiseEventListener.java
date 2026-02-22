@@ -30,12 +30,10 @@ public class DisguiseEventListener implements Listener {
         Player joining = event.getPlayer();
         UUID uuid = joining.getUniqueId();
 
-        plugin.getLogger().info("[DisguiseDebug] Player " + joining.getName() + " joined. Checking Redis...");
 
         String disguiseJson = plugin.getRedisManager().getDisguiseSync(uuid);
 
         if (disguiseJson != null && !disguiseJson.isEmpty()) {
-            plugin.getLogger().info("[DisguiseDebug] Data found: " + disguiseJson);
             try {
                 JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
                 String name = obj.get("name").getAsString();
@@ -44,14 +42,11 @@ public class DisguiseEventListener implements Listener {
 
                 // Delay execution to ensure player is fully in the world
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    plugin.getLogger().info("[DisguiseDebug] Executing auto-disguise for " + joining.getName());
 
                     try {
                         // Matching your signature: disguise(Player player, String rank, String name, String skin)
                         DisguiseCallback result = disguiseHandler.disguise(joining, rank, name, skin);
-                        plugin.getLogger().info("[DisguiseDebug] Auto-disguise result: " + result.name());
                     } catch (Exception e) {
-                        plugin.getLogger().severe("[DisguiseDebug] Failed to execute disguise method");
                         e.printStackTrace();
                     }
                 }, 2L);

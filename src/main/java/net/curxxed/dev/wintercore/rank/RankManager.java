@@ -2,9 +2,9 @@ package net.curxxed.dev.wintercore.rank;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import lombok.Getter;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.nametags.NameTag;
 import net.curxxed.dev.wintercore.nametags.NameTagAdapter;
@@ -12,14 +12,12 @@ import net.curxxed.dev.wintercore.permissions.WinterCorePermissible;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
-
-import lombok.Getter;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -356,15 +354,18 @@ public class RankManager {
                 plugin.getLogger().severe("Failed to update permissions for player " + player.getName() + ": " + e.getMessage());
                 e.printStackTrace();
             }
-            String nameColor = ranksConfig.getString("ranks." + rank + ".name-color", "&f");
-            String coloredName = CC.translate(nameColor) + player.getName() + org.bukkit.ChatColor.RESET;
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                player.setDisplayName(coloredName);
-                player.setPlayerListName(coloredName);
-                player.setCustomName(coloredName);
-                player.setCustomNameVisible(true);
-            });
+            // Use effective rank (disguise aware) for visuals
+            getRank(player, effectiveRank -> getColorPreference(effectiveRank, effectiveColor -> {
+                String coloredName = CC.translate(effectiveColor) + player.getName() + org.bukkit.ChatColor.RESET;
+
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    player.setDisplayName(coloredName);
+                    player.setPlayerListName(coloredName);
+                    player.setCustomName(coloredName);
+                    player.setCustomNameVisible(true);
+                });
+            }));
         });
     }
 
