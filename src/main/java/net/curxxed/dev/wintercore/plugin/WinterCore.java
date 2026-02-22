@@ -4,40 +4,56 @@ import com.google.gson.Gson;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.var;
+import net.curxxed.dev.wintercore.API.WinterCoreAPI;
+import net.curxxed.dev.wintercore.client.ClientBrand;
+import net.curxxed.dev.wintercore.client.ClientBrandCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandHandler;
+import net.curxxed.dev.wintercore.commands.bungee.ServerManagerCommand;
+import net.curxxed.dev.wintercore.commands.gamemode.GameModeCommand;
+import net.curxxed.dev.wintercore.commands.misc.*;
+import net.curxxed.dev.wintercore.commands.social.DiscordCommand;
+import net.curxxed.dev.wintercore.commands.staff.*;
+import net.curxxed.dev.wintercore.commands.troll.TrollCommand;
+import net.curxxed.dev.wintercore.commands.utility.*;
+import net.curxxed.dev.wintercore.database.DatabaseManager;
+import net.curxxed.dev.wintercore.database.RedisManager;
+import net.curxxed.dev.wintercore.database.SocialInput;
+import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
+import net.curxxed.dev.wintercore.disguise.DisguiseGUI;
+import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
+import net.curxxed.dev.wintercore.disguise.DisguiseRegistry;
+import net.curxxed.dev.wintercore.disguise.commands.DisguiseCommand;
+import net.curxxed.dev.wintercore.disguise.commands.UnDisguiseCommand;
+import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
+import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
+import net.curxxed.dev.wintercore.listeners.FreezeListener;
+import net.curxxed.dev.wintercore.listeners.PlayerListener;
+import net.curxxed.dev.wintercore.listeners.ReachListener;
+import net.curxxed.dev.wintercore.menus.ChatColorSelectionMenu;
+import net.curxxed.dev.wintercore.menus.RankMenu;
+import net.curxxed.dev.wintercore.menus.StaffListMenu;
 import net.curxxed.dev.wintercore.nametags.NameTagHandler;
+import net.curxxed.dev.wintercore.placeholders.Placeholder;
+import net.curxxed.dev.wintercore.rank.RankChangeEvent;
+import net.curxxed.dev.wintercore.rank.RankCommand;
+import net.curxxed.dev.wintercore.rank.RankManager;
+import net.curxxed.dev.wintercore.staff.StaffModeListener;
+import net.curxxed.dev.wintercore.staff.StaffModeManager;
+import net.curxxed.dev.wintercore.tags.TagsCommand;
+import net.curxxed.dev.wintercore.tags.TagsGUI;
+import net.curxxed.dev.wintercore.tags.TagsManager;
+import net.curxxed.dev.wintercore.utils.BanList;
+import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.messaging.Messenger;
-import net.curxxed.dev.wintercore.client.*;
-import net.curxxed.dev.wintercore.commands.gamemode.*;
-import net.curxxed.dev.wintercore.commands.bungee.*;
-import net.curxxed.dev.wintercore.commands.misc.*;
-import net.curxxed.dev.wintercore.commands.social.*;
-import net.curxxed.dev.wintercore.commands.troll.*;
-import net.curxxed.dev.wintercore.commands.staff.*;
-import net.curxxed.dev.wintercore.commands.utility.*;
-import net.curxxed.dev.wintercore.rank.*;
-import net.curxxed.dev.wintercore.tags.*;
-import net.curxxed.dev.wintercore.disguise.*;
-import net.curxxed.dev.wintercore.disguise.impl.*;
-import net.curxxed.dev.wintercore.database.*;
-import net.curxxed.dev.wintercore.listeners.*;
-import net.curxxed.dev.wintercore.menus.*;
-import net.curxxed.dev.wintercore.staff.*;
-import net.curxxed.dev.wintercore.disguise.commands.*;
-import net.curxxed.dev.wintercore.disguise.player.*;
-import net.curxxed.dev.wintercore.placeholders.*;
-import net.curxxed.dev.wintercore.utils.*;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.*;
 
 @Getter
@@ -75,6 +91,8 @@ public final class WinterCore extends JavaPlugin {
     private DisguiseHandler disguiseHandler;
     private RankMenu rankMenu;
     private CommandHandler commandHandler;
+    // Public accessor for other plugins
+    private WinterCoreAPI api;
 
     @Override
     public void onEnable() {
@@ -166,14 +184,23 @@ public final class WinterCore extends JavaPlugin {
         registerBungee();
         this.nameTagHandler = new NameTagHandler(this);
         this.nameTagHandler.load();
+
+        // initialize public API after internal managers have been loaded
+        this.api = new WinterCoreAPI(this);
     }
 
-    private void registerBungee() {
-        Messenger bm = getServer().getMessenger();
-        bm.registerOutgoingPluginChannel(this, "BungeeCord");
-        bm.registerIncomingPluginChannel(this, "minecraft:brand", new ClientBrand(this));
-        bm.registerIncomingPluginChannel(this, "MC|Brand", new ClientBrand(this));
+    public void registerBungee() {
+        String channel;
+        if (Utilities.IS_LEGACY) {
+            channel = "MC|Brand";
+        } else {
+            channel = "minecraft:brand";
+        }
+
+        Bukkit.getMessenger().registerIncomingPluginChannel(this, channel, new ClientBrand(this));
+        Bukkit.getMessenger().registerOutgoingPluginChannel(this, channel);
     }
+
 
     private void registerListeners() {
         PluginManager pm = getServer().getPluginManager();
@@ -256,6 +283,7 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(new UnDisguiseCommand(disguiseHandler, this));
         commandHandler.register(ReplyCommand.class);
         commandHandler.register(AltsCommand.class);
+        commandHandler.register(WhoIsDisguisedCommand.class);
     }
 
     @Override
@@ -263,9 +291,7 @@ public final class WinterCore extends JavaPlugin {
         getLogger().info("Disabling server, publishing offline status");
         if (disguiseRegistry != null && redisManager != null) {
             try {
-                Field disguisedPlayersField = disguiseRegistry.getClass().getDeclaredField("disguisedPlayers");
-                disguisedPlayersField.setAccessible(true);
-                Set<UUID> disguisedPlayers = (Set<UUID>) disguisedPlayersField.get(disguiseRegistry);
+                Set<UUID> disguisedPlayers = new HashSet<>(disguiseRegistry.disguisedPlayers);
                 for (UUID uuid : disguisedPlayers) {
                     redisManager.clearDisguise(uuid);
                 }
@@ -340,14 +366,23 @@ public final class WinterCore extends JavaPlugin {
     }
 
     private void initializePlaceholders() {
-        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             getLogger().info("PlaceholderAPI found, initializing placeholders.");
-            placeholder = new Placeholder(this);
-            placeholderAPIEnabled = true;
+
+            this.placeholder = new Placeholder(this);
+
+            if (this.placeholder.register()) {
+                placeholderAPIEnabled = true;
+                getLogger().info("WinterCore placeholders registered.");
+            } else {
+                placeholderAPIEnabled = false;
+                getLogger().warning("Failed to register WinterCore placeholders.");
+            }
         } else {
             placeholder = null;
             placeholderAPIEnabled = false;
             getLogger().warning("PlaceholderAPI not found, some features may not work.");
         }
     }
+
 }
