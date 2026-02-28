@@ -339,7 +339,7 @@ public class RankManager {
         getRankAsync(player, rank -> {
             if (rank == null) {
                 player.setDisplayName(CC.translate("&7" + player.getName()));
-                player.setPlayerListName(CC.translate("&7" + player.getName()));
+                safeSetPlayerListName(player, CC.translate("&7" + player.getName()));
                 return;
             }
             try {
@@ -361,7 +361,7 @@ public class RankManager {
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     player.setDisplayName(coloredName);
-                    player.setPlayerListName(coloredName);
+                    safeSetPlayerListName(player, coloredName);
                     player.setCustomName(coloredName);
                     player.setCustomNameVisible(true);
                 });
@@ -382,6 +382,14 @@ public class RankManager {
         });
     }
 
+
+    private static void safeSetPlayerListName(Player player, String coloredName) {
+        if (coloredName != null && coloredName.length() <= 16) {
+            player.setPlayerListName(coloredName);
+        } else {
+            player.setPlayerListName(player.getName());
+        }
+    }
 
     public List<String> getPermissionsForRank(String rank) {
         List<String> permissions = new ArrayList<>();
@@ -503,7 +511,7 @@ public class RankManager {
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 player.setDisplayName(formattedName);
-                player.setPlayerListName(formattedName);
+                safeSetPlayerListName(player, formattedName);
                 player.setCustomName(formattedName);
                 player.setCustomNameVisible(true);
                 updatePlayerRank(player);
@@ -520,7 +528,7 @@ public class RankManager {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 // Update for the target player
                 target.setDisplayName(formattedName);
-                target.setPlayerListName(formattedName);
+                safeSetPlayerListName(target, formattedName);
                 target.setCustomName(formattedName);
                 target.setCustomNameVisible(true);
                 updatePlayerRank(target);
@@ -572,8 +580,6 @@ public class RankManager {
     public void cachePlayerColor(Player player, String color) {
         colorCache.put(player.getUniqueId(), color);
     }
-
-
 
     public void setTargetPlayer(Player player, Player targetPlayer) {
         targetPlayers.put(player.getUniqueId(), targetPlayer.getUniqueId());

@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.nametags;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.scoreboard.NameTagVisibility;
+
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
@@ -25,7 +25,6 @@ public class NameTag implements NameTagAdapter {
             team.setPrefix(formattedColor);
             team.setSuffix("");
 
-            team.setNameTagVisibility(NameTagVisibility.ALWAYS);
             team.addEntry(player.getName());
         } catch (Exception e) {
             e.printStackTrace();

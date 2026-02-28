@@ -15,38 +15,55 @@ import java.util.Map;
 
 @CommandInfo(
         name = "enchant",
-            permission = "WinterCore.enchant",
-            description = "Enchant the item in your hand.",
-            usage = "/enchant <enchantment> [level]",
-            inGameOnly = true
-    
-    )
+        permission = "WinterCore.enchant",
+        description = "Enchant the item in your hand.",
+        usage = "/enchant <enchantment> [level]",
+        inGameOnly = true
+)
 public class EnchantCommand extends BaseCommand {
 
     private static final Map<String, Enchantment> ENCHANTMENT_MAP = new HashMap<>();
 
     static {
-        ENCHANTMENT_MAP.put("sharpness", Enchantment.DAMAGE_ALL);
-        ENCHANTMENT_MAP.put("efficiency", Enchantment.DIG_SPEED);
-        ENCHANTMENT_MAP.put("fortune", Enchantment.LOOT_BONUS_BLOCKS);
-        ENCHANTMENT_MAP.put("unbreaking", Enchantment.DURABILITY);
-        ENCHANTMENT_MAP.put("power", Enchantment.ARROW_DAMAGE);
-        ENCHANTMENT_MAP.put("infinity", Enchantment.ARROW_INFINITE);
-        ENCHANTMENT_MAP.put("flame", Enchantment.ARROW_FIRE);
-        ENCHANTMENT_MAP.put("punch", Enchantment.ARROW_KNOCKBACK);
-        ENCHANTMENT_MAP.put("protection", Enchantment.PROTECTION_ENVIRONMENTAL);
-        ENCHANTMENT_MAP.put("feather_falling", Enchantment.PROTECTION_FALL);
-        ENCHANTMENT_MAP.put("fire_aspect", Enchantment.FIRE_ASPECT);
-        ENCHANTMENT_MAP.put("looting", Enchantment.LOOT_BONUS_MOBS);
-        ENCHANTMENT_MAP.put("silk_touch", Enchantment.SILK_TOUCH);
-        ENCHANTMENT_MAP.put("knockback", Enchantment.KNOCKBACK);
-        ENCHANTMENT_MAP.put("respiration", Enchantment.OXYGEN);
-        ENCHANTMENT_MAP.put("depth_strider", Enchantment.DEPTH_STRIDER);
-        ENCHANTMENT_MAP.put("aqua_affinity", Enchantment.WATER_WORKER);
-        ENCHANTMENT_MAP.put("bane_of_arthropods", Enchantment.DAMAGE_ARTHROPODS);
-        ENCHANTMENT_MAP.put("smite", Enchantment.DAMAGE_UNDEAD);
-        ENCHANTMENT_MAP.put("luck", Enchantment.LUCK);
-        ENCHANTMENT_MAP.put("lure", Enchantment.LURE);
+        addEnchant("sharpness",           Enchantment.DAMAGE_ALL);
+        addEnchant("efficiency",          Enchantment.DIG_SPEED);
+        addEnchant("fortune",             Enchantment.LOOT_BONUS_BLOCKS);
+        addEnchant("unbreaking",          Enchantment.DURABILITY);
+        addEnchant("power",               Enchantment.ARROW_DAMAGE);
+        addEnchant("infinity",            Enchantment.ARROW_INFINITE);
+        addEnchant("flame",               Enchantment.ARROW_FIRE);
+        addEnchant("punch",               Enchantment.ARROW_KNOCKBACK);
+        addEnchant("protection",          Enchantment.PROTECTION_ENVIRONMENTAL);
+        addEnchant("feather_falling",     Enchantment.PROTECTION_FALL);
+        addEnchant("fire_aspect",         Enchantment.FIRE_ASPECT);
+        addEnchant("looting",             Enchantment.LOOT_BONUS_MOBS);
+        addEnchant("silk_touch",          Enchantment.SILK_TOUCH);
+        addEnchant("knockback",           Enchantment.KNOCKBACK);
+        addEnchant("respiration",         Enchantment.OXYGEN);
+        addEnchant("aqua_affinity",       Enchantment.WATER_WORKER);
+        addEnchant("bane_of_arthropods",  Enchantment.DAMAGE_ARTHROPODS);
+        addEnchant("smite",               Enchantment.DAMAGE_UNDEAD);
+        addEnchant("luck",                Enchantment.LUCK);
+        addEnchant("lure",                Enchantment.LURE);
+        addEnchantByName("depth_strider",    "DEPTH_STRIDER");
+        addEnchantByName("thorns",           "THORNS");
+        addEnchantByName("frost_walker",     "FROST_WALKER");
+        addEnchantByName("mending",          "MENDING");
+        addEnchantByName("binding_curse",    "BINDING_CURSE");
+        addEnchantByName("vanishing_curse",  "VANISHING_CURSE");
+    }
+
+    private static void addEnchant(String name, Enchantment enchantment) {
+        if (enchantment != null) {
+            ENCHANTMENT_MAP.put(name, enchantment);
+        }
+    }
+
+    private static void addEnchantByName(String alias, String mojangName) {
+        Enchantment enchantment = Enchantment.getByName(mojangName);
+        if (enchantment != null) {
+            ENCHANTMENT_MAP.put(alias, enchantment);
+        }
     }
 
     public EnchantCommand(WinterCore plugin) {
@@ -89,8 +106,7 @@ public class EnchantCommand extends BaseCommand {
 
         itemInHand.addUnsafeEnchantment(enchantment, level);
         player.sendMessage(ChatColor.GREEN + "You have enchanted the item with " + enchantmentName + " (Level " + level + ").");
-        int maxLevel = enchantment.getMaxLevel();
-        if (level > maxLevel) {
+        if (level > enchantment.getMaxLevel()) {
             player.sendMessage(ChatColor.YELLOW + "WARNING: This level exceeds the maximum vanilla cap.");
         }
     }
