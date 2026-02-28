@@ -1,7 +1,5 @@
 package net.curxxed.dev.wintercore.nametags;
 
-import java.util.Map;
-import java.util.UUID;
 import net.curxxed.dev.wintercore.managers.Handler;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
@@ -9,6 +7,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+
+import java.util.Map;
+import java.util.UUID;
 
 public class DefaultNameTagAdapter extends Handler implements NameTagAdapter {
     private static final String TEAM_PREFIX = "wintercore_disguise_";
@@ -30,7 +31,8 @@ public class DefaultNameTagAdapter extends Handler implements NameTagAdapter {
         team.setPrefix(formattedColor);
         team.setSuffix("");
         team.addEntry(p.getName());
-        p.setPlayerListName(formattedColor + p.getName() + ChatColor.RESET);
+        String listName = formattedColor + p.getName();
+        p.setPlayerListName(listName.length() > 16 ? p.getName() : listName);
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             if (viewer.equals(p)) continue;
             Scoreboard viewerBoard = viewer.getScoreboard();
@@ -91,7 +93,8 @@ public class DefaultNameTagAdapter extends Handler implements NameTagAdapter {
                 viewerTeam.addEntry(p.getName());
             }
         }
-        p.setPlayerListName(ChatColor.translateAlternateColorCodes('&', selfColor) + p.getName() + ChatColor.RESET);
+        String listName = ChatColor.translateAlternateColorCodes('&', selfColor) + p.getName();
+        p.setPlayerListName(listName.length() > 16 ? p.getName() : listName);
     }
 
 }

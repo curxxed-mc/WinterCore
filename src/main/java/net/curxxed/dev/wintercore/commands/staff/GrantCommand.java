@@ -1,11 +1,12 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.menus.RankMenu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
@@ -50,6 +51,12 @@ public class GrantCommand extends BaseCommand {
     @Override
     public void execute(CommandArguments commandArgs) {
         Player sender = commandArgs.getPlayer();
+
+        if (commandArgs.length() < 1) {
+            sender.sendMessage(CC.translate("&cUsage: /grant <player>"));
+            return;
+        }
+
         String targetName = commandArgs.getArgs()[0];
         UUID targetUUID = Bukkit.getOfflinePlayer(targetName).getUniqueId();
         plugin.getRankManager().setTargetPlayerUUID(sender.getUniqueId(), targetUUID);
@@ -75,7 +82,9 @@ public class GrantCommand extends BaseCommand {
             rankGUI.setItem(slot++, rankItem);
         }
 
-        ItemStack cancelItem = new ItemStack(Material.BARRIER);
+        ItemStack cancelItem = Utilities.IS_LEGACY
+                ? new ItemStack(Material.STAINED_GLASS_PANE, 1, (short) 14) // red pane on 1.7
+                : new ItemStack(Material.BARRIER);
         ItemMeta cancelMeta = cancelItem.getItemMeta();
         cancelMeta.setDisplayName(CC.translate("&cCancel"));
         cancelItem.setItemMeta(cancelMeta);

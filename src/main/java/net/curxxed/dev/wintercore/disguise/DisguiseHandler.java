@@ -186,7 +186,9 @@ public abstract class DisguiseHandler {
             rankItem.setItemMeta(meta);
             gui.setItem(slot++, rankItem);
         }
-        ItemStack cancelItem = new ItemStack(Material.BARRIER);
+        ItemStack cancelItem = Utilities.IS_1_7
+                ? new ItemStack(Material.STAINED_GLASS_PANE, 1, (short) 14)
+                : new ItemStack(Material.BARRIER);
         ItemMeta cancelMeta = cancelItem.getItemMeta();
         cancelMeta.setDisplayName(CC.translate("&cCancel"));
         cancelItem.setItemMeta(cancelMeta);

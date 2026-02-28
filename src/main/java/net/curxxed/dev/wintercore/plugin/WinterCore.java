@@ -1,10 +1,31 @@
+/**
+ * @authors curxxed, samm, FaceSlap_
+ * @since iCore (WinterCore) 0.01
+ * @revision 0.9
+ *
+ * <p>
+ *     WinterCore is a comprehensive Minecraft server management plugin that provides a wide range of features for server administrators and staff members.
+ *     It includes functionalities such as player disguises, rank management, chat color selection, staff mode, and integration with Redis for cross-server communication.
+ * </p>
+ *
+ * <p>
+ *     It also includes support for PlaceholderAPI to provide dynamic placeholders for ranks, disguises, and other player-related information.
+ * </p>
+ *
+ * <p>
+ *     WinterCore is built with performance and reliability in mind, utilizing asynchronous tasks for database operations and Redis communication to minimize server lag.
+ *     It also includes robust error handling and logging to assist with troubleshooting and maintenance.
+ * </p>
+ *
+ *
+ */
+
 package net.curxxed.dev.wintercore.plugin;
 
 import com.google.gson.Gson;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.var;
-import net.curxxed.dev.wintercore.API.WinterCoreAPI;
 import net.curxxed.dev.wintercore.client.ClientBrand;
 import net.curxxed.dev.wintercore.client.ClientBrandCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandHandler;
@@ -58,6 +79,7 @@ import java.util.*;
 
 @Getter
 @Setter
+
 public final class WinterCore extends JavaPlugin {
 
     public static WinterCore INSTANCE;
@@ -91,8 +113,6 @@ public final class WinterCore extends JavaPlugin {
     private DisguiseHandler disguiseHandler;
     private RankMenu rankMenu;
     private CommandHandler commandHandler;
-    // Public accessor for other plugins
-    private WinterCoreAPI api;
 
     @Override
     public void onEnable() {
@@ -184,9 +204,6 @@ public final class WinterCore extends JavaPlugin {
         registerBungee();
         this.nameTagHandler = new NameTagHandler(this);
         this.nameTagHandler.load();
-
-        // initialize public API after internal managers have been loaded
-        this.api = new WinterCoreAPI(this);
     }
 
     public void registerBungee() {

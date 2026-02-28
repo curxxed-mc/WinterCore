@@ -41,6 +41,7 @@ public class DatabaseManager {
     }
 
     private void setupDataSource() {
+        java.util.logging.Logger.getLogger("org.mongodb.driver").setLevel(java.util.logging.Level.SEVERE);
         try {
             String uri = plugin.getConfig().getString("mongodb.uri", "mongodb://localhost:27017");
             String dbName = plugin.getConfig().getString("mongodb.database", "wintercore");
