@@ -56,7 +56,8 @@ public class NameTagHandler extends Handler implements Listener {
                 team.addEntry(target.getName());
             }
         }
-        target.setPlayerListName(ChatColor.translateAlternateColorCodes('&', color) + target.getName() + ChatColor.RESET);
+        String listName = ChatColor.translateAlternateColorCodes('&', color) + target.getName();
+        target.setPlayerListName(listName.length() > 16 ? target.getName() : listName);
     }
 
     @EventHandler

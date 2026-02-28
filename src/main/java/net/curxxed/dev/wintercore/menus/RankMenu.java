@@ -153,7 +153,9 @@ public class RankMenu implements Listener {
         cont.setItemMeta(contMeta);
         gui.setItem(26, cont);
         // Cancel button
-        ItemStack cancel = new ItemStack(Material.BARRIER);
+        ItemStack cancel = Utilities.IS_1_7
+                ? new ItemStack(Material.STAINED_GLASS_PANE, 1, (short) 14)
+                : new ItemStack(Material.BARRIER);
         ItemMeta cancelMeta = cancel.getItemMeta();
         cancelMeta.setDisplayName(CC.translate("&cCancel"));
         cancel.setItemMeta(cancelMeta);
