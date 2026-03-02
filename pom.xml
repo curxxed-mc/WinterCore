@@ -125,6 +125,11 @@
             <version>21.0</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.warrenstrange</groupId>
+            <artifactId>googleauth</artifactId>
+            <version>1.5.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -151,10 +156,6 @@
                                 </filter>
                             </filters>
                             <relocations>
-                                <relocation>
-                                    <pattern>org.mongodb</pattern>
-                                    <shadedPattern>net.curxxed.dev.wintercore.libs.mongo</shadedPattern>
-                                </relocation>
                                 <relocation>
                                     <pattern>com.google.common</pattern>
                                     <shadedPattern>net.curxxed.dev.wintercore.libs.google.common</shadedPattern>

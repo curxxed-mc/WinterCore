@@ -40,8 +40,42 @@ public class DatabaseManager {
         return instance;
     }
 
+    private void suppressMongoLogs() {
+        try {
+            Class<?> logManagerClass = Class.forName("org.apache.logging.log4j.LogManager");
+
+            java.lang.reflect.Method getLogger = logManagerClass.getMethod("getLogger", String.class);
+
+            String[] names = {
+                    "org.mongodb.driver",
+                    "org.mongodb.driver.cluster",
+                    "org.mongodb.driver.connection",
+                    "org.mongodb.driver.protocol",
+                    "org.mongodb.driver.management",
+                    "net.curxxed.dev.wintercore.libs.mongo",
+                    "net.curxxed.dev.wintercore.libs.mongo.driver",
+                    "net.curxxed.dev.wintercore.libs.mongo.driver.cluster",
+                    "net.curxxed.dev.wintercore.libs.mongo.driver.connection"
+            };
+
+            for (String name : names) {
+                Object logger = getLogger.invoke(null, name);
+
+                // Load Level from the SAME classloader as the logger instance
+                Class<?> levelClass = logger.getClass().getClassLoader()
+                        .loadClass("org.apache.logging.log4j.Level");
+                Object offLevel = levelClass.getField("OFF").get(null);
+
+                logger.getClass().getMethod("setLevel", levelClass).invoke(logger, offLevel);
+            }
+
+        } catch (Exception e) {
+            plugin.getLogger().warning("Could not suppress MongoDB driver logs: " + e.getMessage());
+        }
+    }
+
     private void setupDataSource() {
-        java.util.logging.Logger.getLogger("org.mongodb.driver").setLevel(java.util.logging.Level.SEVERE);
+        suppressMongoLogs();
         try {
             String uri = plugin.getConfig().getString("mongodb.uri", "mongodb://localhost:27017");
             String dbName = plugin.getConfig().getString("mongodb.database", "wintercore");
