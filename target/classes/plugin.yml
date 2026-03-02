@@ -1,4 +1,0 @@
-name: WinterCore
-version: '0.8.5'
-main: net.curxxed.dev.wintercore.plugin.WinterCore
-authors: [ curxxed ]

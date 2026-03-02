@@ -29,10 +29,6 @@
               </filters>
               <relocations>
                 <relocation>
-                  <pattern>org.mongodb</pattern>
-                  <shadedPattern>net.curxxed.dev.wintercore.libs.mongo</shadedPattern>
-                </relocation>
-                <relocation>
                   <pattern>com.google.common</pattern>
                   <shadedPattern>net.curxxed.dev.wintercore.libs.google.common</shadedPattern>
                 </relocation>
