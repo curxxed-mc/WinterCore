@@ -112,7 +112,7 @@ public class GrantCommand extends BaseCommand {
         lore.add(CC.translate("&7&m------------------------"));
         lore.add(CC.translate("&6Preview:"));
         String translatedPrefix = CC.translate(prefix);
-        lore.add(translatedPrefix + translatedColorCode + targetName + CC.translate("&f") + ": " + CC.translate("&7") + "Hi! This is what your message would look like.");
+        lore.add(translatedPrefix + " " + translatedColorCode + targetName + CC.translate("&f") + ": " + CC.translate("&7") + "Hi! This is what your message would look like.");
         lore.add(CC.translate("&7&m------------------------"));
         lore.add(CC.translate("&aClick to Grant this Rank to &b" + targetName + "&a."));
         meta.setLore(lore);

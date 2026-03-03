@@ -66,7 +66,7 @@ public class RankCommand extends BaseCommand {
                 sender.sendMessage(CC.translate("&7- &b/rank remove <rank> <permission> [inherit]"));
                 sender.sendMessage(CC.translate("&7- &b/rank prefix <rank> <prefix>"));
                 sender.sendMessage(CC.translate("&7- &b/rank permissions <rank>"));
-                sender.sendMessage(CC.translate("&7- &b/setrank <player>"));
+                sender.sendMessage(CC.translate("&7- &b/grant <player>"));
         }
     }
 

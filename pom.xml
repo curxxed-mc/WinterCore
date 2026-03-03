@@ -6,7 +6,7 @@
 
     <groupId>net.curxxed.dev</groupId>
     <artifactId>WinterCore</artifactId>
-    <version>v0.85</version>
+    <version>0.9</version>
     <packaging>jar</packaging>
 
     <name>WinterCore</name>
@@ -145,16 +145,6 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>kotlin/**</exclude>
-                                        <exclude>META-INF/kotlin*.*</exclude>
-                                        <exclude>**/kotlin/**</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
                             <relocations>
                                 <relocation>
                                     <pattern>com.google.common</pattern>
@@ -163,10 +153,6 @@
                                 <relocation>
                                     <pattern>redis.clients</pattern>
                                     <shadedPattern>net.curxxed.dev.wintercore.libs.redis</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.github.curxxed-mc</pattern>
-                                    <shadedPattern>net.curxxed.dev.wintercore.libs.commandapi</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
