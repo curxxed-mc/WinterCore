@@ -31,6 +31,11 @@ public abstract class BaseCommand implements CommandExecutor {
             return true;
         }
 
+        if (commandInfo.inGameOnly() && !(sender instanceof org.bukkit.entity.Player)) {
+            sender.sendMessage(CC.translate("&cThis command can only be executed by players."));
+            return true;
+        }
+
         final CommandArguments commandArgs = new CommandArguments(sender, args, label);
         if (commandInfo.async()) {
             Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> this.execute(commandArgs));

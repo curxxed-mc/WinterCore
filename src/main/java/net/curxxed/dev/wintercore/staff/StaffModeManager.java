@@ -24,7 +24,7 @@ public class StaffModeManager {
     private final WinterCore plugin;
 
     private static final String PUSH_FORWARD    = ChatColor.GOLD + "Push Forward";
-    private static final String STAFF_LIST      = ChatColor.YELLOW + "staff List";
+    private static final String STAFF_LIST      = ChatColor.YELLOW + "Staff List";
     private static final String RANDOM_TELEPORT = ChatColor.AQUA + "Random Teleport";
     private static final String INSPECT_PLAYER  = ChatColor.AQUA + "Inspect Player";
     private static final String FREEZE_PLAYER   = ChatColor.AQUA + "Freeze Player";
