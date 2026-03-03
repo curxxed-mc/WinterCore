@@ -6,6 +6,7 @@ import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.staff.StaffModeManager;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.GameMode;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -48,6 +49,10 @@ public class GameModeCommand extends BaseCommand {
                     targetGameMode = GameMode.ADVENTURE;
                     break;
                 case "gmsp": case "gm3":
+                    if (Utilities.IS_1_7) {
+                        sender.sendMessage(CC.translate("&cSpectator mode is not available in Minecraft 1.7.10."));
+                        return;
+                }
                     targetGameMode = GameMode.SPECTATOR;
                     break;
             }
@@ -57,17 +62,13 @@ public class GameModeCommand extends BaseCommand {
             sender.sendMessage(CC.translate("&cInvalid gamemode specified. Use creative, survival, adventure, or spectator."));
             return;
         }
-
-        // Step 2: Determine the target Player
-        Player targetPlayer = null;
-        // If mode was parsed from arg 0, player might be in arg 1
+        Player targetPlayer;
         if (parseGameMode(modeInput) != null) {
             targetPlayer = args.getOptionalPlayer(1).orElse(null);
-        } else { // Otherwise, player might be in arg 0
+        } else {
             targetPlayer = args.getOptionalPlayer(0).orElse(null);
         }
 
-        // If no player specified in args, default to sender
         if (targetPlayer == null) {
             if (sender instanceof Player) {
                 targetPlayer = (Player) sender;
@@ -77,7 +78,6 @@ public class GameModeCommand extends BaseCommand {
             }
         }
 
-        // Step 3: Perform permission and safety checks
         if (!sender.hasPermission("wintercore.command.gamemode." + targetGameMode.name().toLowerCase())) {
             sender.sendMessage(CC.translate("&cYou do not have permission to set this gamemode."));
             return;
@@ -93,7 +93,6 @@ public class GameModeCommand extends BaseCommand {
             return;
         }
 
-        // Step 4: Execute the command and send feedback
         targetPlayer.setGameMode(targetGameMode);
 
         String modeName = targetGameMode.name().substring(0, 1).toUpperCase() + targetGameMode.name().substring(1).toLowerCase();

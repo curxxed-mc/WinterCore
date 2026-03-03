@@ -8,18 +8,21 @@ import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.utils.SkinFetcher;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 public class DisguiseRegistry {
+
     private final Map<UUID, SkinFetcher.SkinProperty> originalSkins = new ConcurrentHashMap<>();
     public final Set<UUID> disguisedPlayers = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, String> colorCache = new ConcurrentHashMap<>();
+
     private final RedisManager redisManager;
     private final Logger logger;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final Map<UUID, String> colorCache = new ConcurrentHashMap<>();
 
     public DisguiseRegistry(RedisManager redisManager, Logger logger) {
         this.redisManager = redisManager;
@@ -40,7 +43,10 @@ public class DisguiseRegistry {
     }
 
     public void clear(Player player) {
-        UUID uuid = player.getUniqueId();
+        clear(player.getUniqueId());
+    }
+
+    public void clear(UUID uuid) {
         originalSkins.remove(uuid);
         disguisedPlayers.remove(uuid);
     }
@@ -51,163 +57,81 @@ public class DisguiseRegistry {
             if (player != null && player.isOnline()) {
                 try {
                     undisguiseAction.accept(player);
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) {}
             }
         }
     }
 
-    public void clear(UUID uuid) {
-        originalSkins.remove(uuid);
-        disguisedPlayers.remove(uuid);
-    }
-
-    /**
-     * Call this on PlayerQuitEvent. Will only clear disguise if not switching servers.
-     * Schedules permissions delayed cleanup to allow for cross-server reconnects.
-     */
     public void handleQuit(Player player, Consumer<Player> undisguiseAction) {
         UUID uuid = player.getUniqueId();
         scheduler.schedule(() -> {
-            if (!redisManager.isStillPendingSwitch(uuid)) {
-                if (isDisguised(player)) {
-                    try {
-                        undisguiseAction.accept(player);
-                    } catch (Exception e) {
-                        logger.warning("Failed to undisguise player on quit: " + player.getName());
-                    }
-                    clear(player);
+            if (!redisManager.isStillPendingSwitch(uuid) && isDisguised(player)) {
+                try {
+                    undisguiseAction.accept(player);
+                } catch (Exception e) {
+                    logger.warning("Failed to undisguise player on quit: " + player.getName());
                 }
+                clear(uuid);
             }
-        }, 4, TimeUnit.SECONDS); // 4s delay for cross-server
+        }, 4, TimeUnit.SECONDS);
     }
 
     public void shutdown() {
         scheduler.shutdownNow();
     }
 
-    /**
-     * Store disguise info in Redis for permissions player.
-     * Now includes SKIN to ensure correct texture is loaded on other servers.
-     */
     public void setDisguiseInfo(Player player, String disguiseName, String disguiseRank, String skin, String color, String prefix) {
-        // Build JSON for disguise info
         JsonObject obj = new JsonObject();
         obj.addProperty("name", disguiseName);
         obj.addProperty("rank", disguiseRank);
-        obj.addProperty("skin", skin); // Added Skin persistence
+        obj.addProperty("skin", skin);
         obj.addProperty("color", color);
         obj.addProperty("prefix", prefix);
         redisManager.setDisguise(player.getUniqueId(), obj.toString());
     }
 
-    /**
-     * Remove disguise info from Redis for permissions player.
-     */
     public void clearDisguiseInfo(Player player) {
         redisManager.clearDisguise(player.getUniqueId());
     }
 
-    /**
-     * Get the effective rank for permissions player (disguise rank if present, else real rank).
-     * This is async and returns via callback.
-     */
     public void getEffectiveRank(Player player, Consumer<String> callback) {
         redisManager.getDisguise(player.getUniqueId(), disguiseJson -> {
-            if (disguiseJson != null) {
-                try {
-                    JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
-                    if (obj.has("rank") && !obj.get("rank").isJsonNull()) {
-                        callback.accept(obj.get("rank").getAsString());
-                        return;
-                    }
-                } catch (Exception ignore) {}
-            }
-            // Fallback to real rank
-            RankManager rankManager = RankManager.getInstance();
-            rankManager.getRank(player, callback);
+            String rank = extractField(disguiseJson, "rank");
+            if (rank != null) { callback.accept(rank); return; }
+            RankManager.getInstance().getRank(player, callback);
         });
     }
 
-    /**
-     * Get the effective color for permissions player (disguise color if present, else real color).
-     * This is async and returns via callback.
-     */
     public void getEffectiveColor(Player player, Consumer<String> callback) {
         redisManager.getDisguise(player.getUniqueId(), disguiseJson -> {
-            if (disguiseJson != null) {
-                try {
-                    JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
-                    if (obj.has("color") && !obj.get("color").isJsonNull()) {
-                        callback.accept(obj.get("color").getAsString());
-                        return;
-                    }
-                } catch (Exception ignore) {}
-            }
-            // Fallback to real color (fully async, no getRankSync)
+            String color = extractField(disguiseJson, "color");
+            if (color != null) { callback.accept(color); return; }
             RankManager rankManager = RankManager.getInstance();
-            rankManager.getRankAsync(player, realRank -> rankManager.getColorPreference(realRank, callback));
+            rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, callback));
         });
     }
 
-    /**
-     * Get the effective color for permissions player (disguise color if present, else real color).
-     * This is synchronous and returns the color directly.
-     */
     public String getEffectiveColorSync(Player player) {
-        String disguiseJson = redisManager.getDisguiseSync(player.getUniqueId());
-        if (disguiseJson != null) {
-            try {
-                JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
-                if (obj.has("color") && !obj.get("color").isJsonNull()) {
-                    return obj.get("color").getAsString();
-                }
-            } catch (Exception ignore) {}
-        }
-        // Fallback to real color
-        return RankManager.getInstance().getColorPreferenceSync(player);
+        String color = extractField(redisManager.getDisguiseSync(player.getUniqueId()), "color");
+        return color != null ? color : RankManager.getInstance().getColorPreferenceSync(player);
     }
 
-    /**
-     * Get the effective prefix for permissions player (disguise prefix if present, else real prefix).
-     * This is async and returns via callback.
-     */
     public void getEffectivePrefix(Player player, Consumer<String> callback) {
         redisManager.getDisguise(player.getUniqueId(), disguiseJson -> {
-            if (disguiseJson != null) {
-                try {
-                    JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
-                    if (obj.has("prefix") && !obj.get("prefix").isJsonNull()) {
-                        callback.accept(obj.get("prefix").getAsString());
-                        return;
-                    }
-                } catch (Exception ignore) {}
-            }
-            // Fallback to real prefix
-            RankManager rankManager = RankManager.getInstance();
-            rankManager.getRankPrefix(player, callback);
+            String prefix = extractField(disguiseJson, "prefix");
+            if (prefix != null) { callback.accept(prefix); return; }
+            RankManager.getInstance().getRankPrefix(player, callback);
         });
     }
 
     public void updateColorCache(Player player) {
         UUID uuid = player.getUniqueId();
         redisManager.getDisguise(uuid, disguiseJson -> {
-            String color = null;
-            if (disguiseJson != null) {
-                try {
-                    JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
-                    if (obj.has("color") && !obj.get("color").isJsonNull()) {
-                        color = obj.get("color").getAsString();
-                    }
-                } catch (Exception ignore) {}
-            }
-            if (color == null) {
-                // Fallback to real color (sync is fine here, since it's cached in RankManager)
-                color = RankManager.getInstance().getColorPreferenceSync(player);
-            }
+            String color = extractField(disguiseJson, "color");
+            if (color == null) color = RankManager.getInstance().getColorPreferenceSync(player);
             colorCache.put(uuid, color);
-            // Update scoreboard for this player for all viewers
-            Bukkit.getScheduler().runTask(WinterCore.INSTANCE, () -> WinterCore.INSTANCE.getNameTagHandler().updateNameTagFor(player));
+            Bukkit.getScheduler().runTask(WinterCore.INSTANCE,
+                    () -> WinterCore.INSTANCE.getNameTagHandler().updateNameTagFor(player));
         });
     }
 
@@ -217,5 +141,16 @@ public class DisguiseRegistry {
 
     public void removeColorCache(UUID uuid) {
         colorCache.remove(uuid);
+    }
+
+    private String extractField(String disguiseJson, String field) {
+        if (disguiseJson == null) return null;
+        try {
+            JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
+            if (obj.has(field) && !obj.get(field).isJsonNull() && !obj.get(field).getAsString().isEmpty()) {
+                return obj.get(field).getAsString();
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 }

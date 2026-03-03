@@ -55,7 +55,7 @@ public class ReportCommand extends BaseCommand {
         reporter.sendMessage(ChatColor.GREEN + "You have reported " + ChatColor.WHITE + target.getName() +
                 ChatColor.GREEN + " for: " + ChatColor.WHITE + reason);
 
-        PlayerListener playerListener = new PlayerListener(plugin, tagsManager);
+        PlayerListener playerListener = new PlayerListener(plugin);
         playerListener.notifyStaff(reporter, target, reason);
     }
 }
