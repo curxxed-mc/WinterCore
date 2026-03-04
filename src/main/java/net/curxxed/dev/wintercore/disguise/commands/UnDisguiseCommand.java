@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
         inGameOnly = true
 )
 public class UnDisguiseCommand extends BaseCommand {
+
     private final DisguiseHandler disguiseHandler;
 
     public UnDisguiseCommand(DisguiseHandler disguiseHandler, WinterCore plugin) {
@@ -24,11 +25,10 @@ public class UnDisguiseCommand extends BaseCommand {
         this.disguiseHandler = disguiseHandler;
     }
 
-
+    @Override
     public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
-        try {
-            DisguiseCallback result = disguiseHandler.unDisguise(player, true);
+        disguiseHandler.unDisguise(player, true, result -> {
             if (result == DisguiseCallback.SUCCESS) {
                 player.sendMessage(CC.translate("&aYou are no longer disguised."));
             } else if (result == DisguiseCallback.NOT_DISGUISED) {
@@ -36,9 +36,6 @@ public class UnDisguiseCommand extends BaseCommand {
             } else {
                 player.sendMessage(CC.translate("&cAn error occurred while undisguising."));
             }
-        } catch (Exception e) {
-            player.sendMessage(CC.translate("&cAn error occurred while undisguising."));
-            e.printStackTrace();
-        }
+        });
     }
 }

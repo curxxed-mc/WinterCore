@@ -91,7 +91,7 @@ public class RankManager {
         cacheService.putColor(player.getUniqueId(), color);
 
         displayManager.sendRankUpdateToBungee(player.getName(), rank);
-        Bukkit.getPluginManager().callEvent(new RankChangeEvent(player, rank));
+        Bukkit.getPluginManager().callEvent(new RankChangeEvent(player, rank, getRankSync(player)));
         displayManager.applyRank(player, rank, color);
 
         player.sendMessage(CC.translate("&aYour rank has been set to " + rank + " by " + giver.getName() + "."));

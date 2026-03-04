@@ -4,9 +4,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.curxxed.dev.wintercore.events.PlayerDisguiseEvent;
 import net.curxxed.dev.wintercore.events.PlayerUnDisguiseEvent;
+import net.curxxed.dev.wintercore.events.ServerSwitchEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
-import net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,9 +14,11 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+
 import java.util.UUID;
 
 public class DisguiseEventListener implements Listener {
+
     private final DefaultDisguiseHandler disguiseHandler;
     private final WinterCore plugin;
 
@@ -30,7 +32,6 @@ public class DisguiseEventListener implements Listener {
         Player joining = event.getPlayer();
         UUID uuid = joining.getUniqueId();
 
-
         String disguiseJson = plugin.getRedisManager().getDisguiseSync(uuid);
 
         if (disguiseJson != null && !disguiseJson.isEmpty()) {
@@ -40,70 +41,55 @@ public class DisguiseEventListener implements Listener {
                 String rank = obj.get("rank").getAsString();
                 String skin = obj.has("skinName") ? obj.get("skinName").getAsString() : name;
 
-                // Delay execution to ensure player is fully in the world
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-
-                    try {
-                        // Matching your signature: disguise(Player player, String rank, String name, String skin)
-                        DisguiseCallback result = disguiseHandler.disguise(joining, rank, name, skin);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }, 2L);
+                Bukkit.getScheduler().runTaskLater(plugin, () ->
+                        disguiseHandler.disguise(joining, rank, name, skin, result -> {
+                            if (result != net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback.SUCCESS) {
+                                plugin.getLogger().warning("[Disguise] Failed to restore disguise for "
+                                        + joining.getName() + " on join (callback=" + result + ")");
+                            }
+                        }), 2L);
 
             } catch (Exception e) {
-                plugin.getLogger().severe("[DisguiseDebug] Error parsing redis-disguise JSON");
+                plugin.getLogger().severe("[Disguise] Error parsing Redis disguise JSON for " + joining.getName());
                 e.printStackTrace();
             }
         }
 
-        // Handle visibility for other disguised players
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.equals(joining)) continue;
             if (plugin.getDisguiseRegistry().isDisguised(online)) {
-                refreshVisibility(online, joining);
+                refreshVisibilityFor(online, joining);
             }
         }
     }
 
-    /**
-     * Re-sends packets so that 'viewer' sees 'disguised' with their disguised identity
-     */
-    private void refreshVisibility(Player disguised, Player viewer) {
-        if (viewer == null || !viewer.isOnline()) return;
-        viewer.hidePlayer(disguised);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (viewer.isOnline() && disguised.isOnline()) {
-                viewer.showPlayer(disguised);
-            }
-        }, 1L);
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+
+        boolean isPendingSwitch = plugin.getRedisManager().isStillPendingSwitch(uuid);
+
+        plugin.getDisguiseDataMap().remove(uuid);
+        plugin.getDisguiseRegistry().clear(player);
+
+        if (!isPendingSwitch) {
+            plugin.getDisguiseRegistry().clearDisguiseInfo(player);
+        }
     }
 
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        clearDisguiseOnDisconnect(event.getPlayer());
-    }
+    public void onServerSwitch(ServerSwitchEvent event) {
+        Player player = event.getPlayer();
 
-    public void clearDisguiseOnDisconnect(Player player) {
-        plugin.getDisguiseDataMap().remove(player.getUniqueId());
-        plugin.getDisguiseRegistry().clear(player);
-        plugin.getDisguiseRegistry().clearDisguiseInfo(player);
-    }
+        if (!plugin.getDisguiseRegistry().isDisguised(player)) return;
 
-    /**
-     * Cleans up all disguises when the server shuts down or plugin disables.
-     */
-    public void clearDisguiseOnShutdown() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (plugin.getDisguiseRegistry().isDisguised(player)) {
-                try {
-                    disguiseHandler.undisguise(player);
-                    plugin.getDisguiseRegistry().clearDisguiseInfo(player);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Failed to undisguise " + player.getName() + " on shutdown.");
-                }
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                if (online.equals(player)) continue;
+                refreshVisibilityFor(player, online);
             }
-        }
+        }, 1L);
     }
 
     @EventHandler
@@ -116,10 +102,40 @@ public class DisguiseEventListener implements Listener {
 
     @EventHandler
     public void onPlayerUnDisguise(PlayerUnDisguiseEvent event) {
-        plugin.getRedisManager().clearDisguise(event.getPlayer().getUniqueId());
-        plugin.getDisguiseRegistry().updateColorCache(event.getPlayer());
-        if (plugin.getNameTagHandler() != null) {
-            plugin.getNameTagHandler().updateNameTagFor(event.getPlayer());
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+
+        if (!plugin.getRedisManager().isStillPendingSwitch(uuid)) {
+            plugin.getRedisManager().clearDisguise(uuid);
         }
+
+        plugin.getDisguiseRegistry().updateColorCache(player);
+        if (plugin.getNameTagHandler() != null) {
+            plugin.getNameTagHandler().updateNameTagFor(player);
+        }
+    }
+
+    public void clearDisguiseOnShutdown() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (plugin.getDisguiseRegistry().isDisguised(player)) {
+                disguiseHandler.undisguise(player, result -> {
+                    if (result != net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback.SUCCESS) {
+                        plugin.getLogger().warning("[Disguise] Failed to undisguise "
+                                + player.getName() + " on shutdown.");
+                    }
+                });
+                plugin.getDisguiseRegistry().clearDisguiseInfo(player);
+            }
+        }
+    }
+
+    private void refreshVisibilityFor(Player disguised, Player viewer) {
+        if (viewer == null || !viewer.isOnline()) return;
+        viewer.hidePlayer(disguised);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (viewer.isOnline() && disguised.isOnline()) {
+                viewer.showPlayer(disguised);
+            }
+        }, 1L);
     }
 }
