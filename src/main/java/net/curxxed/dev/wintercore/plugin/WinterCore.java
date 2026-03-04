@@ -30,10 +30,7 @@ import net.curxxed.dev.wintercore.listeners.ChatListener;
 import net.curxxed.dev.wintercore.listeners.ConnectionListener;
 import net.curxxed.dev.wintercore.listeners.FreezeListener;
 import net.curxxed.dev.wintercore.listeners.PlayerListener;
-import net.curxxed.dev.wintercore.listeners.ReachListener;
-import net.curxxed.dev.wintercore.menus.ChatColorSelectionMenu;
-import net.curxxed.dev.wintercore.menus.RankMenu;
-import net.curxxed.dev.wintercore.menus.StaffListMenu;
+import net.curxxed.dev.wintercore.menus.*;
 import net.curxxed.dev.wintercore.nametags.NameTagHandler;
 import net.curxxed.dev.wintercore.placeholders.Placeholder;
 import net.curxxed.dev.wintercore.rank.RankChangeEvent;
@@ -88,12 +85,13 @@ public final class WinterCore extends JavaPlugin {
     private ChatListener chatListener;
     private FreezeListener freezeListener;
     private StaffModeManager staffModeManager;
-    private ReachListener reachListener;
     private RankChangeEvent rankChangeEvent;
     private DisguiseHandler disguiseHandler;
     private RankMenu rankMenu;
     private CommandHandler commandHandler;
     private AuthModule authModule;
+    private HistoryMenu historyMenu;
+    private MenuConfig menuConfig;
 
     @Override
     public void onEnable() {
@@ -205,20 +203,21 @@ public final class WinterCore extends JavaPlugin {
         pm.registerEvents(tagsGUI, this);
         pm.registerEvents(disguiseEventListener, this);
 
-        HistoryCommand history = new HistoryCommand(this);
+        HistoryCommand history = new HistoryCommand(this, historyMenu);
         pm.registerEvents(history, this);
 
         ProfileCommand profile = new ProfileCommand(this, redisManager);
         pm.registerEvents(profile, this);
 
         pm.registerEvents(new BanList(this), this);
+        pm.registerEvents(new HistoryMenu(this,menuConfig), this);
     }
 
     private void registerCommands() {
         commandHandler.register(new FreezeCommand(freezeListener, this));
         commandHandler.register(ThruCommand.class);
         commandHandler.register(Fly.class);
-        commandHandler.register(new TrollCommand(this, reachListener));
+        commandHandler.register(new TrollCommand(this));
         commandHandler.register(InvSeeCommand.class);
         commandHandler.register(Feed.class);
         commandHandler.register(ClearChat.class);
@@ -248,7 +247,7 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(WarningCommand.class);
         commandHandler.register(UnmuteCommand.class);
 
-        HistoryCommand history = new HistoryCommand(this);
+        HistoryCommand history = new HistoryCommand(this, historyMenu);
         getServer().getPluginManager().registerEvents(history, this);
         commandHandler.register(history);
 
