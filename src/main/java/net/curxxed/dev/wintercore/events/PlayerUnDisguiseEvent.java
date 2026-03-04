@@ -1,12 +1,12 @@
-package net.curxxed.dev.wintercore.managers.events;
+package net.curxxed.dev.wintercore.events;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.entity.Player;
 
-@Getter
 @Setter
-public class PlayerDisguiseEvent  extends WinterCoreEvents {
+@Getter
+public class PlayerUnDisguiseEvent extends WinterCoreEvents {
     private Player player;
 
     private String previousName;
@@ -15,7 +15,7 @@ public class PlayerDisguiseEvent  extends WinterCoreEvents {
 
     private String disguisedRank;
 
-    public PlayerDisguiseEvent(Player player, String previousName, String currentName, String disguisedRank) {
+    public PlayerUnDisguiseEvent(Player player, String previousName, String currentName, String disguisedRank) {
         this.player = player;
         this.previousName = previousName;
         this.currentName = currentName;

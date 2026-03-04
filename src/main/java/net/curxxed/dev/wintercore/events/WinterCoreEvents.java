@@ -1,4 +1,4 @@
-package net.curxxed.dev.wintercore.managers.events;
+package net.curxxed.dev.wintercore.events;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;

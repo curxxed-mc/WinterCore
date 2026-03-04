@@ -1,0 +1,49 @@
+history-menu:
+  title: "&6{player}'s History"
+  size: 27
+  items:
+    warnings:
+      slot: 10
+      material: PAPER
+      name: "&eWarnings"
+      lore:
+        - "&7Click to view warnings."
+    mutes:
+      slot: 12
+      material: BOOK
+      name: "&6Mutes"
+      lore:
+        - "&7Click to view mutes."
+    bans:
+      slot: 14
+      material: IRON_DOOR
+      name: "&cBans"
+      lore:
+        - "&7Click to view bans."
+    grants:
+      slot: 16
+      material: NAME_TAG
+      name: "&aGrants"
+      lore:
+        - "&7Click to view rank grants."
+
+history-category:
+  size: 54
+  back-button:
+    slot: 49
+    material: ARROW
+    name: "&cBack"
+    lore:
+      - "&7Return to main history menu."
+  warning-item:
+    material: BOOK
+    name: "&eWarning"
+  mute-item:
+    material: PAPER
+    name: "&bMute"
+  ban-item:
+    material: REDSTONE_BLOCK
+    name: "&cBan"
+  grant-item:
+    material: NAME_TAG
+    name: "&aGrant"

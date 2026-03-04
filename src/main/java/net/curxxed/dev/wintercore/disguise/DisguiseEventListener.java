@@ -2,8 +2,8 @@ package net.curxxed.dev.wintercore.disguise;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.curxxed.dev.wintercore.managers.events.PlayerDisguiseEvent;
-import net.curxxed.dev.wintercore.managers.events.PlayerUnDisguiseEvent;
+import net.curxxed.dev.wintercore.events.PlayerDisguiseEvent;
+import net.curxxed.dev.wintercore.events.PlayerUnDisguiseEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback;
