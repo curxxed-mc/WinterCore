@@ -41,6 +41,59 @@ public class DatabaseManager {
         return instance;
     }
 
+    public void getRankGrants(UUID uuid, Consumer<List<Map<String, String>>> callback) {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            List<Map<String, String>> result = new ArrayList<>();
+            try {
+                Document doc = profiles.find(Filters.eq("_id", uuid.toString())).first();
+                if (doc != null && doc.containsKey("rankGrants")) {
+                    List<Document> list = doc.getList("rankGrants", Document.class);
+                    for (Document g : list) {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("rank", g.getString("rank"));
+                        map.put("issuer", g.getString("grantedBy"));
+                        map.put("date", g.getLong("grantedAt") != null
+                                ? new java.util.Date(g.getLong("grantedAt")).toString() : "Unknown");
+                        map.put("expiration", g.get("expiresAt") != null
+                                ? new java.util.Date((Long) g.get("expiresAt")).toString() : "Permanent");
+                        map.put("reason", g.getString("reason"));
+                        result.add(map);
+                    }
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Could not fetch rank grants for " + uuid, e);
+            }
+            plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept(result));
+        });
+    }
+
+    public void setChatColorPreference(UUID uuid, String colorCode) {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                profiles.updateOne(
+                        Filters.eq("_id", uuid.toString()),
+                        Updates.set("chatColor", colorCode),
+                        new UpdateOptions().upsert(true)
+                );
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Could not save chat color for " + uuid, e);
+            }
+        });
+    }
+
+    public void getChatColorPreference(UUID uuid, Consumer<String> callback) {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                Document doc = profiles.find(Filters.eq("_id", uuid.toString())).first();
+                String color = (doc != null && doc.containsKey("chatColor")) ? doc.getString("chatColor") : "&f";
+                plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept(color));
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Could not fetch chat color for " + uuid, e);
+                plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept("&f"));
+            }
+        });
+    }
+
     private void setupDataSource() {
         try {
             String uri = plugin.getConfig().getString("mongodb.uri", "mongodb://localhost:27017");

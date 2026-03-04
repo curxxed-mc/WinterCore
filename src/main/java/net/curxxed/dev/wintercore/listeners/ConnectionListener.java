@@ -2,6 +2,7 @@ package net.curxxed.dev.wintercore.listeners;
 
 import net.curxxed.dev.wintercore.client.ClientBrandCommand;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
+import net.curxxed.dev.wintercore.events.ServerSwitchEvent;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
@@ -146,6 +147,9 @@ public class ConnectionListener implements Listener {
 
             String realName = player.getName();
             if (isSwitch) {
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        Bukkit.getPluginManager().callEvent(new ServerSwitchEvent(player, last, serverName))
+                );
                 plugin.getRedisManager().publishStaffActivity("switch", realName, color, last, serverName);
             } else {
                 plugin.getRedisManager().publishStaffActivity("join", realName, color, "", serverName);

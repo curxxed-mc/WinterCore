@@ -1,7 +1,7 @@
 package net.curxxed.dev.wintercore.rank;
 
 import lombok.Getter;
-import net.curxxed.dev.wintercore.managers.events.WinterCoreEvents;
+import net.curxxed.dev.wintercore.events.WinterCoreEvents;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
