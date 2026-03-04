@@ -3,49 +3,89 @@ package net.curxxed.dev.wintercore.utils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 public class SkinFetcher {
 
-    public static SkinProperty fetchSkin(String playerName) throws Exception {
-        URL uuidUrl = new URL("https://api.mojang.com/users/profiles/minecraft/" + playerName);
-        HttpURLConnection uuidConn = (HttpURLConnection) uuidUrl.openConnection();
-        uuidConn.setRequestMethod("GET");
-        uuidConn.setConnectTimeout(3000);
-        uuidConn.setReadTimeout(3000);
+    private static final OkHttpClient CLIENT = new OkHttpClient.Builder()
+            .connectTimeout(3, TimeUnit.SECONDS)
+            .readTimeout(3, TimeUnit.SECONDS)
+            .build();
 
-        if (uuidConn.getResponseCode() != 200) {
-            throw new Exception("Player not found: " + playerName);
-        }
+    public static void fetchSkin(String playerName, BiConsumer<SkinProperty, Exception> callback) {
+        Request uuidRequest = new Request.Builder()
+                .url("https://api.mojang.com/users/profiles/minecraft/" + playerName)
+                .build();
 
-        BufferedReader uuidReader = new BufferedReader(new InputStreamReader(uuidConn.getInputStream()));
-        JsonObject uuidObj = new JsonParser().parse(uuidReader).getAsJsonObject();
-        String uuid = uuidObj.get("id").getAsString();
+        CLIENT.newCall(uuidRequest).enqueue(new Callback() {
+            @Override
+            @SuppressWarnings("NullableProblems")
+            public void onFailure(Call call, IOException e) {
+                callback.accept(null, e);
+            }
 
-        // Step 2: Get skin properties from session server
-        URL sessionUrl = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid + "?unsigned=false");
-        HttpURLConnection sessionConn = (HttpURLConnection) sessionUrl.openConnection();
-        sessionConn.setRequestMethod("GET");
-        sessionConn.setConnectTimeout(3000);
-        sessionConn.setReadTimeout(3000);
+            @Override
+            @SuppressWarnings("NullableProblems")
+            public void onResponse(Call call, Response response) throws IOException {
+                try (Response r = response) {
+                    if (!r.isSuccessful() || r.body() == null) {
+                        callback.accept(null, new Exception("Player not found: " + playerName));
+                        return;
+                    }
 
-        if (sessionConn.getResponseCode() != 200) {
-            throw new Exception("Could not fetch skin data for: " + playerName);
-        }
+                    JsonObject uuidObj = new JsonParser()
+                            .parse(r.body().string())
+                            .getAsJsonObject();
+                    String uuid = uuidObj.get("id").getAsString();
 
-        BufferedReader sessionReader = new BufferedReader(new InputStreamReader(sessionConn.getInputStream()));
-        JsonObject sessionObj = new JsonParser().parse(sessionReader).getAsJsonObject();
-        JsonArray properties = sessionObj.getAsJsonArray("properties");
-        JsonObject skinProperty = properties.get(0).getAsJsonObject();
+                    fetchSession(uuid, playerName, callback);
+                }
+            }
+        });
+    }
 
-        String value = skinProperty.get("value").getAsString();
-        String signature = skinProperty.get("signature").getAsString();
+    private static void fetchSession(String uuid, String playerName, BiConsumer<SkinProperty, Exception> callback) {
+        Request sessionRequest = new Request.Builder()
+                .url("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid + "?unsigned=false")
+                .build();
 
-        return new SkinProperty(value, signature);
+        CLIENT.newCall(sessionRequest).enqueue(new Callback() {
+            @Override
+            @SuppressWarnings("NullableProblems")
+            public void onFailure(Call call, IOException e) {
+                callback.accept(null, e);
+            }
+
+            @Override
+            @SuppressWarnings("NullableProblems")
+            public void onResponse(Call call, Response response) throws IOException {
+                try (Response r = response) {
+                    if (!r.isSuccessful() || r.body() == null) {
+                        callback.accept(null, new Exception("Could not fetch skin data for: " + playerName));
+                        return;
+                    }
+
+                    JsonObject sessionObj = new JsonParser()
+                            .parse(r.body().string())
+                            .getAsJsonObject();
+                    JsonArray properties = sessionObj.getAsJsonArray("properties");
+                    JsonObject skinProperty = properties.get(0).getAsJsonObject();
+
+                    String value = skinProperty.get("value").getAsString();
+                    String signature = skinProperty.get("signature").getAsString();
+
+                    callback.accept(new SkinProperty(value, signature), null);
+                }
+            }
+        });
     }
 
     public static class SkinProperty {

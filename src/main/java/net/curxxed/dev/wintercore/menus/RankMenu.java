@@ -1,124 +1,195 @@
 package net.curxxed.dev.wintercore.menus;
 
+import net.curxxed.dev.wintercore.menu.Button;
+import net.curxxed.dev.wintercore.menu.ButtonBuilder;
+import net.curxxed.dev.wintercore.menu.Menu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.Utilities;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.Material;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class RankMenu implements Listener {
+public class RankMenu extends Menu implements Listener {
 
-    private final WinterCore plugin;
-    private final Map<UUID, GrantState> pendingGrants = new HashMap<>();
+    private enum View { RANK_SELECT, DURATION }
 
-    public RankMenu(WinterCore plugin) {
-        this.plugin = plugin;
-    }
-
-    private static class GrantState {
+    static class GrantState {
         public final UUID targetUUID;
         public final String rank;
         public long durationMillis = 0L;
         public boolean permanent = false;
 
-        public GrantState(UUID targetUUID, String rank) {
+        GrantState(UUID targetUUID, String rank) {
             this.targetUUID = targetUUID;
             this.rank = rank;
         }
     }
 
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player)) return;
+    private static final long HOUR  = 3_600_000L;
+    private static final long DAY   = 86_400_000L;
+    private static final long WEEK  = 604_800_000L;
+    private static final long MONTH = 2_592_000_000L;
 
-        Player player = (Player) event.getWhoClicked();
-        String title = Utilities.getInventoryTitle(event);
+    private static final Map<UUID, GrantState> pendingGrants = new ConcurrentHashMap<>();
 
-        if (title != null && title.startsWith("Set duration for ")) {
-            event.setCancelled(true);
-            ItemStack clickedItem = event.getCurrentItem();
-            if (clickedItem == null || !clickedItem.hasItemMeta()) return;
+    private final WinterCore plugin;
+    private final UUID targetUUID;
+    private final String targetName;
 
-            String itemName = CC.stripColor(clickedItem.getItemMeta().getDisplayName());
-            GrantState state = pendingGrants.get(player.getUniqueId());
-            if (state == null) {
-                player.closeInventory();
-                player.sendMessage(CC.translate("&cNo pending grant found."));
-                return;
-            }
+    private View view = View.RANK_SELECT;
+    private GrantState state = null;
 
-            switch (itemName) {
-                case "+1 Hour":   state.durationMillis += 3_600_000L;    state.permanent = false; break;
-                case "+1 Day":    state.durationMillis += 86_400_000L;   state.permanent = false; break;
-                case "+1 Week":   state.durationMillis += 604_800_000L;  state.permanent = false; break;
-                case "+1 Month":  state.durationMillis += 2_592_000_000L; state.permanent = false; break;
-                case "-1 Hour":   state.durationMillis = Math.max(0, state.durationMillis - 3_600_000L);    state.permanent = false; break;
-                case "-1 Day":    state.durationMillis = Math.max(0, state.durationMillis - 86_400_000L);   state.permanent = false; break;
-                case "-1 Week":   state.durationMillis = Math.max(0, state.durationMillis - 604_800_000L);  state.permanent = false; break;
-                case "-1 Month":  state.durationMillis = Math.max(0, state.durationMillis - 2_592_000_000L); state.permanent = false; break;
-                case "Permanent": state.permanent = true; state.durationMillis = 0L; break;
-                case "Continue":
+    public RankMenu(WinterCore plugin, UUID targetUUID, String targetName) {
+        this.plugin = plugin;
+        this.targetUUID = targetUUID;
+        this.targetName = targetName;
+    }
+
+    @Override
+    public String getTitle() {
+        return view == View.RANK_SELECT
+                ? "Set rank for " + targetName
+                : "Set duration for " + targetName;
+    }
+
+    @Override
+    public int getSize() {
+        if (view == View.DURATION) return 27;
+        int count = plugin.getRankManager().getSortedRanks().size() + 1;
+        return Math.min(54, ((count - 1) / 9 + 1) * 9);
+    }
+
+    @Override
+    public Map<Integer, Button> getButtons(Player player) {
+        return view == View.RANK_SELECT ? buildRankButtons(player) : buildDurationButtons(player);
+    }
+
+    private Map<Integer, Button> buildRankButtons(Player player) {
+        Map<Integer, Button> buttons = new HashMap<>();
+        List<String> sortedRanks = plugin.getRankManager().getSortedRanks();
+        ConfigurationSection ranksSection = plugin.getRankManager().getRanksSection();
+
+        int slot = 0;
+        for (String rank : sortedRanks) {
+            if (rank == null || rank.isEmpty()) continue;
+            String colorCode = ranksSection.getString(rank + ".name-color", "&f");
+            final String finalRank = rank;
+            buttons.put(slot++, ButtonBuilder.of(Material.PAPER)
+                    .name(colorCode + rank)
+                    .lore("&7Click to grant &b" + rank + " &7to &e" + targetName)
+                    .action(e -> {
+                        if (!ranksSection.contains(finalRank)) {
+                            player.sendMessage(CC.translate("&cInvalid rank selected."));
+                            return;
+                        }
+                        state = new GrantState(targetUUID, finalRank);
+                        pendingGrants.put(player.getUniqueId(), state);
+                        view = View.DURATION;
+                        open(player);
+                    })
+                    .build());
+        }
+
+        buttons.put(getSize() - 1, cancelButton(player, "&cRank selection cancelled."));
+        return buttons;
+    }
+
+    private Map<Integer, Button> buildDurationButtons(Player player) {
+        Map<Integer, Button> buttons = new HashMap<>();
+
+        buttons.put(0, adjustButton(player, "&a+1 Hour",   HOUR,  true));
+        buttons.put(1, adjustButton(player, "&a+1 Day",    DAY,   true));
+        buttons.put(2, adjustButton(player, "&a+1 Week",   WEEK,  true));
+        buttons.put(3, adjustButton(player, "&a+1 Month",  MONTH, true));
+        buttons.put(5, adjustButton(player, "&c-1 Hour",   HOUR,  false));
+        buttons.put(6, adjustButton(player, "&c-1 Day",    DAY,   false));
+        buttons.put(7, adjustButton(player, "&c-1 Week",   WEEK,  false));
+        buttons.put(8, adjustButton(player, "&c-1 Month",  MONTH, false));
+
+        buttons.put(13, ButtonBuilder.of(Material.BEDROCK)
+                .name("&6Permanent")
+                .action(e -> {
+                    state.permanent = true;
+                    state.durationMillis = 0L;
+                    refresh(player);
+                }).build());
+
+        String durationLabel = state != null && state.permanent
+                ? "&6Permanent"
+                : "&e" + formatDuration(state != null ? state.durationMillis : 0L);
+        buttons.put(22, ButtonBuilder.of(Material.PAPER)
+                .name("&bCurrent Duration: " + durationLabel)
+                .build());
+
+        buttons.put(26, ButtonBuilder.of(Material.WOOL).data((short) 5)
+                .name("&aContinue")
+                .action(e -> {
                     player.closeInventory();
-                    player.sendMessage(CC.translate("&ePlease type the reason for granting this rank in chat. Type &ccancel &eto abort."));
-                    return;
-                case "Cancel":
+                    player.sendMessage(CC.translate(
+                            "&ePlease type the reason for granting this rank in chat. Type &ccancel &eto abort."));
+                }).build());
+
+        buttons.put(18, cancelButton(player, "&cRank grant cancelled."));
+        return buttons;
+    }
+
+    private Button adjustButton(Player player, String label, long amount, boolean add) {
+        return ButtonBuilder.of(Material.WATCH)
+                .name(label)
+                .action(e -> {
+                    if (add) {
+                        state.durationMillis += amount;
+                    } else {
+                        state.durationMillis = Math.max(0, state.durationMillis - amount);
+                    }
+                    state.permanent = false;
+                    refresh(player);
+                }).build();
+    }
+
+    private Button cancelButton(Player player, String message) {
+        Material mat = Utilities.IS_1_7 ? Material.STAINED_GLASS_PANE : Material.BARRIER;
+        short data = Utilities.IS_1_7 ? (short) 14 : 0;
+        return ButtonBuilder.of(mat).data(data)
+                .name("&cCancel")
+                .action(e -> {
                     pendingGrants.remove(player.getUniqueId());
                     player.closeInventory();
-                    player.sendMessage(CC.translate("&cRank grant cancelled."));
-                    return;
-            }
-            openDurationGUI(player, state);
-            return;
-        }
+                    player.sendMessage(CC.translate(message));
+                }).build();
+    }
 
-        if (title == null || !title.startsWith("Set rank for ")) return;
-        event.setCancelled(true);
-
-        ItemStack clickedItem = event.getCurrentItem();
-        if (clickedItem == null || !clickedItem.hasItemMeta()) return;
-
-        String clickedRank = CC.stripColor(clickedItem.getItemMeta().getDisplayName());
-
-        if (clickedRank.equalsIgnoreCase("Cancel")) {
-            player.closeInventory();
-            player.sendMessage(CC.translate("&cRank selection cancelled."));
-            return;
-        }
-
-        UUID targetUUID = plugin.getRankManager().getTargetPlayerUUID(player.getUniqueId());
-        if (targetUUID == null) {
-            player.sendMessage(CC.translate("&cNo target player found for this rank selection."));
-            player.closeInventory();
-            return;
-        }
-
-        if (plugin.getRankManager().getRanksSection().contains(clickedRank)) {
-            GrantState state = new GrantState(targetUUID, clickedRank);
-            pendingGrants.put(player.getUniqueId(), state);
-            openDurationGUI(player, state);
-        } else {
-            player.sendMessage(CC.translate("&cInvalid rank selected."));
-        }
+    private String formatDuration(long millis) {
+        if (millis <= 0) return "0";
+        long months = millis / MONTH; millis %= MONTH;
+        long weeks  = millis / WEEK;  millis %= WEEK;
+        long days   = millis / DAY;   millis %= DAY;
+        long hours  = millis / HOUR;
+        StringBuilder sb = new StringBuilder();
+        if (months > 0) sb.append(months).append("mo ");
+        if (weeks  > 0) sb.append(weeks) .append("w ");
+        if (days   > 0) sb.append(days)  .append("d ");
+        if (hours  > 0) sb.append(hours) .append("h");
+        return sb.toString().trim();
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
-        GrantState state = pendingGrants.get(player.getUniqueId());
-        if (state == null) return;
+        GrantState gs = pendingGrants.get(player.getUniqueId());
+        if (gs == null) return;
 
         event.setCancelled(true);
         String message = event.getMessage();
@@ -132,78 +203,27 @@ public class RankMenu implements Listener {
         pendingGrants.remove(player.getUniqueId());
 
         long now = System.currentTimeMillis();
-        Long expiresAt = state.permanent ? null : (state.durationMillis > 0 ? now + state.durationMillis : null);
+        Long expiresAt = gs.permanent ? null : (gs.durationMillis > 0 ? now + gs.durationMillis : null);
 
-        plugin.getDatabaseManager().setRankWithMeta(state.targetUUID, state.rank, player.getUniqueId(), now, expiresAt, message);
-        plugin.getDatabaseManager().addRankGrant(state.targetUUID, state.rank, player.getUniqueId(), now, expiresAt, message);
+        plugin.getDatabaseManager().setRankWithMeta(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
+        plugin.getDatabaseManager().addRankGrant(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
 
-        String targetName = Bukkit.getOfflinePlayer(state.targetUUID).getName();
-        player.sendMessage(CC.translate("&aGranted rank &e" + state.rank + " &ato &b" + targetName + "&a."));
+        String grantedName = Bukkit.getOfflinePlayer(gs.targetUUID).getName();
+        player.sendMessage(CC.translate("&aGranted rank &e" + gs.rank + " &ato &b" + grantedName + "&a."));
 
         Bukkit.getScheduler().runTask(plugin, () -> {
-            Player target = Bukkit.getPlayer(state.targetUUID);
+            Player target = Bukkit.getPlayer(gs.targetUUID);
             if (target != null) {
-                plugin.getRankManager().cachePlayerRank(target, state.rank);
+                plugin.getRankManager().cachePlayerRank(target, gs.rank);
                 plugin.getRankManager().refreshPlayerDisplay(target);
                 plugin.getRankManager().refreshPlayerDisplayForAll(target);
                 Bukkit.getPluginManager().callEvent(
-                        new net.curxxed.dev.wintercore.rank.RankChangeEvent(target, state.rank)
-                );
+                        new net.curxxed.dev.wintercore.rank.RankChangeEvent(target, gs.rank, plugin.getRankManager().getRankSync(target)));
             }
         });
     }
 
-    public boolean isPendingGrant(UUID staffUUID) {
+    public static boolean isPendingGrant(UUID staffUUID) {
         return pendingGrants.containsKey(staffUUID);
-    }
-
-    private void openDurationGUI(Player player, GrantState state) {
-        Inventory gui = Bukkit.createInventory(null, 27, "Set duration for " + Bukkit.getOfflinePlayer(state.targetUUID).getName());
-
-        gui.setItem(0, createButton(Material.WATCH, CC.translate("&a+1 Hour")));
-        gui.setItem(1, createButton(Material.WATCH, CC.translate("&a+1 Day")));
-        gui.setItem(2, createButton(Material.WATCH, CC.translate("&a+1 Week")));
-        gui.setItem(3, createButton(Material.WATCH, CC.translate("&a+1 Month")));
-        gui.setItem(5, createButton(Material.WATCH, CC.translate("&c-1 Hour")));
-        gui.setItem(6, createButton(Material.WATCH, CC.translate("&c-1 Day")));
-        gui.setItem(7, createButton(Material.WATCH, CC.translate("&c-1 Week")));
-        gui.setItem(8, createButton(Material.WATCH, CC.translate("&c-1 Month")));
-        gui.setItem(13, createButton(Material.BEDROCK, CC.translate("&6Permanent")));
-
-        ItemStack info = new ItemStack(Material.PAPER);
-        ItemMeta infoMeta = info.getItemMeta();
-        infoMeta.setDisplayName(CC.translate("&bCurrent Duration: " + (state.permanent ? "&6Permanent" : "&e" + formatDuration(state.durationMillis))));
-        info.setItemMeta(infoMeta);
-        gui.setItem(22, info);
-
-        ItemStack cont = new ItemStack(Material.WOOL, 1, (short) 5);
-        ItemMeta contMeta = cont.getItemMeta();
-        contMeta.setDisplayName(CC.translate("&aContinue"));
-        cont.setItemMeta(contMeta);
-        gui.setItem(26, cont);
-
-        ItemStack cancel = Utilities.IS_1_7
-                ? new ItemStack(Material.STAINED_GLASS_PANE, 1, (short) 14)
-                : new ItemStack(Material.BARRIER);
-        ItemMeta cancelMeta = cancel.getItemMeta();
-        cancelMeta.setDisplayName(CC.translate("&cCancel"));
-        cancel.setItemMeta(cancelMeta);
-        gui.setItem(18, cancel);
-
-        player.openInventory(gui);
-    }
-
-    private ItemStack createButton(Material mat, String name) {
-        ItemStack item = new ItemStack(mat);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(name);
-        item.setItemMeta(meta);
-        return item;
-    }
-
-    private String formatDuration(long millis) {
-        if (millis <= 0) return "0";
-        long hours = millis / 3_600_000L;
-        return hours + "h";
     }
 }

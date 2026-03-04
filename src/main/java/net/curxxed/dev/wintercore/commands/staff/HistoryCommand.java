@@ -4,14 +4,12 @@ import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.menus.HistoryMenu;
+import net.curxxed.dev.wintercore.menus.MenuConfig;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerQuitEvent;
 
 @CommandInfo(
         name = "history",
@@ -20,13 +18,13 @@ import org.bukkit.event.player.PlayerQuitEvent;
         usage = "/history <player>",
         async = true
 )
-public class HistoryCommand extends BaseCommand implements Listener {
+public class HistoryCommand extends BaseCommand {
 
-    private final HistoryMenu historyMenu;
+    private final MenuConfig menuConfig;
 
-    public HistoryCommand(WinterCore plugin, HistoryMenu historyMenu) {
+    public HistoryCommand(WinterCore plugin, MenuConfig menuConfig) {
         super(plugin);
-        this.historyMenu = historyMenu;
+        this.menuConfig = menuConfig;
     }
 
     @Override
@@ -51,11 +49,6 @@ public class HistoryCommand extends BaseCommand implements Listener {
             return;
         }
 
-        historyMenu.open(sender, target.getName(), target.getUniqueId());
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        historyMenu.clearContext(event.getPlayer().getUniqueId());
+        new HistoryMenu(plugin, menuConfig, target.getName(), target.getUniqueId()).open(sender);
     }
 }
