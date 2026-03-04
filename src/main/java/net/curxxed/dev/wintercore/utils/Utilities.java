@@ -72,12 +72,12 @@ public class Utilities {
                 String pkg = Bukkit.getServer().getClass().getPackage().getName();
                 String version = pkg.substring("org.bukkit.craftbukkit.".length());
 
-                minecraftServer = Class
+                minecraftServer = Class //CraftBukkit Mappings
                         .forName("net.minecraft.server." + version + ".MinecraftServer")
                         .getMethod("getServer")
                         .invoke(null);
             } else {
-                minecraftServer = Class
+                minecraftServer = Class //Mojang Mappings
                         .forName("net.minecraft.server.MinecraftServer")
                         .getMethod("getServer")
                         .invoke(null);

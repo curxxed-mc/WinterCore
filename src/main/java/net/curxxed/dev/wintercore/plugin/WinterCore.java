@@ -19,7 +19,6 @@ import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.database.RedisManager;
 import net.curxxed.dev.wintercore.database.SocialInput;
 import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
-import net.curxxed.dev.wintercore.disguise.DisguiseGUI;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.DisguiseRegistry;
 import net.curxxed.dev.wintercore.disguise.commands.DisguiseCommand;
@@ -30,7 +29,9 @@ import net.curxxed.dev.wintercore.listeners.ChatListener;
 import net.curxxed.dev.wintercore.listeners.ConnectionListener;
 import net.curxxed.dev.wintercore.listeners.FreezeListener;
 import net.curxxed.dev.wintercore.listeners.PlayerListener;
-import net.curxxed.dev.wintercore.menus.*;
+import net.curxxed.dev.wintercore.menu.MenuManager;
+import net.curxxed.dev.wintercore.menus.MenuConfig;
+import net.curxxed.dev.wintercore.menus.RankMenu;
 import net.curxxed.dev.wintercore.nametags.NameTagHandler;
 import net.curxxed.dev.wintercore.placeholders.Placeholder;
 import net.curxxed.dev.wintercore.rank.RankChangeEvent;
@@ -67,7 +68,6 @@ public final class WinterCore extends JavaPlugin {
     public Set<UUID> vanished_players = new HashSet<>();
 
     private RankManager rankManager;
-    private ChatColorSelectionMenu chatColorSelectionMenu;
     private JedisPool redisPool;
     private RedisManager redisManager;
     private FreezeCommand freezeCommand;
@@ -90,7 +90,6 @@ public final class WinterCore extends JavaPlugin {
     private RankMenu rankMenu;
     private CommandHandler commandHandler;
     private AuthModule authModule;
-    private HistoryMenu historyMenu;
     private MenuConfig menuConfig;
 
     @Override
@@ -103,12 +102,10 @@ public final class WinterCore extends JavaPlugin {
         initializePlaceholders();
 
         this.databaseManager = DatabaseManager.init(this);
-
         this.rankManager = new RankManager(this);
-        this.chatColorSelectionMenu = new ChatColorSelectionMenu(this);
 
-        String redisHost = getConfig().getString("Redis.host", "localhost");
-        int redisPort = getConfig().getInt("Redis.port", 6379);
+        String redisHost     = getConfig().getString("Redis.host", "localhost");
+        int    redisPort     = getConfig().getInt("Redis.port", 6379);
         String redisPassword = getConfig().getString("Redis.password", "");
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -156,14 +153,15 @@ public final class WinterCore extends JavaPlugin {
         Utilities.logBootBanner();
 
         RankManager.initialize(this);
-        this.rankManager = RankManager.getInstance();
-        this.staffModeManager = new StaffModeManager(this);
-        this.disguiseRegistry = new DisguiseRegistry(this.redisManager, getLogger());
-        this.disguiseHandler = new DefaultDisguiseHandler(this, this.disguiseRegistry);
-        this.tagsManager = new TagsManager(this);
-        this.tagsGUI = new TagsGUI(tagsManager);
+        this.rankManager        = RankManager.getInstance();
+        this.staffModeManager   = new StaffModeManager(this);
+        this.disguiseRegistry   = new DisguiseRegistry(this.redisManager, getLogger());
+        this.disguiseHandler    = new DefaultDisguiseHandler(this, this.disguiseRegistry);
+        this.tagsManager        = new TagsManager(this);
+        this.tagsGUI            = new TagsGUI(tagsManager);
+        this.menuConfig         = new MenuConfig(this);
         this.disguiseEventListener = new DisguiseEventListener(this, (DefaultDisguiseHandler) disguiseHandler);
-        this.commandHandler = new CommandHandler(this);
+        this.commandHandler     = new CommandHandler(this);
 
         registerListeners();
         registerCommands();
@@ -182,35 +180,32 @@ public final class WinterCore extends JavaPlugin {
     private void registerListeners() {
         PluginManager pm = getServer().getPluginManager();
 
-        this.playerListener = new PlayerListener(this);
-        this.chatListener = new ChatListener(this, tagsManager, playerListener);
-        this.freezeListener = new FreezeListener(playerListener);
+        this.playerListener  = new PlayerListener(this);
+        this.chatListener    = new ChatListener(this, tagsManager, playerListener);
+        this.freezeListener  = new FreezeListener(playerListener);
 
         pm.registerEvents(playerListener, this);
         pm.registerEvents(chatListener, this);
         pm.registerEvents(new ConnectionListener(this), this);
         pm.registerEvents(freezeListener, this);
 
-        this.rankMenu = new RankMenu(this);
+        this.rankMenu = new RankMenu(this, null, null);
         pm.registerEvents(rankMenu, this);
 
-        SocialInput socialInput = new SocialInput(this);
-        pm.registerEvents(socialInput, this);
-        pm.registerEvents(new StaffListMenu(this), this);
+        pm.registerEvents(new SocialInput(this), this);
         pm.registerEvents(new StaffModeListener(this, staffModeManager), this);
-        pm.registerEvents(new ChatColorSelectionMenu(this), this);
-        pm.registerEvents(new DisguiseGUI(disguiseHandler), this);
+
         pm.registerEvents(tagsGUI, this);
         pm.registerEvents(disguiseEventListener, this);
 
-        HistoryCommand history = new HistoryCommand(this, historyMenu);
-        pm.registerEvents(history, this);
+        MenuManager.initialize(this);
+
+        HistoryCommand history = new HistoryCommand(this, menuConfig);
 
         ProfileCommand profile = new ProfileCommand(this, redisManager);
         pm.registerEvents(profile, this);
 
         pm.registerEvents(new BanList(this), this);
-        pm.registerEvents(new HistoryMenu(this,menuConfig), this);
     }
 
     private void registerCommands() {
@@ -221,11 +216,7 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(InvSeeCommand.class);
         commandHandler.register(Feed.class);
         commandHandler.register(ClearChat.class);
-
-        ChatColorSelectionMenu chatColor = new ChatColorSelectionMenu(this);
-        getServer().getPluginManager().registerEvents(chatColor, this);
-        commandHandler.register(chatColor);
-
+        commandHandler.register(new ChatColorCommand(this));
         commandHandler.register(new GameModeCommand(this, staffModeManager));
         commandHandler.register(DiscordCommand.class);
         commandHandler.register(Heal.class);
@@ -235,11 +226,9 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(new ListCommand(this, rankManager));
         commandHandler.register(VanishCommand.class);
         commandHandler.register(new ReportCommand(this, tagsManager));
-
         commandHandler.register(new StaffChatCommand(this, chatListener));
         commandHandler.register(new AdminChatCommand(this, chatListener));
         commandHandler.register(new ManagerChatCommand(this, chatListener));
-
         commandHandler.register(AboutCommand.class);
         commandHandler.register(MuteCommand.class);
         commandHandler.register(KickCommand.class);
@@ -247,8 +236,7 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(WarningCommand.class);
         commandHandler.register(UnmuteCommand.class);
 
-        HistoryCommand history = new HistoryCommand(this, historyMenu);
-        getServer().getPluginManager().registerEvents(history, this);
+        HistoryCommand history = new HistoryCommand(this, menuConfig);
         commandHandler.register(history);
 
         commandHandler.register(FixCommand.class);
@@ -286,6 +274,7 @@ public final class WinterCore extends JavaPlugin {
     @Override
     public void onDisable() {
         getLogger().info("Disabling server, publishing offline status");
+        isShuttingDown = true;
 
         if (disguiseRegistry != null && redisManager != null) {
             try {

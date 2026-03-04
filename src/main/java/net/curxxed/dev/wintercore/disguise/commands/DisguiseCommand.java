@@ -3,7 +3,6 @@ package net.curxxed.dev.wintercore.disguise.commands;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.disguise.DisguiseGUI;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
@@ -17,6 +16,7 @@ import org.bukkit.entity.Player;
         permission = "wintercore.disguise"
 )
 public class DisguiseCommand extends BaseCommand {
+
     private final DisguiseHandler disguiseHandler;
 
     public DisguiseCommand(DisguiseHandler disguiseHandler, WinterCore plugin) {
@@ -38,8 +38,7 @@ public class DisguiseCommand extends BaseCommand {
             player.sendMessage(CC.translate("&cUsage: /disguise <name>"));
             return;
         }
-        String name = args[0];
-        DisguiseGUI.setPendingTarget(player, name); // Store pending disguise target
-        disguiseHandler.openRankSelectionGUI(player, name);
+
+        disguiseHandler.openDisguiseMenu(player, args[0]);
     }
 }

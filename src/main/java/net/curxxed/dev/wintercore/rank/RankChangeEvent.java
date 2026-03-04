@@ -10,10 +10,12 @@ public class RankChangeEvent extends WinterCoreEvents {
     private static final HandlerList handlers = new HandlerList();
     private final Player player;
     private final String newRank;
+    private final String oldRank;
 
-    public RankChangeEvent(Player player, String newRank) {
+    public RankChangeEvent(Player player, String newRank, String oldRank) {
         this.player = player;
         this.newRank = newRank;
+        this.oldRank = oldRank;
     }
 
     @Override
