@@ -9,10 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * A helper class that wraps the arguments of a command.
- * Provides safe methods to retrieve arguments as different data types.
- */
 @Getter
 public class CommandArguments {
 

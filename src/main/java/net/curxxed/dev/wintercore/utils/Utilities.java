@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -149,6 +150,53 @@ public class Utilities {
             }
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    public static Class<?> getNMSClass(String what) {
+        try {
+            return Class.forName("net.minecraft.server." + SERVER_VERSION + "." + what);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("NMS class not found: " + what, e);
+        }
+    }
+
+    public static void sendPacket(Player player, Object packet) {
+        try {
+            Object handle     = player.getClass().getMethod("getHandle").invoke(player);
+            Object connection = handle.getClass().getField("playerConnection").get(handle);
+            connection.getClass()
+                    .getMethod("sendPacket",
+                            Class.forName("net.minecraft.server." + SERVER_VERSION + ".Packet"))
+                    .invoke(connection, packet);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Constructor<?> getConstructorByParamCount(Class<?> clazz, int count) {
+        for (Constructor<?> c : clazz.getConstructors()) {
+            if (c.getParameterCount() == count) return c;
+        }
+        return clazz.getConstructors()[0];
+    }
+
+    public static void setField(Object target, String fieldName, Object value) {
+        try {
+            Field field = target.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(target, value);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static boolean isPaperBrigadierSupported() {
+        try {
+            Class.forName("io.papermc.paper.command.brigadier.Commands");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
         }
     }
 

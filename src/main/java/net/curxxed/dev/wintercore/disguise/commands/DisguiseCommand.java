@@ -29,7 +29,7 @@ public class DisguiseCommand extends BaseCommand {
         Player player = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
 
-        if (WinterCore.INSTANCE.getDisguiseDataMap().containsKey(player.getUniqueId())) {
+        if (WinterCore.getInstance().getDisguiseDataMap().containsKey(player.getUniqueId())) {
             player.sendMessage(CC.translate("&cYou are already disguised! Use /undisguise first."));
             return;
         }

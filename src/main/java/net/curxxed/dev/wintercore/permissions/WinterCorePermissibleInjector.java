@@ -16,7 +16,7 @@ public class WinterCorePermissibleInjector {
             throw new IllegalStateException("HUMAN_ENTITY_PERMISSIBLE_FIELD is null. Injection failed.");
         }
 
-        final WinterCorePermissible permissible = new WinterCorePermissible(WinterCore.INSTANCE, player);
+        final WinterCorePermissible permissible = new WinterCorePermissible(WinterCore.getInstance(), player);
         HUMAN_ENTITY_PERMISSIBLE_FIELD.set(player, permissible);
     }
 

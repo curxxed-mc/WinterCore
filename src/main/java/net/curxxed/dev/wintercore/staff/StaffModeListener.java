@@ -1,9 +1,5 @@
 package net.curxxed.dev.wintercore.staff;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -23,7 +19,6 @@ public class StaffModeListener implements Listener {
     public StaffModeListener(WinterCore plugin, StaffModeManager manager) {
         this.plugin = plugin;
         this.staffModeManager = manager;
-        setupProtocolLib();
     }
 
     @EventHandler
@@ -48,17 +43,8 @@ public class StaffModeListener implements Listener {
 
         if (cooldowns.containsKey(uuid) && (now - cooldowns.get(uuid)) < COOLDOWN_TIME) return;
         cooldowns.put(uuid, now);
-
-        // delegăm la manager
         staffModeManager.handleItemUse(player, itemName, target, item);
     }
 
-    private void setupProtocolLib() {
-        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(plugin, PacketType.Play.Server.PLAYER_INFO) {
-            @Override
-            public void onPacketSending(PacketEvent event) {
-                //staffModeManager.modifyPlayerInfoPacket(event);
-            }
-        });
-    }
+
 }

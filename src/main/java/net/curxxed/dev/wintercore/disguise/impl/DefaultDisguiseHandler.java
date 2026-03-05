@@ -9,6 +9,7 @@ import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.events.PlayerDisguiseEvent;
 import net.curxxed.dev.wintercore.events.PlayerUnDisguiseEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -188,16 +189,15 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
                             String rawPrefix  = getRankString(rank, "prefix", "");
                             String nameColor  = getRankString(rank, "name-color", "&f");
-                            String coloredPrefix = net.curxxed.dev.wintercore.utils.CC.translate(rawPrefix);
+                            String coloredPrefix = CC.translate(rawPrefix);
 
                             disguiseRegistry.setDisguiseInfo(player, name, rank, skin, nameColor, coloredPrefix);
                             disguiseRegistry.getEffectiveColor(player, color -> {
-                                if (plugin.getNameTagHandler() != null && plugin.getNameTagHandler().getNameTagAdapter() != null) {
-                                    plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, color);
+                                if (plugin.getNameTagColorManager() != null) {
+                                    plugin.getNameTagColorManager().applyColor(player, color);
                                 }
                             });
 
-                            updateTabListAndTeam(player);
                             Bukkit.getPluginManager().callEvent(new PlayerDisguiseEvent(player, player.getName(), name, rank));
                             callback.accept(DisguiseCallback.SUCCESS);
                         } catch (Exception e) {
@@ -262,10 +262,8 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             changeField(entityPlayer, displayField, originalName);
 
             if (!save) {
+                plugin.getRankManager().refreshPlayerDisplay(player);
                 Bukkit.getPluginManager().callEvent(new PlayerUnDisguiseEvent(player, disguiseData.getName(), originalName, disguiseData.getRank()));
-                if (plugin.getNameTagHandler() != null && plugin.getNameTagHandler().getNameTagAdapter() != null) {
-                    plugin.getNameTagHandler().getNameTagAdapter().resetNameTag(player);
-                }
                 plugin.getRedisManager().clearDisguise(player.getUniqueId());
                 callback.accept(DisguiseCallback.SUCCESS);
                 return;
@@ -297,12 +295,6 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             plugin.getRankManager().refreshPlayerDisplay(player);
             plugin.getRedisManager().clearDisguise(player.getUniqueId());
 
-            if (plugin.getNameTagHandler().getNameTagAdapter() != null) {
-                plugin.getNameTagHandler().getNameTagAdapter().resetNameTag(player);
-            } else {
-                System.out.println("[WinterCore] NameTagAdapter is null! Cannot reset name tag for " + player.getName());
-            }
-
             callback.accept(DisguiseCallback.SUCCESS);
         } catch (Exception e) {
             e.printStackTrace();
@@ -313,7 +305,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     @Override
     public void disguise(Player player, String targetName, Consumer<DisguiseCallback> callback) {
         String version = Utilities.getServerVersion();
-        if (!(version.startsWith("v1_7") || version.startsWith("v1_8"))) { callback.accept(DisguiseCallback.ERROR); return; }
+        if (!(Utilities.IS_1_7 || version.startsWith("v1_8"))) { callback.accept(DisguiseCallback.ERROR); return; }
         if (player == null || !player.isOnline()) { callback.accept(DisguiseCallback.NOT_ONLINE); return; }
         if (targetName.equalsIgnoreCase(player.getName())) { callback.accept(DisguiseCallback.SAME_NAME); return; }
 
@@ -345,18 +337,9 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     @Override
     public void undisguise(Player player, Consumer<DisguiseCallback> callback) {
         String version = Utilities.getServerVersion();
-        if (!(version.startsWith("v1_7") || version.startsWith("v1_8"))) { callback.accept(DisguiseCallback.ERROR); return; }
+        if (!(Utilities.IS_1_7 || version.startsWith("v1_8"))) { callback.accept(DisguiseCallback.ERROR); return; }
         if (player == null || !player.isOnline()) { callback.accept(DisguiseCallback.NOT_ONLINE); return; }
         unDisguise(player, true, callback);
-    }
-
-    private void updateTabListAndTeam(Player player) {
-        disguiseRegistry.getEffectiveColor(player, color -> {
-            if (!player.isOnline()) return;
-            if (plugin.getNameTagHandler() != null && plugin.getNameTagHandler().getNameTagAdapter() != null) {
-                plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, color);
-            }
-        });
     }
 
     private void sendEquipmentPackets(Object entityPlayer, int entityId) {
