@@ -6,6 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.inventory.Inventory;
 
 public class MenuListener implements Listener {
 
@@ -55,6 +56,8 @@ public class MenuListener implements Listener {
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!(event.getPlayer() instanceof Player)) return;
-        menuManager.closeMenu((Player) event.getPlayer());
+        Player player = (Player) event.getPlayer();
+        Inventory closed = event.getInventory();
+        menuManager.closeMenu(player, closed);
     }
 }

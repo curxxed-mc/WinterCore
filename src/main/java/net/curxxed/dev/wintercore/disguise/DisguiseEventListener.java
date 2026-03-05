@@ -81,7 +81,6 @@ public class DisguiseEventListener implements Listener {
     @EventHandler
     public void onServerSwitch(ServerSwitchEvent event) {
         Player player = event.getPlayer();
-
         if (!plugin.getDisguiseRegistry().isDisguised(player)) return;
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -95,9 +94,6 @@ public class DisguiseEventListener implements Listener {
     @EventHandler
     public void onPlayerDisguise(PlayerDisguiseEvent event) {
         plugin.getDisguiseRegistry().updateColorCache(event.getPlayer());
-        if (plugin.getNameTagHandler() != null) {
-            plugin.getNameTagHandler().updateNameTagFor(event.getPlayer());
-        }
     }
 
     @EventHandler
@@ -110,9 +106,6 @@ public class DisguiseEventListener implements Listener {
         }
 
         plugin.getDisguiseRegistry().updateColorCache(player);
-        if (plugin.getNameTagHandler() != null) {
-            plugin.getNameTagHandler().updateNameTagFor(player);
-        }
     }
 
     public void clearDisguiseOnShutdown() {

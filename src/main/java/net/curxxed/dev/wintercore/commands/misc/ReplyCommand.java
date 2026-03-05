@@ -53,7 +53,7 @@ public class ReplyCommand extends BaseCommand {
     }
 
     private static WinterCore pluginInstance() {
-        return WinterCore.INSTANCE;
+        return WinterCore.getInstance();
     }
 
     private static class LastMessageInfo {
@@ -87,4 +87,4 @@ public class ReplyCommand extends BaseCommand {
         playerListener.sendPrivateMessage(player, lastSender, message);
         setLastSender(lastSender, player); // allow reply chain
     }
-}
+}

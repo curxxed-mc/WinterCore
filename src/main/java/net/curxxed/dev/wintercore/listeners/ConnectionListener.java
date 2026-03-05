@@ -67,10 +67,6 @@ public class ConnectionListener implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        if (plugin.getNameTagHandler() != null) {
-            plugin.getNameTagHandler().getNameTagAdapter().resetNameTag(player);
-        }
-
         Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
             boolean isPending = plugin.getRedisManager().isStillPendingSwitch(uuid);
             plugin.getRedisManager().updateLastSeen(uuid);
@@ -95,21 +91,16 @@ public class ConnectionListener implements Listener {
     }
 
     private void applyNametag(Player player) {
-        if (plugin.getNameTagHandler() == null) return;
+        if (plugin.getNameTagColorManager() == null) return;
 
         if (plugin.getDisguiseRegistry().isDisguised(player)) {
             plugin.getDisguiseRegistry().getEffectiveColor(player, color -> {
-                plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, color);
+                plugin.getNameTagColorManager().applyColor(player, color);
                 String formatted = CC.translate(color) + player.getName() + ChatColor.RESET;
                 player.setPlayerListName(formatted);
             });
         } else {
-            rankManager.setRankAboveHead(player);
-            rankManager.getRank(player, rank ->
-                    rankManager.getColorPreference(rank, color ->
-                            rankManager.updateNameTagColor(player, color)
-                    )
-            );
+            rankManager.refreshPlayerDisplay(player);
         }
     }
 

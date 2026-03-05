@@ -130,8 +130,13 @@ public class DisguiseRegistry {
             String color = extractField(disguiseJson, "color");
             if (color == null) color = RankManager.getInstance().getColorPreferenceSync(player);
             colorCache.put(uuid, color);
-            Bukkit.getScheduler().runTask(WinterCore.INSTANCE,
-                    () -> WinterCore.INSTANCE.getNameTagHandler().updateNameTagFor(player));
+            final String resolvedColor = color;
+            Bukkit.getScheduler().runTask(WinterCore.getInstance(), () -> {
+                WinterCore instance = WinterCore.getInstance();
+                if (instance != null && instance.getNameTagColorManager() != null) {
+                    instance.getNameTagColorManager().applyColor(player, resolvedColor);
+                }
+            });
         });
     }
 

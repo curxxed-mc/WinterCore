@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.commands.api;
 
+import lombok.Getter;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
@@ -7,13 +8,13 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-/**
- * The abstract blueprint for all commands in the framework.
- * It handles permission checks, async execution, and forces a consistent structure.
- */
+import java.util.Collections;
+import java.util.List;
+
 public abstract class BaseCommand implements CommandExecutor {
 
     protected final WinterCore plugin;
+    @Getter
     protected final CommandInfo commandInfo;
 
     public BaseCommand(WinterCore plugin) {
@@ -46,10 +47,10 @@ public abstract class BaseCommand implements CommandExecutor {
         return true;
     }
 
-    /**
-     * The core logic of the command. This method must be implemented by all concrete command classes.
-     *
-     * @param args The wrapped command arguments and sender.
-     */
     public abstract void execute(CommandArguments args);
+
+    public List<String> onTabComplete(CommandArguments args) {
+        return Collections.emptyList();
+    }
+
 }

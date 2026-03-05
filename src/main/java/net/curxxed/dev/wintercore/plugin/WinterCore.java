@@ -1,12 +1,11 @@
 package net.curxxed.dev.wintercore.plugin;
 
-import com.google.gson.Gson;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.var;
 import net.curxxed.dev.wintercore.auth.AuthModule;
 import net.curxxed.dev.wintercore.client.ClientBrand;
 import net.curxxed.dev.wintercore.client.ClientBrandCommand;
+import net.curxxed.dev.wintercore.commands.api.BrigadierCommandHandler;
 import net.curxxed.dev.wintercore.commands.api.CommandHandler;
 import net.curxxed.dev.wintercore.commands.bungee.ServerManagerCommand;
 import net.curxxed.dev.wintercore.commands.gamemode.GameModeCommand;
@@ -32,9 +31,8 @@ import net.curxxed.dev.wintercore.listeners.PlayerListener;
 import net.curxxed.dev.wintercore.menu.MenuManager;
 import net.curxxed.dev.wintercore.menus.MenuConfig;
 import net.curxxed.dev.wintercore.menus.RankMenu;
-import net.curxxed.dev.wintercore.nametags.NameTagHandler;
+import net.curxxed.dev.wintercore.nametags.NameTagColorManager;
 import net.curxxed.dev.wintercore.placeholders.Placeholder;
-import net.curxxed.dev.wintercore.rank.RankChangeEvent;
 import net.curxxed.dev.wintercore.rank.RankCommand;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.staff.StaffModeListener;
@@ -43,11 +41,11 @@ import net.curxxed.dev.wintercore.tags.TagsCommand;
 import net.curxxed.dev.wintercore.tags.TagsGUI;
 import net.curxxed.dev.wintercore.tags.TagsManager;
 import net.curxxed.dev.wintercore.utils.BanList;
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.JedisPool;
@@ -57,60 +55,122 @@ import java.io.File;
 import java.util.*;
 
 @Getter
-@Setter
 public final class WinterCore extends JavaPlugin {
 
-    public static WinterCore INSTANCE;
+    @Getter
+    private static WinterCore instance;
     public static volatile boolean isShuttingDown = false;
 
     private boolean placeholderAPIEnabled = false;
     private final Map<UUID, DisguiseData> disguiseDataMap = new HashMap<>();
-    public Set<UUID> vanished_players = new HashSet<>();
+    private final Set<UUID> vanishedPlayers = new HashSet<>();
 
+    private DatabaseManager databaseManager;
     private RankManager rankManager;
     private JedisPool redisPool;
     private RedisManager redisManager;
-    private FreezeCommand freezeCommand;
-    public DatabaseManager databaseManager;
-    private Plugin plugin;
-    private Gson gson;
     private Placeholder placeholder;
-    private DisguiseData disguiseData;
     private TagsManager tagsManager;
     private TagsGUI tagsGUI;
     private DisguiseRegistry disguiseRegistry;
-    private NameTagHandler nameTagHandler;
     private DisguiseEventListener disguiseEventListener;
     private PlayerListener playerListener;
     private ChatListener chatListener;
     private FreezeListener freezeListener;
     private StaffModeManager staffModeManager;
-    private RankChangeEvent rankChangeEvent;
     private DisguiseHandler disguiseHandler;
     private RankMenu rankMenu;
     private CommandHandler commandHandler;
     private AuthModule authModule;
     private MenuConfig menuConfig;
+    private NameTagColorManager nameTagColorManager;
 
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
-        loadRanksFile();
+
         saveDefaultConfig();
         getConfig().options().copyDefaults(true);
-        INSTANCE = this;
-        initializePlaceholders();
+        loadRanksFile();
+
+        instance = this;
 
         this.databaseManager = DatabaseManager.init(this);
-        this.rankManager = new RankManager(this);
 
+        initializeRedis();
+        initializePlaceholders();
+
+        RankManager.initialize(this);
+        this.rankManager = RankManager.getInstance();
+        this.rankManager.startAutoCacheRefresh();
+
+        getServer().getScheduler().runTaskTimerAsynchronously(
+                this, () -> databaseManager.removeExpiredBans(), 0L, 20L);
+
+        this.staffModeManager      = new StaffModeManager(this);
+        this.disguiseRegistry      = new DisguiseRegistry(this.redisManager, getLogger());
+        this.disguiseHandler       = new DefaultDisguiseHandler(this, this.disguiseRegistry);
+        this.tagsManager           = new TagsManager(this);
+        this.tagsGUI               = new TagsGUI(tagsManager);
+        this.menuConfig            = new MenuConfig(this);
+        this.disguiseEventListener = new DisguiseEventListener(this, (DefaultDisguiseHandler) disguiseHandler);
+        this.commandHandler        = new CommandHandler(this);
+
+        MenuManager.initialize(this);
+        registerListeners();
+        registerCommands();
+        registerBungee();
+
+        if (Utilities.isPaperBrigadierSupported()) {
+            try {
+                new BrigadierCommandHandler(this, commandHandler.getRegisteredCommands()).initialize();
+                getLogger().info("Paper Brigadier command registration active.");
+            } catch (ClassNotFoundException e) {
+                getLogger().warning("Brigadier check passed but class resolution failed: " + e.getMessage());
+            }
+        }
+        getLogger().info("WinterCore enabled in " + (System.currentTimeMillis() - start) + "ms.");
+        Utilities.logBootBanner();
+    }
+
+    @Override
+    public void onDisable() {
+        isShuttingDown = true;
+        getLogger().info("Disabling WinterCore, publishing offline status...");
+
+        if (disguiseEventListener != null) {
+            disguiseEventListener.clearDisguiseOnShutdown();
+        }
+
+        if (redisManager != null) {
+            try {
+                redisManager.publishServerStatus(false);
+            } catch (Exception e) {
+                getLogger().warning("Failed to publish offline status: " + e.getMessage());
+            }
+        }
+
+        if (redisPool != null) {
+            try (var jedis = redisPool.getResource()) {
+                jedis.del("server:" + getConfig().getString("server-name", "unknown") + ":heartbeat");
+                for (String key : jedis.keys("disguise:*")) jedis.del(key);
+            } catch (Exception e) {
+                getLogger().warning("Failed to cleanup Redis keys on disable: " + e.getMessage());
+            }
+        }
+
+        if (databaseManager != null) databaseManager.close();
+        if (redisPool != null) redisPool.close();
+
+        saveVanishedPlayers();
+        getLogger().info(CC.translate("&cWinterCore has been disabled."));
+        instance = null;
+    }
+
+    private void initializeRedis() {
         String redisHost     = getConfig().getString("Redis.host", "localhost");
         int    redisPort     = getConfig().getInt("Redis.port", 6379);
         String redisPassword = getConfig().getString("Redis.password", "");
-
-        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            Utilities.log("&bPlaceholderAPI successfully registered.");
-        }
 
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(10);
@@ -118,71 +178,55 @@ public final class WinterCore extends JavaPlugin {
         poolConfig.setMinIdle(1);
         poolConfig.setTestOnBorrow(true);
 
-        JedisPool tempPool = redisPassword.isEmpty()
-                ? new JedisPool(poolConfig, redisHost, redisPort)
-                : new JedisPool(poolConfig, redisHost, redisPort, 2000, redisPassword);
-
-        try (var jedis = tempPool.getResource()) {
+        try (JedisPool tempPool = buildJedisPool(poolConfig, redisHost, redisPort, redisPassword); var jedis = tempPool.getResource()) {
             if (jedis.keys("server:*").isEmpty()) {
                 for (String key : jedis.keys("disguise:*")) jedis.del(key);
-                getLogger().info("No server:* keys found in Redis. All disguise:* keys have been deleted for crash/force-kill cleanup.");
+                getLogger().info("No server:* keys found — stale disguise:* keys cleared.");
             }
         } catch (Exception e) {
-            getLogger().warning("Failed to check or cleanup disguise keys on startup: " + e.getMessage());
+            getLogger().warning("Failed to cleanup stale disguise keys on startup: " + e.getMessage());
         }
-        tempPool.close();
 
-        this.redisPool = redisPassword.isEmpty()
-                ? new JedisPool(poolConfig, redisHost, redisPort)
-                : new JedisPool(poolConfig, redisHost, redisPort, 2000, redisPassword);
-
+        this.redisPool    = buildJedisPool(poolConfig, redisHost, redisPort, redisPassword);
         this.redisManager = new RedisManager(this);
-
-        for (Player player : Utilities.getOnlinePlayers()) {
-            ClientBrandCommand.silenced.add(player.getUniqueId());
-        }
 
         redisManager.startHeartbeatSender();
         redisManager.startHeartbeatMonitor();
         redisManager.publishServerStatus(true);
         redisManager.startInfoUpdater();
-        rankManager.startAutoCacheRefresh();
-        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> databaseManager.removeExpiredBans(), 0L, 20L);
 
-        getLogger().info("WinterCore has been enabled in " + (System.currentTimeMillis() - start) + "ms!");
-        Utilities.logBootBanner();
-
-        RankManager.initialize(this);
-        this.rankManager        = RankManager.getInstance();
-        this.staffModeManager   = new StaffModeManager(this);
-        this.disguiseRegistry   = new DisguiseRegistry(this.redisManager, getLogger());
-        this.disguiseHandler    = new DefaultDisguiseHandler(this, this.disguiseRegistry);
-        this.tagsManager        = new TagsManager(this);
-        this.tagsGUI            = new TagsGUI(tagsManager);
-        this.menuConfig         = new MenuConfig(this);
-        this.disguiseEventListener = new DisguiseEventListener(this, (DefaultDisguiseHandler) disguiseHandler);
-        this.commandHandler     = new CommandHandler(this);
-
-        registerListeners();
-        registerCommands();
-        registerBungee();
-
-        this.nameTagHandler = new NameTagHandler(this);
-        this.nameTagHandler.load();
+        for (Player player : Utilities.getOnlinePlayers()) {
+            ClientBrandCommand.silenced.add(player.getUniqueId());
+        }
     }
 
-    public void registerBungee() {
-        String channel = Utilities.IS_LEGACY ? "MC|Brand" : "minecraft:brand";
-        Bukkit.getMessenger().registerIncomingPluginChannel(this, channel, new ClientBrand(this));
-        Bukkit.getMessenger().registerOutgoingPluginChannel(this, channel);
+    private JedisPool buildJedisPool(JedisPoolConfig config, String host, int port, String password) {
+        return password.isEmpty()
+                ? new JedisPool(config, host, port)
+                : new JedisPool(config, host, port, 2000, password);
+    }
+
+    private void initializePlaceholders() {
+        if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            getLogger().warning("PlaceholderAPI not found, some features may not work.");
+            return;
+        }
+        getLogger().info("PlaceholderAPI found, initializing placeholders.");
+        this.placeholder = new Placeholder(this);
+        if (this.placeholder.register()) {
+            placeholderAPIEnabled = true;
+            getLogger().info("WinterCore placeholders registered.");
+        } else {
+            getLogger().warning("Failed to register WinterCore placeholders.");
+        }
     }
 
     private void registerListeners() {
         PluginManager pm = getServer().getPluginManager();
 
-        this.playerListener  = new PlayerListener(this);
-        this.chatListener    = new ChatListener(this, tagsManager, playerListener);
-        this.freezeListener  = new FreezeListener(playerListener);
+        this.playerListener = new PlayerListener(this);
+        this.chatListener   = new ChatListener(this, tagsManager, playerListener);
+        this.freezeListener = new FreezeListener(playerListener);
 
         pm.registerEvents(playerListener, this);
         pm.registerEvents(chatListener, this);
@@ -194,17 +238,8 @@ public final class WinterCore extends JavaPlugin {
 
         pm.registerEvents(new SocialInput(this), this);
         pm.registerEvents(new StaffModeListener(this, staffModeManager), this);
-
         pm.registerEvents(tagsGUI, this);
         pm.registerEvents(disguiseEventListener, this);
-
-        MenuManager.initialize(this);
-
-        HistoryCommand history = new HistoryCommand(this, menuConfig);
-
-        ProfileCommand profile = new ProfileCommand(this, redisManager);
-        pm.registerEvents(profile, this);
-
         pm.registerEvents(new BanList(this), this);
     }
 
@@ -235,10 +270,7 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(BanCommand.class);
         commandHandler.register(WarningCommand.class);
         commandHandler.register(UnmuteCommand.class);
-
-        HistoryCommand history = new HistoryCommand(this, menuConfig);
-        commandHandler.register(history);
-
+        commandHandler.register(new HistoryCommand(this, menuConfig));
         commandHandler.register(FixCommand.class);
         commandHandler.register(MoreCommand.class);
         commandHandler.register(EnchantCommand.class);
@@ -255,7 +287,7 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(JumpToPlayer.class);
         commandHandler.register(StaffListCommand.class);
         commandHandler.register(new StaffModeCommand(this, staffModeManager));
-        commandHandler.register(new RankCommand(this, RankManager.getInstance()));
+        commandHandler.register(new RankCommand(this, rankManager));
         commandHandler.register(CheckNMS.class);
         commandHandler.register(SudoCommand.class);
         commandHandler.register(UnbanCommand.class);
@@ -271,62 +303,16 @@ public final class WinterCore extends JavaPlugin {
         this.authModule.register(commandHandler);
     }
 
-    @Override
-    public void onDisable() {
-        getLogger().info("Disabling server, publishing offline status");
-        isShuttingDown = true;
-
-        if (disguiseRegistry != null && redisManager != null) {
-            try {
-                for (UUID uuid : new HashSet<>(disguiseRegistry.disguisedPlayers)) {
-                    redisManager.clearDisguise(uuid);
-                }
-            } catch (Exception e) {
-                getLogger().warning("Failed to clear disguise strings from Redis: " + e.getMessage());
-            }
-        }
-
-        if (disguiseEventListener != null) {
-            disguiseEventListener.clearDisguiseOnShutdown();
-        }
-
-        if (redisManager != null) {
-            try {
-                redisManager.publishServerStatus(false);
-            } catch (Exception e) {
-                getLogger().warning("RedisManager was not initialized or failed, could not publish offline status.");
-            }
-        }
-
-        if (redisPool != null) {
-            try (var jedis = redisPool.getResource()) {
-                jedis.del("server:" + getConfig().getString("server-name", "unknown") + ":heartbeat");
-            } catch (Exception e) {
-                getLogger().warning("Failed to remove heartbeat key: " + e.getMessage());
-            }
-
-            try (var jedis = redisPool.getResource()) {
-                for (String key : jedis.keys("disguise:*")) jedis.del(key);
-            } catch (Exception e) {
-                getLogger().warning("Failed to remove all disguise:* keys: " + e.getMessage());
-            }
-        }
-
-        if (databaseManager != null) databaseManager.close();
-        if (redisPool != null) redisPool.close();
-
-        saveVanishedPlayers();
-
-        if (nameTagHandler != null) nameTagHandler.clear();
-
-        getLogger().info("§cWinterCore has been disabled.");
-        INSTANCE = null;
+    private void registerBungee() {
+        String channel = Utilities.IS_LEGACY ? "MC|Brand" : "minecraft:brand";
+        Bukkit.getMessenger().registerIncomingPluginChannel(this, channel, new ClientBrand(this));
+        Bukkit.getMessenger().registerOutgoingPluginChannel(this, channel);
     }
 
     public void saveVanishedPlayers() {
-        Set<String> vanishedUUIDs = new HashSet<>();
-        for (UUID uuid : vanished_players) vanishedUUIDs.add(uuid.toString());
-        getConfig().set("vanished_players", vanishedUUIDs);
+        Set<String> uuids = new HashSet<>();
+        for (UUID uuid : vanishedPlayers) uuids.add(uuid.toString());
+        getConfig().set("vanished_players", uuids);
         saveConfig();
     }
 
@@ -334,24 +320,6 @@ public final class WinterCore extends JavaPlugin {
         File ranksFile = new File(getDataFolder(), "ranks.yml");
         if (!ranksFile.exists()) saveResource("ranks.yml", false);
         YamlConfiguration.loadConfiguration(ranksFile);
-        getLogger().info("Ranks file loaded successfully.");
-    }
-
-    private void initializePlaceholders() {
-        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            getLogger().info("PlaceholderAPI found, initializing placeholders.");
-            this.placeholder = new Placeholder(this);
-            if (this.placeholder.register()) {
-                placeholderAPIEnabled = true;
-                getLogger().info("WinterCore placeholders registered.");
-            } else {
-                placeholderAPIEnabled = false;
-                getLogger().warning("Failed to register WinterCore placeholders.");
-            }
-        } else {
-            placeholder = null;
-            placeholderAPIEnabled = false;
-            getLogger().warning("PlaceholderAPI not found, some features may not work.");
-        }
+        getLogger().info("Ranks file loaded.");
     }
 }

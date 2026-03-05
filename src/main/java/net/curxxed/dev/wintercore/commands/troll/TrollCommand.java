@@ -1,9 +1,5 @@
 package net.curxxed.dev.wintercore.commands.troll;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.PacketContainer;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
@@ -12,11 +8,15 @@ import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 @CommandInfo(
@@ -28,15 +28,12 @@ import java.util.concurrent.ThreadLocalRandom;
 )
 public class TrollCommand extends BaseCommand {
 
-    private final WinterCore plugin;
-    private final ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
     private final Map<UUID, BukkitRunnable> dayNightTasks = new HashMap<>();
 
     private static final List<String> SUBCOMMANDS = Arrays.asList("demo", "win", "boatspam", "daynight");
 
     public TrollCommand(WinterCore plugin) {
         super(plugin);
-        this.plugin = plugin;
     }
 
     @Override
@@ -54,7 +51,8 @@ public class TrollCommand extends BaseCommand {
             return;
         }
 
-        switch (commandArgs.getArgs()[1].toLowerCase()) {
+        String sub = commandArgs.getArgs()[1].toLowerCase();
+        switch (sub) {
             case "demo":
                 sendGameStateChange(target, 5, 0.0f);
                 break;
@@ -62,7 +60,7 @@ public class TrollCommand extends BaseCommand {
                 sendGameStateChange(target, 4, 0.0f);
                 break;
             case "boatspam":
-                spawnBoatStack(target);
+                spawnFakeBoats(target);
                 break;
             case "daynight":
                 toggleDayNightLoop(player, target);
@@ -72,55 +70,59 @@ public class TrollCommand extends BaseCommand {
                 return;
         }
 
-        player.sendMessage(ChatColor.GREEN + "Trolled " + target.getName() + " with " + commandArgs.getArgs()[1].toLowerCase() + "!");
+        player.sendMessage(ChatColor.GREEN + "Trolled " + target.getName() + " with " + sub + "!");
     }
 
     private void sendGameStateChange(Player target, int reason, float value) {
         try {
-            PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.GAME_STATE_CHANGE);
-            packet.getIntegers().write(0, reason);
-            packet.getFloat().write(0, value);
-            protocolManager.sendServerPacket(target, packet);
+            Class<?> packetClass = Utilities.getNMSClass("PacketPlayOutGameStateChange");
+            Constructor<?> ctor = Utilities.getConstructorByParamCount(packetClass, 2);
+            Utilities.sendPacket(target, ctor.newInstance(reason, value));
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to send game state packet to " + target.getName() + ": " + e.getMessage());
         }
     }
 
-    private void spawnBoatStack(Player target) {
+    private void spawnFakeBoats(Player target) {
         Location base = target.getLocation().add(0, 2, 0);
 
         for (int i = 0; i < 10; i++) {
             Location loc = base.clone().add(0, i * 0.25, 0);
-
             try {
-                PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SPAWN_ENTITY);
+                Class<?> packetClass = Utilities.getNMSClass("PacketPlayOutSpawnEntity");
+                Object packet = packetClass.newInstance();
                 int entityId = ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
 
                 if (Utilities.IS_1_7) {
-                    // 1.7.10 format
-                    packet.getIntegers().write(0, entityId);
-                    packet.getIntegers().write(1, (int) (loc.getX() * 32));
-                    packet.getIntegers().write(2, (int) (loc.getY() * 32));
-                    packet.getIntegers().write(3, (int) (loc.getZ() * 32));
-                    packet.getIntegers().write(4, 0); // Pitch
-                    packet.getIntegers().write(5, 0); // Yaw
-                    packet.getIntegers().write(6, 1); // Type ID (1 = Boat)
-                    packet.getIntegers().write(7, 0); // Data
-
+                    Utilities.setField(packet, "a", entityId);
+                    Utilities.setField(packet, "b", (int) (loc.getX() * 32));
+                    Utilities.setField(packet, "c", (int) (loc.getY() * 32));
+                    Utilities.setField(packet, "d", (int) (loc.getZ() * 32));
+                    Utilities.setField(packet, "e", 0);
+                    Utilities.setField(packet, "f", 0);
+                    Utilities.setField(packet, "g", 0);
+                    Utilities.setField(packet, "h", 0);
+                    Utilities.setField(packet, "i", 0);
+                    Utilities.setField(packet, "j", 1);
+                    Utilities.setField(packet, "k", 0);
                 } else {
-                    // 1.8.x format
-                    packet.getIntegers().write(0, entityId);
-                    packet.getUUIDs().write(0, UUID.randomUUID());
-                    packet.getEntityTypeModifier().write(0, EntityType.BOAT);
-                    packet.getDoubles().write(0, loc.getX());
-                    packet.getDoubles().write(1, loc.getY());
-                    packet.getDoubles().write(2, loc.getZ());
+                    Utilities.setField(packet, "a", entityId);
+                    Utilities.setField(packet, "b", UUID.randomUUID());
+                    Utilities.setField(packet, "c", (int) (loc.getX() * 32));
+                    Utilities.setField(packet, "d", (int) (loc.getY() * 32));
+                    Utilities.setField(packet, "e", (int) (loc.getZ() * 32));
+                    Utilities.setField(packet, "f", 0);
+                    Utilities.setField(packet, "g", 0);
+                    Utilities.setField(packet, "h", 0);
+                    Utilities.setField(packet, "i", 0);
+                    Utilities.setField(packet, "j", 0);
+                    Utilities.setField(packet, "k", 1);
+                    Utilities.setField(packet, "l", 0);
                 }
 
-                protocolManager.sendServerPacket(target, packet);
-
+                Utilities.sendPacket(target, packet);
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to send fake boat: " + e.getMessage());
+                plugin.getLogger().warning("Failed to send fake boat packet: " + e.getMessage());
             }
         }
     }
@@ -159,10 +161,11 @@ public class TrollCommand extends BaseCommand {
 
     private void sendTimeUpdate(Player target, long timeOfDay) {
         try {
-            PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.UPDATE_TIME);
-            packet.getLongs().write(0, target.getWorld().getFullTime());
-            packet.getLongs().write(1, timeOfDay);
-            protocolManager.sendServerPacket(target, packet);
+            Class<?> packetClass = Utilities.getNMSClass("PacketPlayOutUpdateTime");
+            Object packet = packetClass
+                    .getConstructor(long.class, long.class)
+                    .newInstance(target.getWorld().getFullTime(), timeOfDay);
+            Utilities.sendPacket(target, packet);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to send time packet to " + target.getName() + ": " + e.getMessage());
         }
