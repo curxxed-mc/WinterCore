@@ -44,15 +44,7 @@ public abstract class DisguiseHandler {
     }
 
     public void sendPacket(Player player, Object packet) {
-        try {
-            Object handle = player.getClass().getMethod("getHandle").invoke(player);
-            Object playerConnection = handle.getClass().getField("playerConnection").get(handle);
-            playerConnection.getClass()
-                    .getMethod("sendPacket", Class.forName("net.minecraft.server." + Utilities.getServerVersion() + ".Packet"))
-                    .invoke(playerConnection, packet);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Utilities.sendPacket(player, packet);
     }
 
     public void changeField(Object object, String fieldName, Object to) {
@@ -66,12 +58,7 @@ public abstract class DisguiseHandler {
     }
 
     public Class<?> getNMSClass(String what) {
-        try {
-            return Class.forName("net.minecraft.server." + Utilities.getServerVersion() + "." + what);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
+      return Utilities.getNMSClass(what);
     }
 
     public boolean doesClassExists(String what) {

@@ -170,11 +170,11 @@ public class RankManager {
     }
 
     public void setRankAboveHead(Player player) {
-        getRank(player, rank -> displayManager.applyNameTag(player, configManager.getColor(rank)));
+        getRank(player, rank -> displayManager.applyNameTag(player, rank));
     }
 
     public void updateNameTagColor(Player player, String color) {
-        displayManager.applyNameTag(player, color != null ? color : "&f");
+        displayManager.applyNameTagColor(player, color != null ? color : "&f");
     }
 
     public void getDisguiseRank(Player player, Consumer<String> callback) {
@@ -186,8 +186,8 @@ public class RankManager {
     }
 
     public String getDisguiseRankSync(Player player) {
-        String color = extractDisguiseField(plugin.getRedisManager().getDisguiseSync(player.getUniqueId()), "rank");
-        return color != null ? color : getRankSync(player);
+        String rank = extractDisguiseField(plugin.getRedisManager().getDisguiseSync(player.getUniqueId()), "rank");
+        return rank != null ? rank : getRankSync(player);
     }
 
     public String getDisguiseColorPreferenceSync(Player player) {

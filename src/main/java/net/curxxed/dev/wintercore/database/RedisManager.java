@@ -412,25 +412,20 @@ public class RedisManager {
             boolean disguised = obj.get("disguised").getAsBoolean();
             Bukkit.getScheduler().runTask(plugin, () -> {
                 Player player = Bukkit.getPlayer(uuid);
-                if (player != null && plugin.getNameTagHandler() != null && plugin.getNameTagHandler().getNameTagAdapter() != null) {
-                    if (disguised) {
-                        // Always get the color from the disguise string in Redis
-                        String disguiseJson = getDisguiseSync(uuid);
-                        String color = "&f";
-                        if (disguiseJson != null) {
-                            try {
-                                JsonObject disguiseObj = new com.google.gson.JsonParser().parse(disguiseJson).getAsJsonObject();
-                                if (disguiseObj.has("color")) {
-                                    color = disguiseObj.get("color").getAsString();
-                                }
-                            } catch (Exception ignored) {}
-                        }
-                        plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, color);
-                    } else {
-                        // Use the real rank color when undisguised
-                        String color = plugin.getRankManager().getColorPreferenceSync(player);
-                        plugin.getNameTagHandler().getNameTagAdapter().setNameTag(player, color);
+                if (player == null || plugin.getNameTagColorManager() == null) return;
+
+                if (disguised) {
+                    String disguiseJson = getDisguiseSync(uuid);
+                    String color = "&f";
+                    if (disguiseJson != null) {
+                        try {
+                            JsonObject disguiseObj = new com.google.gson.JsonParser().parse(disguiseJson).getAsJsonObject();
+                            if (disguiseObj.has("color")) color = disguiseObj.get("color").getAsString();
+                        } catch (Exception ignored) {}
                     }
+                    plugin.getNameTagColorManager().applyColor(player, color);
+                } else {
+                    plugin.getNameTagColorManager().applyColor(player, plugin.getRankManager().getColorPreferenceSync(player));
                 }
             });
         } catch (Exception e) {

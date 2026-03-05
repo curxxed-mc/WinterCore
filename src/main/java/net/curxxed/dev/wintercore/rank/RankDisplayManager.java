@@ -2,8 +2,6 @@ package net.curxxed.dev.wintercore.rank;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import net.curxxed.dev.wintercore.nametags.NameTag;
-import net.curxxed.dev.wintercore.nametags.NameTagAdapter;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissible;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
@@ -18,46 +16,47 @@ public class RankDisplayManager {
 
     private final WinterCore plugin;
     private final RankConfigManager config;
-    private final NameTagAdapter nameTagAdapter;
 
     public RankDisplayManager(WinterCore plugin, RankConfigManager config) {
         this.plugin = plugin;
         this.config = config;
-        this.nameTagAdapter = new NameTag();
     }
 
-    public void applyRank(Player player, String rank, String color) {
-        applyPermissions(player, rank);
+    public void applyRank(Player player, String rankName, String color) {
+        applyPermissions(player, rankName);
         applyVisuals(player, color);
-        applyNameTag(player, color);
+        applyNameTag(player, rankName);
     }
 
-    public void refreshDisplay(Player player, String rank, String color) {
-        applyRank(player, rank, color);
+    public void refreshDisplay(Player player, String rankName, String color) {
+        applyRank(player, rankName, color);
     }
 
-    public void refreshDisplayForAll(Player target, String rank, String color) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            applyRank(target, rank, color);
-            if (plugin.getNameTagHandler() != null) {
-                plugin.getNameTagHandler().getNameTagAdapter().setNameTag(target, color);
-            }
-        });
+    public void refreshDisplayForAll(Player target, String rankName, String color) {
+        Bukkit.getScheduler().runTask(plugin, () -> applyRank(target, rankName, color));
     }
 
-    public void applyNameTag(Player player, String color) {
+    public void applyNameTag(Player player, String rankName) {
+        if (plugin.getNameTagColorManager() == null) return;
         if (config.isShowRankAboveHead()) {
-            nameTagAdapter.setNameTag(player, color);
+            plugin.getNameTagColorManager().applyRank(player, rankName);
         } else {
-            nameTagAdapter.resetNameTag(player);
+            plugin.getNameTagColorManager().refresh(player);
         }
     }
 
-    public void resetNameTag(Player player) {
-        nameTagAdapter.resetNameTag(player);
+    public void applyNameTagColor(Player player, String color) {
+        if (plugin.getNameTagColorManager() == null) return;
+        plugin.getNameTagColorManager().applyColor(player, color);
     }
 
-    public void sendRankUpdateToBungee(String playerName, String rank) {
+    public void refreshNameTag(Player player) {
+        if (plugin.getNameTagColorManager() != null) {
+            plugin.getNameTagColorManager().refresh(player);
+        }
+    }
+
+    public void sendRankUpdateToBungee(String playerName, String rankName) {
         Collection<? extends Player> online = Bukkit.getOnlinePlayers();
         if (online.isEmpty()) return;
 
@@ -66,17 +65,17 @@ public class RankDisplayManager {
         out.writeUTF("ALL");
         out.writeUTF("SyncRank");
         out.writeUTF(playerName);
-        out.writeUTF(rank);
+        out.writeUTF(rankName);
 
         online.iterator().next().sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
     }
 
-    private void applyPermissions(Player player, String rank) {
+    private void applyPermissions(Player player, String rankName) {
         try {
             WinterCorePermissible permissible = (WinterCorePermissible)
                     WinterCorePermissibleInjector.HUMAN_ENTITY_PERMISSIBLE_FIELD.get(player);
             permissible.clearRawPermissions();
-            for (String permission : config.getPermissionsForRank(rank)) {
+            for (String permission : config.getPermissionsForRank(rankName)) {
                 permissible.addRawPermission(permission, true);
             }
             permissible.recalculatePermissions();
@@ -90,8 +89,7 @@ public class RankDisplayManager {
         Bukkit.getScheduler().runTask(plugin, () -> {
             player.setDisplayName(coloredName);
             safeSetPlayerListName(player, coloredName);
-            player.setCustomName(coloredName);
-            player.setCustomNameVisible(true);
+
         });
     }
 

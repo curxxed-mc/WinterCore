@@ -14,6 +14,7 @@ public class MenuManager {
 
     private final WinterCore plugin;
     private final Map<UUID, Menu> openMenus = new ConcurrentHashMap<>();
+    private final Map<UUID, Inventory> openInventories = new ConcurrentHashMap<>();
 
     private MenuManager(WinterCore plugin) {
         this.plugin = plugin;
@@ -32,8 +33,12 @@ public class MenuManager {
     }
 
     public void openMenu(Player player, Menu menu) {
+        UUID uuid = player.getUniqueId();
         Inventory inventory = menu.buildInventory(player);
-        openMenus.put(player.getUniqueId(), menu);
+
+        openMenus.put(uuid, menu);
+        openInventories.put(uuid, inventory);
+
         player.openInventory(inventory);
         menu.onOpen(player);
     }
@@ -47,8 +52,13 @@ public class MenuManager {
         return openMenus.get(player.getUniqueId());
     }
 
-    public void closeMenu(Player player) {
-        Menu menu = openMenus.remove(player.getUniqueId());
+    public void closeMenu(Player player, Inventory closedInventory) {
+        UUID uuid = player.getUniqueId();
+        Inventory registered = openInventories.get(uuid);
+        if (registered == null || !registered.equals(closedInventory)) return;
+
+        openInventories.remove(uuid);
+        Menu menu = openMenus.remove(uuid);
         if (menu != null) menu.onClose(player);
     }
 
