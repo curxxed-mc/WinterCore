@@ -14,6 +14,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RankMenu extends Menu implements Listener {
+public class RankMenu extends Menu {
 
     private enum View { RANK_SELECT, DURATION }
 
@@ -42,7 +43,7 @@ public class RankMenu extends Menu implements Listener {
     private static final long WEEK  = 604_800_000L;
     private static final long MONTH = 2_592_000_000L;
 
-    private static final Map<UUID, GrantState> pendingGrants = new ConcurrentHashMap<>();
+    static final Map<UUID, GrantState> pendingGrants = new ConcurrentHashMap<>();
 
     private final WinterCore plugin;
     private final UUID targetUUID;
@@ -84,39 +85,87 @@ public class RankMenu extends Menu implements Listener {
         int slot = 0;
         for (String rank : sortedRanks) {
             if (rank == null || rank.isEmpty()) continue;
-            String colorCode = ranksSection.getString(rank + ".name-color", "&f");
-            final String finalRank = rank;
-            buttons.put(slot++, ButtonBuilder.of(Material.PAPER)
-                    .name(colorCode + rank)
-                    .lore("&7Click to grant &b" + rank + " &7to &e" + targetName)
-                    .action(e -> {
-                        if (!ranksSection.contains(finalRank)) {
-                            player.sendMessage(CC.translate("&cInvalid rank selected."));
-                            return;
-                        }
-                        state = new GrantState(targetUUID, finalRank);
-                        pendingGrants.put(player.getUniqueId(), state);
-                        view = View.DURATION;
-                        open(player);
-                    })
-                    .build());
+
+            String colorCode          = ranksSection.getString(rank + ".name-color", "&f");
+            String translatedColor    = CC.translate(colorCode);
+            String prefix             = ranksSection.getString(rank + ".prefix", "");
+            String translatedPrefix   = CC.translate(prefix);
+            final String finalRank    = rank;
+
+            org.bukkit.ChatColor chatColor = org.bukkit.ChatColor.getByChar(
+                    colorCode.replace("&", "").replace("§", "").charAt(0));
+            if (chatColor == null) chatColor = org.bukkit.ChatColor.WHITE;
+
+            ItemStack item;
+            if (chatColor == org.bukkit.ChatColor.DARK_RED) {
+                item = new ItemStack(Material.STAINED_CLAY, 1, (short) 14);
+            } else {
+                org.bukkit.DyeColor dye = dyeColor(chatColor);
+                item = new ItemStack(Material.WOOL, 1, dye.getWoolData());
+            }
+
+            org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+            meta.setDisplayName(translatedColor + rank);
+
+            java.util.List<String> lore = new java.util.ArrayList<>();
+            lore.add(CC.translate("&7&m------------------------"));
+            lore.add(CC.translate("&6Preview:"));
+            lore.add(translatedPrefix + " " + translatedColor + targetName
+                    + CC.translate("&f") + ": " + CC.translate("&7")
+                    + "Hi! This is what your message would look like.");
+            lore.add(CC.translate("&7&m------------------------"));
+            lore.add(CC.translate("&aClick to grant this rank to &b" + targetName + "&a."));
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+
+            buttons.put(slot++, new Button(item, e -> {
+                if (!ranksSection.contains(finalRank)) {
+                    player.sendMessage(CC.translate("&cInvalid rank selected."));
+                    return;
+                }
+                state = new GrantState(targetUUID, finalRank);
+                pendingGrants.put(player.getUniqueId(), state);
+                view = View.DURATION;
+                open(player);
+            }));
         }
 
         buttons.put(getSize() - 1, cancelButton(player, "&cRank selection cancelled."));
         return buttons;
     }
 
+    private static org.bukkit.DyeColor dyeColor(org.bukkit.ChatColor color) {
+        switch (color) {
+            case BLACK:        return org.bukkit.DyeColor.BLACK;
+            case DARK_BLUE:    return org.bukkit.DyeColor.BLUE;
+            case DARK_GREEN:   return org.bukkit.DyeColor.GREEN;
+            case DARK_AQUA:    return org.bukkit.DyeColor.CYAN;
+            case DARK_RED:     return org.bukkit.DyeColor.RED;
+            case DARK_PURPLE:  return org.bukkit.DyeColor.PURPLE;
+            case GOLD:         return org.bukkit.DyeColor.ORANGE;
+            case GRAY:         return org.bukkit.DyeColor.SILVER;
+            case DARK_GRAY:    return org.bukkit.DyeColor.GRAY;
+            case BLUE:         return org.bukkit.DyeColor.LIGHT_BLUE;
+            case GREEN:        return org.bukkit.DyeColor.LIME;
+            case AQUA:         return org.bukkit.DyeColor.LIGHT_BLUE;
+            case RED:          return org.bukkit.DyeColor.RED;
+            case LIGHT_PURPLE: return org.bukkit.DyeColor.PINK;
+            case YELLOW:       return org.bukkit.DyeColor.YELLOW;
+            default:           return org.bukkit.DyeColor.WHITE;
+        }
+    }
+
     private Map<Integer, Button> buildDurationButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
 
-        buttons.put(0, adjustButton(player, "&a+1 Hour",   HOUR,  true));
-        buttons.put(1, adjustButton(player, "&a+1 Day",    DAY,   true));
-        buttons.put(2, adjustButton(player, "&a+1 Week",   WEEK,  true));
-        buttons.put(3, adjustButton(player, "&a+1 Month",  MONTH, true));
-        buttons.put(5, adjustButton(player, "&c-1 Hour",   HOUR,  false));
-        buttons.put(6, adjustButton(player, "&c-1 Day",    DAY,   false));
-        buttons.put(7, adjustButton(player, "&c-1 Week",   WEEK,  false));
-        buttons.put(8, adjustButton(player, "&c-1 Month",  MONTH, false));
+        buttons.put(0, adjustButton(player, "&a+1 Hour",  HOUR,  true));
+        buttons.put(1, adjustButton(player, "&a+1 Day",   DAY,   true));
+        buttons.put(2, adjustButton(player, "&a+1 Week",  WEEK,  true));
+        buttons.put(3, adjustButton(player, "&a+1 Month", MONTH, true));
+        buttons.put(5, adjustButton(player, "&c-1 Hour",  HOUR,  false));
+        buttons.put(6, adjustButton(player, "&c-1 Day",   DAY,   false));
+        buttons.put(7, adjustButton(player, "&c-1 Week",  WEEK,  false));
+        buttons.put(8, adjustButton(player, "&c-1 Month", MONTH, false));
 
         buttons.put(13, ButtonBuilder.of(Material.BEDROCK)
                 .name("&6Permanent")
@@ -179,51 +228,61 @@ public class RankMenu extends Menu implements Listener {
         long hours  = millis / HOUR;
         StringBuilder sb = new StringBuilder();
         if (months > 0) sb.append(months).append("mo ");
-        if (weeks  > 0) sb.append(weeks) .append("w ");
-        if (days   > 0) sb.append(days)  .append("d ");
-        if (hours  > 0) sb.append(hours) .append("h");
+        if (weeks  > 0) sb.append(weeks).append("w ");
+        if (days   > 0) sb.append(days).append("d ");
+        if (hours  > 0) sb.append(hours).append("h");
         return sb.toString().trim();
-    }
-
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
-        Player player = event.getPlayer();
-        GrantState gs = pendingGrants.get(player.getUniqueId());
-        if (gs == null) return;
-
-        event.setCancelled(true);
-        String message = event.getMessage();
-
-        if (message.equalsIgnoreCase("cancel")) {
-            pendingGrants.remove(player.getUniqueId());
-            player.sendMessage(CC.translate("&cRank grant cancelled."));
-            return;
-        }
-
-        pendingGrants.remove(player.getUniqueId());
-
-        long now = System.currentTimeMillis();
-        Long expiresAt = gs.permanent ? null : (gs.durationMillis > 0 ? now + gs.durationMillis : null);
-
-        plugin.getDatabaseManager().setRankWithMeta(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
-        plugin.getDatabaseManager().addRankGrant(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
-
-        String grantedName = Bukkit.getOfflinePlayer(gs.targetUUID).getName();
-        player.sendMessage(CC.translate("&aGranted rank &e" + gs.rank + " &ato &b" + grantedName + "&a."));
-
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            Player target = Bukkit.getPlayer(gs.targetUUID);
-            if (target != null) {
-                plugin.getRankManager().cachePlayerRank(target, gs.rank);
-                plugin.getRankManager().refreshPlayerDisplay(target);
-                plugin.getRankManager().refreshPlayerDisplayForAll(target);
-                Bukkit.getPluginManager().callEvent(
-                        new net.curxxed.dev.wintercore.rank.RankChangeEvent(target, gs.rank, plugin.getRankManager().getRankSync(target)));
-            }
-        });
     }
 
     public static boolean isPendingGrant(UUID staffUUID) {
         return pendingGrants.containsKey(staffUUID);
+    }
+
+    public static class ChatListener implements Listener {
+
+        private final WinterCore plugin;
+
+        public ChatListener(WinterCore plugin) {
+            this.plugin = plugin;
+        }
+
+        @EventHandler(priority = EventPriority.LOWEST)
+        public void onPlayerChat(AsyncPlayerChatEvent event) {
+            Player player = event.getPlayer();
+            GrantState gs = pendingGrants.get(player.getUniqueId());
+            if (gs == null) return;
+
+            event.setCancelled(true);
+            String message = event.getMessage();
+
+            if (message.equalsIgnoreCase("cancel")) {
+                pendingGrants.remove(player.getUniqueId());
+                player.sendMessage(CC.translate("&cRank grant cancelled."));
+                return;
+            }
+
+            pendingGrants.remove(player.getUniqueId());
+
+            long now = System.currentTimeMillis();
+            Long expiresAt = gs.permanent ? null : (gs.durationMillis > 0 ? now + gs.durationMillis : null);
+
+            plugin.getDatabaseManager().setRankWithMeta(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
+            plugin.getDatabaseManager().addRankGrant(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
+
+            String grantedName = Bukkit.getOfflinePlayer(gs.targetUUID).getName();
+            player.sendMessage(CC.translate("&aGranted rank &e" + gs.rank + " &ato &b" + grantedName + "&a."));
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Player target = Bukkit.getPlayer(gs.targetUUID);
+                if (target != null) {
+                    plugin.getRankManager().cachePlayerRank(target, gs.rank);
+                    plugin.getRankManager().refreshPlayerDisplay(target);
+                    plugin.getRankManager().refreshPlayerDisplayForAll(target);
+                    Bukkit.getPluginManager().callEvent(
+                            new net.curxxed.dev.wintercore.rank.RankChangeEvent(
+                                    target, gs.rank, plugin.getRankManager().getRankSync(target)));
+                }
+            });
+        }
     }
 }

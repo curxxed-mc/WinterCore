@@ -55,7 +55,7 @@ public class ClientBrand implements PluginMessageListener {
 
     private String getMinecraftVersion(UUID uuid) {
         if (!VIA_PRESENT) {
-            return "1.7/1.8";
+            return "Unknown";
         }
         return ViaHelper.getVersion(uuid);
     }

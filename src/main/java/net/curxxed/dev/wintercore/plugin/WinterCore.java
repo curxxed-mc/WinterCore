@@ -79,7 +79,6 @@ public final class WinterCore extends JavaPlugin {
     private FreezeListener freezeListener;
     private StaffModeManager staffModeManager;
     private DisguiseHandler disguiseHandler;
-    private RankMenu rankMenu;
     private CommandHandler commandHandler;
     private AuthModule authModule;
     private MenuConfig menuConfig;
@@ -129,6 +128,10 @@ public final class WinterCore extends JavaPlugin {
                 getLogger().warning("Brigadier check passed but class resolution failed: " + e.getMessage());
             }
         }
+
+        this.nameTagColorManager = new NameTagColorManager(this);
+        this.nameTagColorManager.load();
+
         getLogger().info("WinterCore enabled in " + (System.currentTimeMillis() - start) + "ms.");
         Utilities.logBootBanner();
     }
@@ -163,6 +166,9 @@ public final class WinterCore extends JavaPlugin {
         if (redisPool != null) redisPool.close();
 
         saveVanishedPlayers();
+
+        if (nameTagColorManager != null) nameTagColorManager.unload();
+
         getLogger().info(CC.translate("&cWinterCore has been disabled."));
         instance = null;
     }
@@ -233,8 +239,7 @@ public final class WinterCore extends JavaPlugin {
         pm.registerEvents(new ConnectionListener(this), this);
         pm.registerEvents(freezeListener, this);
 
-        this.rankMenu = new RankMenu(this, null, null);
-        pm.registerEvents(rankMenu, this);
+        pm.registerEvents(new RankMenu.ChatListener(this), this);
 
         pm.registerEvents(new SocialInput(this), this);
         pm.registerEvents(new StaffModeListener(this, staffModeManager), this);
@@ -255,7 +260,7 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(new GameModeCommand(this, staffModeManager));
         commandHandler.register(DiscordCommand.class);
         commandHandler.register(Heal.class);
-        commandHandler.register(GrantCommand.class);
+        commandHandler.register(new GrantCommand(this));
         commandHandler.register(ManagePermissionCommand.class);
         commandHandler.register(ReloadConfig.class);
         commandHandler.register(new ListCommand(this, rankManager));
@@ -304,7 +309,7 @@ public final class WinterCore extends JavaPlugin {
     }
 
     private void registerBungee() {
-        String channel = Utilities.IS_LEGACY ? "MC|Brand" : "minecraft:brand";
+        String channel = Utilities.IS_1_13_OR_NEWER ?  "minecraft:brand" : "MC|Brand";
         Bukkit.getMessenger().registerIncomingPluginChannel(this, channel, new ClientBrand(this));
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, channel);
     }

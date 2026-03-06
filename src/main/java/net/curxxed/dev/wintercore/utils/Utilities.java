@@ -16,12 +16,14 @@ public class Utilities {
     private static final String SERVER_VERSION;
     public static final boolean IS_LEGACY;
     public static final boolean IS_1_7;
+    public static final boolean IS_1_13_OR_NEWER;
     private static Field pingField = null;
 
     static {
         SERVER_VERSION = detectServerVersion();
         IS_LEGACY = detectMinecraftMajor() < 17;
         IS_1_7 = detectMinecraftMajor() == 7;
+        IS_1_13_OR_NEWER = detectMinecraftMajor() >= 13;
     }
 
     private static String detectServerVersion() {
