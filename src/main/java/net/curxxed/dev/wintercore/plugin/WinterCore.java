@@ -8,6 +8,7 @@ import net.curxxed.dev.wintercore.client.ClientBrandCommand;
 import net.curxxed.dev.wintercore.commands.api.BrigadierCommandHandler;
 import net.curxxed.dev.wintercore.commands.api.CommandHandler;
 import net.curxxed.dev.wintercore.commands.bungee.ServerManagerCommand;
+import net.curxxed.dev.wintercore.commands.bungee.SyncCommand;
 import net.curxxed.dev.wintercore.commands.gamemode.GameModeCommand;
 import net.curxxed.dev.wintercore.commands.misc.*;
 import net.curxxed.dev.wintercore.commands.social.DiscordCommand;
@@ -303,6 +304,7 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(ReplyCommand.class);
         commandHandler.register(AltsCommand.class);
         commandHandler.register(WhoIsDisguisedCommand.class);
+        commandHandler.register(SyncCommand.class);
 
         this.authModule = new AuthModule(this, databaseManager.getDatabase());
         this.authModule.register(commandHandler);
@@ -312,6 +314,8 @@ public final class WinterCore extends JavaPlugin {
         String channel = Utilities.IS_1_13_OR_NEWER ?  "minecraft:brand" : "MC|Brand";
         Bukkit.getMessenger().registerIncomingPluginChannel(this, channel, new ClientBrand(this));
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, channel);
+        Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+        Bukkit.getMessenger().registerIncomingPluginChannel(this, "BungeeCord", (ch, player, message) -> {});
     }
 
     public void saveVanishedPlayers() {

@@ -9,6 +9,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.*;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class AuthListener implements Listener {
 
@@ -19,15 +20,17 @@ public class AuthListener implements Listener {
     private static final String[] AUTH_ALLOWED_COMMANDS = {"/auth", "/2fa"};
 
     private final AuthManager authManager;
+    private final JavaPlugin plugin;
 
-    public AuthListener(AuthManager authManager) {
+    public AuthListener(AuthManager authManager, JavaPlugin plugin) {
         this.authManager = authManager;
+        this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent event) {
         event.getPlayer().getServer().getScheduler().runTaskLater(
-                event.getPlayer().getServer().getPluginManager().getPlugins()[0],
+                plugin, // use it here
                 () -> authManager.handleJoin(event.getPlayer()),
                 5L
         );

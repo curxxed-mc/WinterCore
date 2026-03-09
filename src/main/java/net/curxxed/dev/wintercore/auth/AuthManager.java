@@ -4,10 +4,12 @@ import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
 import net.curxxed.dev.wintercore.auth.repository.AuthRepository;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.Map;
 import java.util.Set;
@@ -22,18 +24,19 @@ public class AuthManager {
     private static final long SESSION_DURATION_MS = 12 * 60 * 60 * 1000L;
     private static final String TOTP_ISSUER = "WinterCore";
 
-    private final JavaPlugin plugin;
+    private final WinterCore plugin;
     private final AuthRepository repository;
     private final GoogleAuthenticator googleAuth;
+    private final JedisPool jedisPool;
 
     private final Map<UUID, BukkitTask> pendingAuth = new ConcurrentHashMap<>();
     private final Set<UUID> pendingSetup = ConcurrentHashMap.newKeySet();
-    private final Map<UUID, AuthSession> sessions = new ConcurrentHashMap<>();
 
-    public AuthManager(JavaPlugin plugin, AuthRepository repository) {
+    public AuthManager(WinterCore plugin, AuthRepository repository) {
         this.plugin = plugin;
         this.repository = repository;
         this.googleAuth = new GoogleAuthenticator();
+        this.jedisPool = plugin.getRedisPool();
     }
 
     public void handleJoin(Player player) {
@@ -53,13 +56,12 @@ public class AuthManager {
             return;
         }
 
-        AuthSession existing = sessions.get(uuid);
-        if (existing != null && existing.isValid(resolveIp(player))) {
+        // Check Redis for a valid existing session
+        if (isAuthenticated(player)) {
             player.sendMessage("§a§lAuthenticated §8(session resumed)");
             return;
         }
 
-        sessions.remove(uuid);
         scheduleKickTimer(player, "§c§lAuthentication Timeout\n\n§7You did not authenticate within 30 seconds.\n§7Please reconnect and enter your 2FA code.");
 
         player.sendMessage("");
@@ -83,7 +85,12 @@ public class AuthManager {
 
         if (googleAuth.authorize(secret, totpCode)) {
             long expiry = System.currentTimeMillis() + SESSION_DURATION_MS;
-            sessions.put(uuid, new AuthSession(uuid, resolveIp(player), expiry));
+            try (Jedis jedis = jedisPool.getResource()) {
+                String key = "auth:session:" + uuid;
+                jedis.hset(key, "ip", resolveIp(player));
+                jedis.hset(key, "expiry", String.valueOf(expiry));
+                jedis.expireAt(key, expiry / 1000);
+            }
             cancelKickTimer(uuid);
             return true;
         }
@@ -119,7 +126,9 @@ public class AuthManager {
     public void disableAuth(Player player) {
         UUID uuid = player.getUniqueId();
         repository.deleteSecret(uuid);
-        sessions.remove(uuid);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.del("auth:session:" + uuid);
+        }
         cancelKickTimer(uuid);
     }
 
@@ -135,14 +144,17 @@ public class AuthManager {
         if (!isStaff(player)) return true;
         if (!repository.hasSecret(player.getUniqueId())) return false;
 
-        AuthSession session = sessions.get(player.getUniqueId());
-        if (session == null) return false;
+        try (Jedis jedis = jedisPool.getResource()) {
+            String key = "auth:session:" + player.getUniqueId();
+            if (!jedis.exists(key)) return false;
 
-        if (!session.isValid(resolveIp(player))) {
-            sessions.remove(player.getUniqueId());
-            return false;
+            String ip = jedis.hget(key, "ip");
+            String expiryStr = jedis.hget(key, "expiry");
+            if (ip == null || expiryStr == null) return false;
+
+            long expiry = Long.parseLong(expiryStr);
+            return System.currentTimeMillis() < expiry && resolveIp(player).equals(ip);
         }
-        return true;
     }
 
     public boolean isPendingAuth(Player player) {

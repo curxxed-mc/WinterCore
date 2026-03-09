@@ -121,13 +121,8 @@ public class ServerManagerCommand extends BaseCommand {
             player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
         });
     }
-
     private void runCommand(CommandSender sender, String server, String command) {
-        try (Jedis jedis = plugin.getRedisPool().getResource()) {
-            // Channel format: "wintercore:<serverName>:commands"
-            String channel = "wintercore:" + server + ":commands";
-            jedis.publish(channel, command);
-            sender.sendMessage(CC.translate("&aSent command to " + server + "."));
-        }
+        plugin.getRedisManager().dispatchRemoteCommand(server, command);
+        sender.sendMessage(CC.translate("&aSent command to " + server + "."));
     }
 }
