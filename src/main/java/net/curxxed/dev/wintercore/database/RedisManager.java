@@ -65,6 +65,7 @@ public class RedisManager {
             plugin.getLogger().warning("Failed to handle player report message: " + e.getMessage());
         }
     }
+
     public void publishServerStatus(boolean isOnline) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.publish("server-status", serverName + "|" + (isOnline ? "online" : "offline"));
@@ -77,45 +78,82 @@ public class RedisManager {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try (Jedis jedis = plugin.getRedisPool().getResource()) {
                 jedis.subscribe(new JedisPubSub() {
-                    @Override
-                    public void onMessage(String channel, String message) {
-                        switch (channel) {
-                            case "vanishSync":
-                                handleVanishMessage(message);
-                                break;
-                            case "server-status":
-                                handleServerStatusMessage(message);
-                                break;
-                            case "server-command":
-                                handleRemoteCommand(message);
-                                break;
-                            case "staff-activity":
-                                handleStaffActivityMessage(message);
-                                break;
-                            case "staff:message":
-                                handleStaffChatMessage(message);
-                                break;
-                            case "admin:message":
-                                handleAdminChatMessage(message);
-                                break;
-                            case "manager:message":
-                                handleManagerChatMessage(message);
-                                break;
-                            case "player-report":
-                                handlePlayerReportMessage(message);
-                                break;
-                            case "disguise-activity":
-                                handleDisguiseActivityMessage(message);
-                                break;
-                        }
-                    }
-                }, "vanishSync", "server-status", "server-command", "staff-activity", "staff:message", "admin:message", "manager:message", "player-report", "disguise-activity");
+                                    @Override
+                                    public void onMessage(String channel, String message) {
+                                        switch (channel) {
+                                            case "vanishSync":
+                                                handleVanishMessage(message);
+                                                break;
+                                            case "server-status":
+                                                handleServerStatusMessage(message);
+                                                break;
+                                            case "server-command":
+                                                handleRemoteCommand(message);
+                                                break;
+                                            case "staff-activity":
+                                                handleStaffActivityMessage(message);
+                                                break;
+                                            case "staff:message":
+                                                handleStaffChatMessage(message);
+                                                break;
+                                            case "admin:message":
+                                                handleAdminChatMessage(message);
+                                                break;
+                                            case "manager:message":
+                                                handleManagerChatMessage(message);
+                                                break;
+                                            case "player-report":
+                                                handlePlayerReportMessage(message);
+                                                break;
+                                            case "disguise-activity":
+                                                handleDisguiseActivityMessage(message);
+                                                break;
+                                            case "config-sync:ranks":
+                                                handleConfigSync(channel, message);
+                                                break;
+                                            case "config-sync:tags":
+                                                handleConfigSync(channel, message);
+                                                break;
+                                        }
+                                    }
+                                }, "vanishSync", "server-status", "server-command", "staff-activity", "staff:message",
+                        "admin:message", "manager:message", "player-report", "disguise-activity",
+                        "config-sync:ranks", "config-sync:tags");
             } catch (Exception e) {
                 plugin.getLogger().warning("Redis subscription failed: " + e.getMessage());
             }
         });
     }
 
+    private void handleConfigSync(String channel, String message) {
+        int sep = message.indexOf('|');
+        if (sep == -1) {
+            plugin.getLogger().warning("[Sync] Malformed config-sync payload on " + channel);
+            return;
+        }
+
+        String sourceServer = message.substring(0, sep);
+        String yaml         = message.substring(sep + 1);
+
+        if (sourceServer.equals(serverName)) return;
+
+        boolean isRanks = channel.equals("config-sync:ranks");
+        java.io.File target = new java.io.File(
+                plugin.getDataFolder(), isRanks ? "ranks.yml" : "tags.yml");
+
+        boolean written = net.curxxed.dev.wintercore.commands.bungee.SyncCommand.writeFile(target, yaml);
+        if (!written) {
+            plugin.getLogger().warning("[Sync] Failed to write " + target.getName()
+                    + " (received from " + sourceServer + ")");
+            return;
+        }
+
+        if (isRanks) {
+            net.curxxed.dev.wintercore.commands.bungee.SyncCommand.reloadRanks(null, sourceServer, false);
+        } else {
+            net.curxxed.dev.wintercore.commands.bungee.SyncCommand.reloadTags(null, sourceServer, false);
+        }
+    }
 
     private void handleStaffChatMessage(String message) {
         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -126,6 +164,7 @@ public class RedisManager {
             }
         });
     }
+
     private void handleAdminChatMessage(String message) {
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -135,6 +174,7 @@ public class RedisManager {
             }
         });
     }
+
     private void handleManagerChatMessage(String message) {
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -225,8 +265,6 @@ public class RedisManager {
         }, 0L, 40L);
     }
 
-
-
     public void setSocialLink(UUID playerId, String platform, String link) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.hset("social:" + playerId.toString(), platform.toLowerCase(), link);
@@ -259,11 +297,9 @@ public class RedisManager {
         }
     }
 
-
     public void sendPlayerToServer(Player player, String server) {
         UUID uuid = player.getUniqueId();
         markPendingSwitch(uuid);
-
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             ByteArrayOutputStream b = new ByteArrayOutputStream();
@@ -277,7 +313,6 @@ public class RedisManager {
             }
         }, 2L);
     }
-
 
     private void handleRemoteCommand(String message) {
         String[] parts = message.split("\\|", 2);
@@ -351,15 +386,10 @@ public class RedisManager {
         }
     }
 
-    /**
-     * Publishes disguise activity.
-     * Note: This now uses JSON format to match handleDisguiseActivityMessage expectation.
-     */
     public void publishDisguiseActivity(UUID uuid, boolean disguised) {
         JsonObject obj = new JsonObject();
         obj.addProperty("uuid", uuid.toString());
         obj.addProperty("disguised", disguised);
-        // Added optional fields if needed for legacy compatibility or debugging
         obj.addProperty("timestamp", System.currentTimeMillis());
 
         try (redis.clients.jedis.Jedis jedis = plugin.getRedisPool().getResource()) {
@@ -369,13 +399,10 @@ public class RedisManager {
         }
     }
 
-    // Kept for backward compatibility but fixed to send JSON
     public void publishDisguiseActivity(String type, String playerName, String color, String fromServer, String currentServer) {
-        // This method signature was problematic because the handler expects JSON with UUID
-        // We will try to resolve the UUID from the player name if possible, or send a simplified JSON
         Player p = Bukkit.getPlayer(playerName);
         if (p != null) {
-            publishDisguiseActivity(p.getUniqueId(), true); // Assumes switch implies remaining disguised
+            publishDisguiseActivity(p.getUniqueId(), true);
         }
     }
 
@@ -490,7 +517,6 @@ public class RedisManager {
         }
     }
 
-
     public boolean isStillPendingSwitch(UUID uuid) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             String key = "pendingSwitch:" + uuid.toString();
@@ -517,7 +543,6 @@ public class RedisManager {
         }
     }
 
-
     public void clearPendingSwitch(UUID uuid) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             String key = "pendingSwitch:" + uuid.toString();
@@ -525,7 +550,6 @@ public class RedisManager {
         }
     }
 
-    // --- Disguise cross-server persistence ---
     public void setDisguise(UUID uuid, String disguiseJson) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.set("disguise:" + uuid.toString(), disguiseJson);

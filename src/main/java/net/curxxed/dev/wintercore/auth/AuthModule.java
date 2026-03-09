@@ -29,7 +29,7 @@ public class AuthModule {
         authManager = new AuthManager(plugin, repository);
 
         plugin.getServer().getPluginManager().registerEvents(
-                new AuthListener(authManager), plugin
+                new AuthListener(authManager, plugin), plugin
         );
 
         commandHandler.register(new AuthCommand(plugin, authManager));
