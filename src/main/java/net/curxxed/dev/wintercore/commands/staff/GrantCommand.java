@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @CommandInfo(
         name = "grant",
-        permission = "WinterCore.commands.grant",
+        permission = "wintercore.commands.grant",
         description = "Open the rank selection GUI for target player.",
         aliases = {"setrank"},
         usage = "/grant <player>",

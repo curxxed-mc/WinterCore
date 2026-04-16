@@ -69,6 +69,7 @@ public class CommandHandler {
         PluginCommand pluginCommand = pluginCommandConstructor.newInstance(info.name(), plugin);
 
         pluginCommand.setExecutor(commandExecutor);
+        pluginCommand.setTabCompleter(commandExecutor); // BaseCommand now implements TabExecutor
         pluginCommand.setAliases(Arrays.asList(info.aliases()));
         pluginCommand.setDescription(info.description());
         pluginCommand.setUsage(info.usage());
