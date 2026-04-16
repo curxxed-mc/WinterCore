@@ -5,13 +5,13 @@ import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 
 import java.util.Collections;
 import java.util.List;
 
-public abstract class BaseCommand implements CommandExecutor {
+public abstract class BaseCommand implements TabExecutor {
 
     protected final WinterCore plugin;
     @Getter
@@ -47,10 +47,20 @@ public abstract class BaseCommand implements CommandExecutor {
         return true;
     }
 
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (!commandInfo.permission().isEmpty() && !sender.hasPermission(commandInfo.permission())) {
+            return Collections.emptyList();
+        }
+        if (commandInfo.inGameOnly() && !(sender instanceof org.bukkit.entity.Player)) {
+            return Collections.emptyList();
+        }
+        return onTabComplete(new CommandArguments(sender, args, label));
+    }
+
     public abstract void execute(CommandArguments args);
 
     public List<String> onTabComplete(CommandArguments args) {
         return Collections.emptyList();
     }
-
 }
