@@ -3,10 +3,13 @@ package net.curxxed.dev.wintercore.events;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
 
 @Setter
 @Getter
 public class PlayerUnDisguiseEvent extends WinterCoreEvents {
+    private static final HandlerList handlers = new HandlerList();
+
     private Player player;
 
     private String previousName;
@@ -21,4 +24,8 @@ public class PlayerUnDisguiseEvent extends WinterCoreEvents {
         this.currentName = currentName;
         this.disguisedRank = disguisedRank;
     }
+
+    @Override
+    public HandlerList getHandlers() { return handlers; }
+    public static HandlerList getHandlerList() { return handlers; }
 }

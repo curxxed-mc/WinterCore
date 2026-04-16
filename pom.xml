@@ -45,12 +45,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.mojang</groupId>
-            <artifactId>authlib</artifactId>
-            <version>1.5.21</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.viaversion</groupId>
             <artifactId>viaversion</artifactId>
             <version>4.8.1</version>
@@ -79,6 +73,7 @@
             <version>2.11.6</version>
             <scope>provided</scope>
         </dependency>
+        <!-- 1.7.10, 1.8.8 and brigadier are used for reflection help, nothing else -->
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>spigot</artifactId>
@@ -94,6 +89,12 @@
             <systemPath>${project.basedir}/libs/WinterSpigot-1.8.8-b2.0.7.jar</systemPath>
         </dependency>
         <dependency>
+            <groupId>com.mojang</groupId>
+            <artifactId>brigadier</artifactId>
+            <version>1.3.10</version>
+        </dependency>
+        <!-- 1.7.10, 1.8.8 and brigadier are used for reflection help, nothing else -->
+        <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
             <version>5.2.0</version>
@@ -107,11 +108,6 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>5.0.0-alpha.14</version>
-        </dependency>
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>0.10.2</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
