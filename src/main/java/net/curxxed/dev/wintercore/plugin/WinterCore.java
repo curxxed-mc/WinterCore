@@ -16,7 +16,7 @@ import net.curxxed.dev.wintercore.commands.staff.*;
 import net.curxxed.dev.wintercore.commands.troll.TrollCommand;
 import net.curxxed.dev.wintercore.commands.utility.*;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
-import net.curxxed.dev.wintercore.database.RedisManager;
+import net.curxxed.dev.wintercore.database.redis.RedisManager;
 import net.curxxed.dev.wintercore.database.SocialInput;
 import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
@@ -61,7 +61,7 @@ public final class WinterCore extends JavaPlugin {
     @Getter
     private static WinterCore instance;
     public static volatile boolean isShuttingDown = false;
-
+    public String channel = Utilities.IS_1_13_OR_NEWER ?  "minecraft:brand" : "MC|Brand";
     private boolean placeholderAPIEnabled = false;
     private final Map<UUID, DisguiseData> disguiseDataMap = new HashMap<>();
     private final Set<UUID> vanishedPlayers = new HashSet<>();
@@ -105,7 +105,7 @@ public final class WinterCore extends JavaPlugin {
         this.rankManager.startAutoCacheRefresh();
 
         getServer().getScheduler().runTaskTimerAsynchronously(
-                this, () -> databaseManager.removeExpiredBans(), 0L, 20L);
+                this, () -> databaseManager.getModerationService().removeExpiredBans(), 0L, 20L);
 
         this.staffModeManager      = new StaffModeManager(this);
         this.disguiseRegistry      = new DisguiseRegistry(this.redisManager, getLogger());
@@ -148,7 +148,7 @@ public final class WinterCore extends JavaPlugin {
 
         if (redisManager != null) {
             try {
-                redisManager.publishServerStatus(false);
+                redisManager.g(false);
             } catch (Exception e) {
                 getLogger().warning("Failed to publish offline status: " + e.getMessage());
             }
@@ -306,12 +306,11 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(WhoIsDisguisedCommand.class);
         commandHandler.register(SyncCommand.class);
 
-        this.authModule = new AuthModule(this, databaseManager.getDatabase());
+        this.authModule = new AuthModule(this, databaseManager.getMongoDatabase());
         this.authModule.register(commandHandler);
     }
 
     private void registerBungee() {
-        String channel = Utilities.IS_1_13_OR_NEWER ?  "minecraft:brand" : "MC|Brand";
         Bukkit.getMessenger().registerIncomingPluginChannel(this, channel, new ClientBrand(this));
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, channel);
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
@@ -332,3 +331,4 @@ public final class WinterCore extends JavaPlugin {
         getLogger().info("Ranks file loaded.");
     }
 }
+

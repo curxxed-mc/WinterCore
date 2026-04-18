@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.menus;
 
+import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
 import net.curxxed.dev.wintercore.menu.Button;
 import net.curxxed.dev.wintercore.menu.ButtonBuilder;
 import net.curxxed.dev.wintercore.menu.Menu;
@@ -279,7 +280,7 @@ public class RankMenu extends Menu {
                     plugin.getRankManager().refreshPlayerDisplay(target);
                     plugin.getRankManager().refreshPlayerDisplayForAll(target);
                     Bukkit.getPluginManager().callEvent(
-                            new net.curxxed.dev.wintercore.rank.RankChangeEvent(
+                            new RankChangeEvent(
                                     target, gs.rank, plugin.getRankManager().getRankSync(target)));
                 }
             });

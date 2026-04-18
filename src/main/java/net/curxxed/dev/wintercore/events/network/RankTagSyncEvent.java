@@ -1,11 +1,15 @@
-package net.curxxed.dev.wintercore.events;
+package net.curxxed.dev.wintercore.events.network;
 
 import lombok.Getter;
+import net.curxxed.dev.wintercore.annotation.ForRemoval;
+import net.curxxed.dev.wintercore.events.WinterCoreEvents;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @Getter
+@Deprecated
+@ForRemoval("Replaced by Packet-based synchronization")
 public class RankTagSyncEvent extends WinterCoreEvents {
 
     private static final HandlerList handlers = new HandlerList();
@@ -15,8 +19,8 @@ public class RankTagSyncEvent extends WinterCoreEvents {
     private final SyncType syncType;
 
     /**
-     * The sender who triggered the sync, or null if this server is
-     * receiving the sync (i.e. it did not originate here).
+     * The sender who triggered the network, or null if this server is
+     * receiving the network (i.e. it did not originate here).
      */
     private final @Nullable CommandSender initiator;
 

@@ -2,7 +2,7 @@ package net.curxxed.dev.wintercore.listeners;
 
 import net.curxxed.dev.wintercore.client.ClientBrandCommand;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
-import net.curxxed.dev.wintercore.events.ServerSwitchEvent;
+import net.curxxed.dev.wintercore.events.network.ServerSwitchEvent;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;

@@ -18,7 +18,7 @@ public class ClientBrand implements PluginMessageListener {
         try {
             Class.forName("com.viaversion.viaversion.api.Via");
             return Bukkit.getPluginManager().getPlugin("ViaVersion") != null;
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException ignored) {
             return false;
         }
     }
@@ -29,7 +29,7 @@ public class ClientBrand implements PluginMessageListener {
 
     @Override
     public void onPluginMessageReceived(String channel, Player player, byte[] message) {
-        if (!channel.equalsIgnoreCase("minecraft:brand") && !channel.equalsIgnoreCase("MC|Brand")) {
+        if (plugin.channel == null || plugin.channel.isEmpty()) {
             return;
         }
 
