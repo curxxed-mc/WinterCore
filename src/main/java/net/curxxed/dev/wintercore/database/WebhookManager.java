@@ -2,7 +2,7 @@ package net.curxxed.dev.wintercore.database;
 
 import okhttp3.*;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 
@@ -17,9 +17,9 @@ public class WebhookManager {
 
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) {}
+            public void onResponse(@NonNull Call call, @NonNull Response response) {}
             @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {}
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {}
         });
     }
 }

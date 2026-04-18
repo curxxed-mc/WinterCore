@@ -8,6 +8,7 @@ import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -27,14 +28,12 @@ public class SkinFetcher {
 
         CLIENT.newCall(uuidRequest).enqueue(new Callback() {
             @Override
-            @SuppressWarnings("NullableProblems")
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NonNull Call call,@NonNull IOException e) {
                 callback.accept(null, e);
             }
 
             @Override
-            @SuppressWarnings("NullableProblems")
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NonNull Call call,@NonNull Response response) throws IOException {
                 try (Response r = response) {
                     if (!r.isSuccessful() || r.body() == null) {
                         callback.accept(null, new Exception("Player not found: " + playerName));
@@ -59,14 +58,12 @@ public class SkinFetcher {
 
         CLIENT.newCall(sessionRequest).enqueue(new Callback() {
             @Override
-            @SuppressWarnings("NullableProblems")
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NonNull Call call,@NonNull IOException e) {
                 callback.accept(null, e);
             }
 
             @Override
-            @SuppressWarnings("NullableProblems")
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NonNull Call call,@NonNull Response response) throws IOException {
                 try (Response r = response) {
                     if (!r.isSuccessful() || r.body() == null) {
                         callback.accept(null, new Exception("Could not fetch skin data for: " + playerName));

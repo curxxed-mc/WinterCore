@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.placeholders;
 import net.curxxed.dev.wintercore.disguise.DisguiseRegistry;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.rank.RankChangeEvent;
+import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import lombok.Getter;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -13,7 +13,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 public class Placeholder extends PlaceholderExpansion implements Listener {
 
@@ -30,17 +30,17 @@ public class Placeholder extends PlaceholderExpansion implements Listener {
     }
 
     @Override
-    public @NotNull String getIdentifier() {
+    public @NonNull String getIdentifier() {
         return "wintercore";
     }
 
     @Override
-    public @NotNull String getAuthor() {
+    public @NonNull String getAuthor() {
         return "curxxed";
     }
 
     @Override
-    public @NotNull String getVersion() {
+    public @NonNull String getVersion() {
         return plugin.getDescription().getVersion();
     }
 
@@ -55,7 +55,7 @@ public class Placeholder extends PlaceholderExpansion implements Listener {
     }
 
     @Override
-    public String onPlaceholderRequest(Player player, @NotNull String identifier) {
+    public String onPlaceholderRequest(Player player, @NonNull String identifier) {
         if (player == null) return "";
 
         RankManager rankManager = RankManager.getInstance();
