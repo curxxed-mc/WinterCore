@@ -2,9 +2,9 @@ package net.curxxed.dev.wintercore.disguise;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.curxxed.dev.wintercore.events.PlayerDisguiseEvent;
-import net.curxxed.dev.wintercore.events.PlayerUnDisguiseEvent;
-import net.curxxed.dev.wintercore.events.ServerSwitchEvent;
+import net.curxxed.dev.wintercore.events.disguise.PlayerDisguiseEvent;
+import net.curxxed.dev.wintercore.events.disguise.PlayerUnDisguiseEvent;
+import net.curxxed.dev.wintercore.events.network.ServerSwitchEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
 import org.bukkit.Bukkit;

@@ -6,6 +6,7 @@ import com.mongodb.client.model.ReplaceOptions;
 import org.bson.Document;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class AuthRepository {
 
@@ -18,9 +19,11 @@ public class AuthRepository {
         this.collection = collection;
     }
 
-    public String getSecret(UUID uuid) {
-        Document doc = collection.find(Filters.eq(FIELD_UUID, uuid.toString())).first();
-        return doc != null ? doc.getString(FIELD_SECRET) : null;
+    public CompletableFuture<String> getSecret(UUID uuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            Document doc = collection.find(Filters.eq(FIELD_UUID, uuid.toString())).first();
+            return doc != null ? doc.getString(FIELD_SECRET) : null;
+        });
     }
 
     public void saveSecret(UUID uuid, String secret) {

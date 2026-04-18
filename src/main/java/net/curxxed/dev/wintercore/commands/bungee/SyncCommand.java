@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.commands.bungee;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.events.RankTagSyncEvent;
+import net.curxxed.dev.wintercore.events.network.RankTagSyncEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.command.CommandSender;
@@ -15,17 +15,17 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 @CommandInfo(
-        name = "sync",
-        permission = "wintercore.sync",
+        name = "network",
+        permission = "wintercore.network",
         description = "Sync ranks.yml or tags.yml across all servers via Redis.",
-        usage = "/sync <ranks|tags|all>",
+        usage = "/network <ranks|tags|all>",
         async = true
 )
 public class SyncCommand extends BaseCommand {
 
     // Redis channels
-    public static final String CHANNEL_RANKS = "config-sync:ranks";
-    public static final String CHANNEL_TAGS  = "config-sync:tags";
+    public static final String CHANNEL_RANKS = "config-network:ranks";
+    public static final String CHANNEL_TAGS  = "config-network:tags";
 
     public SyncCommand(WinterCore plugin) {
         super(plugin);
@@ -89,7 +89,7 @@ public class SyncCommand extends BaseCommand {
             }
 
         } catch (Exception e) {
-            sender.sendMessage(CC.translate("&cRedis error during sync: " + e.getMessage()));
+            sender.sendMessage(CC.translate("&cRedis error during network: " + e.getMessage()));
             plugin.getLogger().warning("Sync publish failed: " + e.getMessage());
         }
     }

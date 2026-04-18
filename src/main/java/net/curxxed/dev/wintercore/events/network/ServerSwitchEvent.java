@@ -1,11 +1,14 @@
-package net.curxxed.dev.wintercore.events;
+package net.curxxed.dev.wintercore.events.network;
 
 import lombok.Getter;
+import net.curxxed.dev.wintercore.annotation.ForRemoval;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 
 @Getter
+@Deprecated
+@ForRemoval("Replaced by Packet-based synchronization")
 public class ServerSwitchEvent extends PlayerEvent {
 
     private static final HandlerList HANDLERS = new HandlerList();

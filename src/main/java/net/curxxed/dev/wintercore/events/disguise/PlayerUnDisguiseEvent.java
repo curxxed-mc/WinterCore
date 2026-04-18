@@ -1,7 +1,8 @@
-package net.curxxed.dev.wintercore.events;
+package net.curxxed.dev.wintercore.events.disguise;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.curxxed.dev.wintercore.events.WinterCoreEvents;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 

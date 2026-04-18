@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.utils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -130,7 +130,7 @@ public class Utilities {
         }
     }
 
-    public static @NotNull List<Player> getOnlinePlayers() {
+    public static @NonNull List<Player> getOnlinePlayers() {
         return new ArrayList<>(Bukkit.getOnlinePlayers());
     }
 

@@ -3,6 +3,8 @@ package net.curxxed.dev.wintercore.rank;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Getter;
+import net.curxxed.dev.wintercore.database.cache.RankCacheService;
+import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
@@ -44,7 +46,7 @@ public class RankManager {
     }
 
     public void startAutoCacheRefresh() {
-        cacheService.startAutoRefresh();
+        cacheService.re();
     }
 
     public void reloadRanksConfig() {
@@ -84,7 +86,7 @@ public class RankManager {
     }
 
     public void setRank(Player player, String rank, Player giver) {
-        plugin.getDatabaseManager().setRank(player.getUniqueId(), rank);
+        plugin.getDatabaseManager().getProfileService().setRank(player.getUniqueId(), rank);
         cacheService.put(player.getUniqueId(), rank);
 
         String color = configManager.getColor(rank);

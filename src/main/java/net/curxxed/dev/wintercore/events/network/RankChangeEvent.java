@@ -1,4 +1,4 @@
-package net.curxxed.dev.wintercore.rank;
+package net.curxxed.dev.wintercore.events.network;
 
 import lombok.Getter;
 import net.curxxed.dev.wintercore.events.WinterCoreEvents;
