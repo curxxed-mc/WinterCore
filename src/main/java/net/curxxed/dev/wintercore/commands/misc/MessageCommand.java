@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.commands.misc;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.listeners.PlayerListener;
+import net.curxxed.dev.wintercore.player.PlayerService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
@@ -20,12 +20,12 @@ import java.util.stream.Collectors;
 )
 public class MessageCommand extends BaseCommand {
 
-    private final PlayerListener playerListener;
+    private final PlayerService playerService;
 
     public MessageCommand(WinterCore plugin) {
         super(plugin);
-        // Get the singleton instance of PlayerListener from the main plugin class
-        this.playerListener = plugin.getPlayerListener();
+        // Get the singleton instance of PlayerService from the main plugin class
+        this.playerService = plugin.getPlayerService();
     }
 
     @Override
@@ -58,14 +58,14 @@ public class MessageCommand extends BaseCommand {
                 .skip(1) // Skip the player name argument
                 .collect(Collectors.joining(" "));
 
-        // Delegate the actual message sending to the PlayerListener
+        // Delegate the actual message sending to the PlayerService
         // This keeps the command class clean and respects your existing logic for /reply
-        if (this.playerListener != null) {
-            this.playerListener.sendPrivateMessage(sender, target, message);
+        if (this.playerService != null) {
+            this.playerService.sendPrivateMessage(sender, target, message);
         } else {
             // This is a safeguard in case the listener isn't initialized correctly
             sender.sendMessage(CC.translate("&cAn internal error occurred. Please contact an administrator."));
-            plugin.getLogger().severe("MessageCommand could not execute because PlayerListener was not found!");
+            plugin.getLogger().severe("MessageCommand could not execute because PlayerService was not found!");
         }
     }
 }

@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.menus;
 
+import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
 import net.curxxed.dev.wintercore.menu.Button;
 import net.curxxed.dev.wintercore.menu.Menu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
@@ -10,7 +11,6 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
-import redis.clients.jedis.Jedis;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -20,12 +20,14 @@ public class StaffListMenu extends Menu {
 
     private final WinterCore plugin;
     private final RankManager rankManager;
+    private final NetworkRedisService nrs;
 
     private final List<ItemStack> skulls = new CopyOnWriteArrayList<>();
 
-    public StaffListMenu(WinterCore plugin) {
+    public StaffListMenu(WinterCore plugin, NetworkRedisService nrs) {
         this.plugin = plugin;
         this.rankManager = plugin.getRankManager();
+        this.nrs = nrs;
     }
 
     @Override
@@ -54,54 +56,40 @@ public class StaffListMenu extends Menu {
 
     private void loadStaffAsync(Player viewer) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<StaffEntry> entries = new ArrayList<>();
-
-            try (Jedis jedis = plugin.getRedisPool().getResource()) {
-                Map<String, String> lastServers = jedis.hgetAll("staff:last-server");
-                if (lastServers == null || lastServers.isEmpty()) {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        skulls.clear();
-                        if (viewer.isOnline()) refresh(viewer);
-                    });
-                    return;
-                }
-
-                for (Map.Entry<String, String> entry : lastServers.entrySet()) {
-                    String uuidStr = entry.getKey();
-                    String server  = entry.getValue();
-
-                    if (server == null || server.isEmpty()) continue;
-                    if (!jedis.exists("server:" + server + ":heartbeat")) continue;
-
-                    UUID uuid;
-                    try {
-                        uuid = UUID.fromString(uuidStr);
-                    } catch (IllegalArgumentException e) {
-                        continue;
-                    }
-
-                    String cachedName = jedis.get("username:" + uuidStr);
-                    String playerName = cachedName != null
-                            ? cachedName
-                            : Bukkit.getOfflinePlayer(uuid).getName();
-                    if (playerName == null) continue;
-
-                    entries.add(new StaffEntry(uuid, playerName, server));
-                }
-            } catch (Exception e) {
-                plugin.getLogger().warning("StaffListMenu: Redis error — " + e.getMessage());
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    skulls.clear();
-                    if (viewer.isOnline()) refresh(viewer);
-                });
+            Map<String, String> lastServers = nrs.getStaffLastServers();
+            if (lastServers.isEmpty()) {
+                runRefresh(viewer);
                 return;
             }
 
+            Set<String> aliveServers = nrs.getAliveServers();
+
+            List<StaffEntry> entries = new ArrayList<>();
+
+            for (Map.Entry<String, String> entry : lastServers.entrySet()) {
+                String uuidStr = entry.getKey();
+                String server = entry.getValue();
+
+                if (server == null || server.isEmpty()) continue;
+                if (!aliveServers.contains(server)) continue;
+
+                UUID uuid;
+                try {
+                    uuid = UUID.fromString(uuidStr);
+                } catch (IllegalArgumentException ex) {
+                    continue;
+                }
+
+                String playerName = nrs.getCachedUsername(uuidStr);
+                if (playerName == null || playerName.trim().isEmpty()) {
+                    playerName = "Unknown-" + uuidStr.substring(0, 8);
+                }
+
+                entries.add(new StaffEntry(uuid, playerName, server));
+            }
+
             if (entries.isEmpty()) {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    skulls.clear();
-                    if (viewer.isOnline()) refresh(viewer);
-                });
+                runRefresh(viewer);
                 return;
             }
 
@@ -112,12 +100,13 @@ public class StaffListMenu extends Menu {
                 rankManager.getRank(se.uuid, rank -> {
                     if (rank == null) rank = "Default";
                     final String resolvedRank = rank;
+
                     rankManager.getColorPreference(resolvedRank, color -> {
                         if (color == null) color = "&f";
                         String coloredRank = CC.translate(color) + resolvedRank;
 
                         ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
-                        SkullMeta meta  = (SkullMeta) skull.getItemMeta();
+                        SkullMeta meta = (SkullMeta) skull.getItemMeta();
                         if (meta != null) {
                             meta.setOwner(se.playerName);
                             meta.setDisplayName(CC.translate("&b" + se.playerName));
@@ -127,17 +116,29 @@ public class StaffListMenu extends Menu {
                             ));
                             skull.setItemMeta(meta);
                         }
+
                         loaded.add(skull);
 
                         if (remaining.decrementAndGet() == 0) {
                             Bukkit.getScheduler().runTask(plugin, () -> {
                                 skulls.clear();
                                 skulls.addAll(loaded);
-                                if (viewer.isOnline()) refresh(viewer);
+                                if (viewer.isOnline()) {
+                                    refresh(viewer);
+                                }
                             });
                         }
                     });
                 });
+            }
+        });
+    }
+
+    private void runRefresh(Player viewer) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            skulls.clear();
+            if (viewer.isOnline()) {
+                refresh(viewer);
             }
         });
     }

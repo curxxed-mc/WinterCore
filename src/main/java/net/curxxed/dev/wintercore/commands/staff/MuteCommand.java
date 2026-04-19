@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.commands.staff;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.database.DatabaseManager;
+import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
@@ -23,12 +23,12 @@ import java.util.UUID;
     )
 public class MuteCommand extends BaseCommand {
     private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
+    private final ModerationService moderationService;
 
     public MuteCommand(WinterCore plugin) {
         super(plugin);
         this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
+        this.moderationService = plugin.getDatabaseManager().getModerationService();
     }
 
     @Override
@@ -55,13 +55,13 @@ public class MuteCommand extends BaseCommand {
         UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
         String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
         Duration duration = parseDuration(durationString);
-        databaseManager.isPlayerMuted(targetUUID, isMuted -> {
+        moderationService.isPlayerMuted(targetUUID, isMuted -> {
             if (isMuted) {
                 commandArgs.getSender().sendMessage(CC.translate("&cPlayer " + displayName + " is already muted."));
                 return;
             }
             Instant expiration = duration != null ? Instant.now().plus(duration) : null;
-            databaseManager.mutePlayer(targetUUID, reason, commandArgs.getSender().getName(), expiration);
+            moderationService.mutePlayer(targetUUID, reason, commandArgs.getSender().getName(), expiration);
             commandArgs.getSender().sendMessage(CC.translate("&aYou have muted " + displayName + (expiration != null ? " until " + expiration : " permanently") + "."));
             Player target = Bukkit.getPlayer(targetUUID);
             if (target != null) {

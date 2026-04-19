@@ -267,8 +267,8 @@ public class RankMenu extends Menu {
             long now = System.currentTimeMillis();
             Long expiresAt = gs.permanent ? null : (gs.durationMillis > 0 ? now + gs.durationMillis : null);
 
-            plugin.getDatabaseManager().setRankWithMeta(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
-            plugin.getDatabaseManager().addRankGrant(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
+            plugin.getDatabaseManager().getProfileService().setRankWithMeta(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
+            plugin.getDatabaseManager().getModerationService().addRankGrant(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
 
             String grantedName = Bukkit.getOfflinePlayer(gs.targetUUID).getName();
             player.sendMessage(CC.translate("&aGranted rank &e" + gs.rank + " &ato &b" + grantedName + "&a."));

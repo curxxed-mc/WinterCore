@@ -5,7 +5,7 @@ import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.ChatColor;
+import net.curxxed.dev.wintercore.utils.CC;
 
 @CommandInfo(
         name = "reloadconfig",
@@ -25,11 +25,6 @@ public class ReloadConfig extends BaseCommand {
 
     @Override
     public void execute(CommandArguments commandArgs) {
-        if (!commandArgs.getSender().hasPermission("WinterCore.reloadconfig")) {
-            commandArgs.getSender().sendMessage(ChatColor.RED + "You do not have permission to use this command.");
-            return;
-        }
-
         plugin.reloadConfig();
 
         if (plugin.getTagsManager() != null) {
@@ -42,14 +37,7 @@ public class ReloadConfig extends BaseCommand {
         }
 
         commandArgs.getSender().sendMessage(
-                ChatColor.AQUA + "Sexy files have been reloaded: " +
-                        ChatColor.GRAY + "[" +
-                        ChatColor.AQUA + "ranks.yml" +
-                        ChatColor.RESET + ", " +
-                        ChatColor.AQUA + "config.yml" +
-                        ChatColor.GRAY + ", " +
-                        ChatColor.AQUA + "tags.yml" +
-                        ChatColor.GRAY + "]"
+                CC.translate("&bSexy files have been reloaded: &7[&branks.yml&r, &bconfig.yml&7, &btags.yml&7]")
         );
     }
 }

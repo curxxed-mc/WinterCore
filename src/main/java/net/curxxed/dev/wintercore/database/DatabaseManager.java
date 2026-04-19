@@ -26,6 +26,8 @@ public final class DatabaseManager implements AutoCloseable {
     @Getter private final IdentityService identityService;
     @Getter private final ModerationService moderationService;
 
+    @Getter private final ProfileRepository profileRepository;
+
     public DatabaseManager(WinterCore plugin) {
         this.mongo = new MongoConnectionManager(plugin);
         this.profiles = new ProfileRepository(mongo.collection("profiles"));
@@ -36,6 +38,8 @@ public final class DatabaseManager implements AutoCloseable {
         this.identityService = new IdentityService(plugin, profiles);
         this.profileService = new ProfileService(plugin, profiles, rankCache, tagCache);
         this.moderationService = new ModerationService(plugin, profiles, identityService);
+
+        this.profileRepository = profiles;
     }
 
     public static DatabaseManager init(WinterCore plugin) {

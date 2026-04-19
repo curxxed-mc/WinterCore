@@ -1,10 +1,10 @@
 package net.curxxed.dev.wintercore.database.redis.event;
 
 import net.curxxed.dev.wintercore.database.redis.packet.RedisPacket;
-import org.bukkit.event.Event;
+import net.curxxed.dev.wintercore.events.WinterCoreEvents;
 import org.bukkit.event.HandlerList;
 
-public final class RedisPacketReceivedEvent extends Event {
+public final class RedisPacketReceivedEvent extends WinterCoreEvents {
 
     private static final HandlerList handlers = new HandlerList();
 

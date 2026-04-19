@@ -3,11 +3,12 @@ package net.curxxed.dev.wintercore.commands.bungee;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.events.network.RankTagSyncEvent;
+import net.curxxed.dev.wintercore.database.redis.packet.packets.ConfigSyncPacket;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
-import redis.clients.jedis.Jedis;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,10 +24,6 @@ import java.nio.file.Files;
 )
 public class SyncCommand extends BaseCommand {
 
-    // Redis channels
-    public static final String CHANNEL_RANKS = "config-network:ranks";
-    public static final String CHANNEL_TAGS  = "config-network:tags";
-
     public SyncCommand(WinterCore plugin) {
         super(plugin);
     }
@@ -36,7 +33,7 @@ public class SyncCommand extends BaseCommand {
         CommandSender sender = args.getSender();
 
         if (args.length() == 0) {
-            sender.sendMessage(CC.translate("&eUsage: " + commandInfo.usage()));
+            reply(sender, "&eUsage: " + commandInfo.usage());
             return;
         }
 
@@ -44,63 +41,91 @@ public class SyncCommand extends BaseCommand {
 
         switch (sub) {
             case "ranks":
-                pushSync(sender, RankTagSyncEvent.SyncType.RANKS);
+                pushRanks(sender);
                 break;
             case "tags":
-                pushSync(sender, RankTagSyncEvent.SyncType.TAGS);
+                pushTags(sender);
                 break;
             case "all":
-                pushSync(sender, RankTagSyncEvent.SyncType.ALL);
+                pushRanks(sender);
+                pushTags(sender);
                 break;
             default:
-                sender.sendMessage(CC.translate("&eUsage: " + commandInfo.usage()));
+                reply(sender, "&eUsage: " + commandInfo.usage());
         }
     }
 
-    /**
-     * Reads the requested file(s), publishes their raw YAML content to Redis,
-     * then reloads the local copy and fires {@link RankTagSyncEvent}.
-     */
-    private void pushSync(CommandSender sender, RankTagSyncEvent.SyncType type) {
+    private void pushRanks(CommandSender sender) {
         String serverName = plugin.getConfig().getString("server-name", "Unknown");
+        File file = new File(plugin.getDataFolder(), "ranks.yml");
 
-        try (Jedis jedis = plugin.getRedisPool().getResource()) {
-
-            if (type == RankTagSyncEvent.SyncType.RANKS || type == RankTagSyncEvent.SyncType.ALL) {
-                String yaml = readFile(new File(plugin.getDataFolder(), "ranks.yml"));
-                if (yaml == null) {
-                    sender.sendMessage(CC.translate("&cFailed to read ranks.yml."));
-                    return;
-                }
-                jedis.publish(CHANNEL_RANKS, serverName + "|" + yaml);
-                reloadRanks(sender, serverName, true);
-                sender.sendMessage(CC.translate("&aPublished &eranks.yml&a to all servers."));
+        try {
+            String yaml = readFile(file);
+            if (yaml == null) {
+                reply(sender, "&cFailed to read ranks.yml.");
+                return;
             }
 
-            if (type == RankTagSyncEvent.SyncType.TAGS || type == RankTagSyncEvent.SyncType.ALL) {
-                String yaml = readFile(new File(plugin.getDataFolder(), "tags.yml"));
-                if (yaml == null) {
-                    sender.sendMessage(CC.translate("&cFailed to read tags.yml."));
-                    return;
-                }
-                jedis.publish(CHANNEL_TAGS, serverName + "|" + yaml);
-                reloadTags(sender, serverName, true);
-                sender.sendMessage(CC.translate("&aPublished &etags.yml&a to all servers."));
-            }
+            plugin.getRedisManager().publish(
+                    new ConfigSyncPacket(
+                            serverName,
+                            System.currentTimeMillis(),
+                            ConfigSyncPacket.ConfigType.RANKS,
+                            yaml
+                    )
+            );
 
+            Bukkit.getScheduler().runTask(plugin, () -> applyRanksLocally(serverName));
+            reply(sender, "&aPublished &eranks.yml&a as a packet.");
         } catch (Exception e) {
-            sender.sendMessage(CC.translate("&cRedis error during network: " + e.getMessage()));
-            plugin.getLogger().warning("Sync publish failed: " + e.getMessage());
+            plugin.getLogger().warning("Failed to publish ranks.yml sync: " + e.getMessage());
+            reply(sender, "&cRedis error during rank sync: " + e.getMessage());
         }
     }
 
-    public static boolean writeFile(File file, String yaml) {
+    private void pushTags(CommandSender sender) {
+        String serverName = plugin.getConfig().getString("server-name", "Unknown");
+        File file = new File(plugin.getDataFolder(), "tags.yml");
+
         try {
-            Files.write(file.toPath(), yaml.getBytes(StandardCharsets.UTF_8));
-            return true;
-        } catch (IOException e) {
-            return false;
+            String yaml = readFile(file);
+            if (yaml == null) {
+                reply(sender, "&cFailed to read tags.yml.");
+                return;
+            }
+
+            plugin.getRedisManager().publish(
+                    new ConfigSyncPacket(
+                            serverName,
+                            System.currentTimeMillis(),
+                            ConfigSyncPacket.ConfigType.TAGS,
+                            yaml
+                    )
+            );
+
+            Bukkit.getScheduler().runTask(plugin, () -> applyTagsLocally(serverName));
+            reply(sender, "&aPublished &etags.yml&a as a packet.");
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to publish tags.yml sync: " + e.getMessage());
+            reply(sender, "&cRedis error during tag sync: " + e.getMessage());
         }
+    }
+
+    private void applyRanksLocally(String source) {
+        plugin.getRankManager().reloadRanksConfig();
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            plugin.getRankManager().refreshPlayerDisplay(p);
+        }
+
+        plugin.getLogger().info("[Sync] ranks.yml applied locally from " + source + ".");
+    }
+
+    private void applyTagsLocally(String source) {
+        plugin.getTagsManager().loadTags();
+        plugin.getTagsGUI().refresh();
+
+        plugin.getLogger().info("[Sync] tags.yml applied locally from " + source + ".");
     }
 
     private String readFile(File file) {
@@ -111,34 +136,7 @@ public class SyncCommand extends BaseCommand {
         }
     }
 
-    public static void reloadRanks(CommandSender initiator, String source, boolean isLocal) {
-        WinterCore plugin = WinterCore.getInstance();
-        plugin.getRankManager().reloadRanksConfig();
-        org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-            for (org.bukkit.entity.Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
-                plugin.getRankManager().refreshPlayerDisplay(p);
-            }
-            org.bukkit.Bukkit.getPluginManager().callEvent(
-                    new RankTagSyncEvent(RankTagSyncEvent.SyncType.RANKS, initiator, source));
-
-            if (!isLocal) {
-                plugin.getLogger().info("[Sync] ranks.yml received from " + source + " and applied.");
-            }
-        });
-    }
-
-    public static void reloadTags(CommandSender initiator, String source, boolean isLocal) {
-        WinterCore plugin = WinterCore.getInstance();
-        plugin.getTagsManager().loadTags();
-        plugin.getTagsGUI().refresh();
-
-        org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-            org.bukkit.Bukkit.getPluginManager().callEvent(
-                    new RankTagSyncEvent(RankTagSyncEvent.SyncType.TAGS, initiator, source));
-
-            if (!isLocal) {
-                plugin.getLogger().info("[Sync] tags.yml received from " + source + " and applied.");
-            }
-        });
+    private void reply(CommandSender sender, String message) {
+        Bukkit.getScheduler().runTask(plugin, () -> sender.sendMessage(CC.translate(message)));
     }
 }

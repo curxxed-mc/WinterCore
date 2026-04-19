@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.commands.staff;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.database.DatabaseManager;
+import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
@@ -26,12 +26,12 @@ import java.util.UUID;
     )
 public class BanCommand extends BaseCommand {
     private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
+    private final ModerationService moderationService;
 
     public BanCommand(WinterCore plugin) {
         super(plugin);
         this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
+        this.moderationService = plugin.getDatabaseManager().getModerationService();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class BanCommand extends BaseCommand {
             commandArgs.getSender().sendMessage(CC.translate("&cYou must provide a reason for the ban."));
             return;
         }
-        databaseManager.isPlayerBanned(targetUUID, isBanned -> {
+        moderationService.isPlayerBanned(targetUUID, isBanned -> {
             if (isBanned) {
                 commandArgs.getSender().sendMessage(CC.translate("&cThis player is already banned."));
                 return;
@@ -78,7 +78,7 @@ public class BanCommand extends BaseCommand {
                 Instant expirationTime = Instant.now().plus(duration);
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String formattedExpiration = sdf.format(Date.from(expirationTime));
-                databaseManager.banPlayer(targetUUID, reason, expirationTime);
+                moderationService.banPlayer(targetUUID, reason, expirationTime);
                 if (target != null && target.isOnline()) {
                     target.kickPlayer(CC.translate("&cYou have been temporarily banned by " + commandArgs.getSender().getName() + ".\n" +
                             "&cReason: &f" + reason + "\n" +
@@ -86,7 +86,7 @@ public class BanCommand extends BaseCommand {
                 }
                 broadcastBanMessage(displayName, reason, "until " + formattedExpiration, commandArgs.getSender().getName(), silent);
             } else {
-                databaseManager.banPlayer(targetUUID, reason, null);
+                moderationService.banPlayer(targetUUID, reason, null);
                 if (target != null && target.isOnline()) {
                     target.kickPlayer(CC.translate("&cYou have been permanently banned by " + commandArgs.getSender().getName() + ".\n&cReason: &f" + reason));
                 }

@@ -1,13 +1,14 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.database.DatabaseManager;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
 import java.util.UUID;
 
 @CommandInfo(
@@ -20,12 +21,12 @@ import java.util.UUID;
     )
 public class UnbanCommand extends BaseCommand {
     private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
+    private final ModerationService moderationService;
 
     public UnbanCommand(WinterCore plugin) {
         super(plugin);
         this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
+        this.moderationService = plugin.getDatabaseManager().getModerationService();
     }
 
     @Override
@@ -43,12 +44,12 @@ public class UnbanCommand extends BaseCommand {
         UUID targetUUID = Bukkit.getOfflinePlayer(targetName).getUniqueId();
         // Always get the correct capitalization for the IGN
         String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        databaseManager.isPlayerBanned(targetUUID, isBanned -> {
+        moderationService.isPlayerBanned(targetUUID, isBanned -> {
             if (!isBanned) {
                 commandArgs.getSender().sendMessage(CC.translate("&cPlayer " + displayName + " is not banned."));
                 return;
             }
-            databaseManager.unbanPlayer(targetUUID);
+            moderationService.unbanPlayer(targetUUID);
             commandArgs.getSender().sendMessage(CC.translate("&aPlayer " + displayName + " has been unbanned."));
             Player target = Bukkit.getPlayer(targetUUID);
             if (target != null) {

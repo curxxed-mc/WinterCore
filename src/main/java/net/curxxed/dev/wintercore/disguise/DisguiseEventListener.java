@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.curxxed.dev.wintercore.events.disguise.PlayerDisguiseEvent;
 import net.curxxed.dev.wintercore.events.disguise.PlayerUnDisguiseEvent;
-import net.curxxed.dev.wintercore.events.network.ServerSwitchEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
 import org.bukkit.Bukkit;
@@ -32,7 +31,7 @@ public class DisguiseEventListener implements Listener {
         Player joining = event.getPlayer();
         UUID uuid = joining.getUniqueId();
 
-        String disguiseJson = plugin.getRedisManager().getDisguiseSync(uuid);
+        String disguiseJson = plugin.getDisguiseRegistry().getDisguiseDataSync(uuid);
 
         if (disguiseJson != null && !disguiseJson.isEmpty()) {
             try {
@@ -68,19 +67,11 @@ public class DisguiseEventListener implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        boolean isPendingSwitch = plugin.getRedisManager().isStillPendingSwitch(uuid);
-
         plugin.getDisguiseDataMap().remove(uuid);
         plugin.getDisguiseRegistry().clear(player);
-
-        if (!isPendingSwitch) {
-            plugin.getDisguiseRegistry().clearDisguiseInfo(player);
-        }
     }
 
-    @EventHandler
-    public void onServerSwitch(ServerSwitchEvent event) {
-        Player player = event.getPlayer();
+    public void onServerSwitch(Player player) {
         if (!plugin.getDisguiseRegistry().isDisguised(player)) return;
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -98,14 +89,7 @@ public class DisguiseEventListener implements Listener {
 
     @EventHandler
     public void onPlayerUnDisguise(PlayerUnDisguiseEvent event) {
-        Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-
-        if (!plugin.getRedisManager().isStillPendingSwitch(uuid)) {
-            plugin.getRedisManager().clearDisguise(uuid);
-        }
-
-        plugin.getDisguiseRegistry().updateColorCache(player);
+        plugin.getDisguiseRegistry().updateColorCache(event.getPlayer());
     }
 
     public void clearDisguiseOnShutdown() {
@@ -117,7 +101,7 @@ public class DisguiseEventListener implements Listener {
                                 + player.getName() + " on shutdown.");
                     }
                 });
-                plugin.getDisguiseRegistry().clearDisguiseInfo(player);
+                plugin.getDisguiseRegistry().publishClearDisguise(player);
             }
         }
     }

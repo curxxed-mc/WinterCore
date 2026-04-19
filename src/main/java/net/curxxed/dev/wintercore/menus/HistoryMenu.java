@@ -120,7 +120,7 @@ public class HistoryMenu extends Menu {
     private void openCategory(Player player, String category) {
         switch (category) {
             case "warnings":
-                db.getWarnings(targetName, maps -> {
+                db.getModerationService().getWarnings(targetName, maps -> {
                     List<ItemStack> items = new ArrayList<>();
                     for (Map<String, String> map : maps) {
                         items.add(buildEntryItem("history-category.warning-item",
@@ -134,7 +134,7 @@ public class HistoryMenu extends Menu {
                 });
                 break;
             case "mutes":
-                db.getMutes(targetUuid, maps -> {
+                db.getModerationService().getMutes(targetUuid, maps -> {
                     List<ItemStack> items = new ArrayList<>();
                     for (Map<String, String> map : maps) {
                         items.add(buildEntryItem("history-category.mute-item",
@@ -146,7 +146,7 @@ public class HistoryMenu extends Menu {
                 });
                 break;
             case "bans":
-                db.getBans(targetName, maps -> {
+                db.getModerationService().getBans(targetName, maps -> {
                     List<ItemStack> items = new ArrayList<>();
                     for (Map<String, String> map : maps) {
                         items.add(buildEntryItem("history-category.ban-item",
@@ -159,7 +159,7 @@ public class HistoryMenu extends Menu {
                 });
                 break;
             case "grants":
-                db.getRankGrants(targetUuid, maps -> {
+                db.getModerationService().getRankGrants(targetUuid, maps -> {
                     List<ItemStack> items = new ArrayList<>();
                     for (Map<String, String> map : maps) {
                         items.add(buildEntryItem("history-category.grant-item",
