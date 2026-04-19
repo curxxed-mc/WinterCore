@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
         permission = "wintercore.command.list",
         description = "Displays the list of online players, sorted by rank.",
         usage = "/list",
-        async = true // The command logic is asynchronous
+        async = true
 )
 public class ListCommand extends BaseCommand {
 
@@ -36,15 +36,11 @@ public class ListCommand extends BaseCommand {
     @Override
     public void execute(CommandArguments args) {
         CommandSender sender = args.getSender();
-
-        // Step 1: Get the rank configuration section from the RankManager.
         ConfigurationSection ranksSection = rankManager.getRanksSection();
         if (ranksSection == null) {
             sender.sendMessage(CC.translate("&cThe 'ranks' section is missing from ranks.yml."));
             return;
         }
-
-        // Step 2: Load rank properties into maps for efficient lookups.
         Map<String, Integer> rankWeights = new HashMap<>();
         Map<String, String> rankColors = new HashMap<>();
         for (String rankName : ranksSection.getKeys(false)) {
@@ -52,24 +48,18 @@ public class ListCommand extends BaseCommand {
             rankColors.put(rankName.toLowerCase(), ranksSection.getString(rankName + ".name-color", "&f"));
         }
 
-        // Step 3: Asynchronously fetch all player rank names.
         List<Player> onlinePlayers = new ArrayList<>(Bukkit.getOnlinePlayers());
-        // This map will store the results of our async lookups (UUID -> Rank Name)
         Map<UUID, String> playerRankNames = new ConcurrentHashMap<>();
-
-        // Step 4: When ALL asynchronous rank lookups are complete, proceed.
         CompletableFuture.allOf(onlinePlayers.stream()
                 .map(player -> {
                     CompletableFuture<Void> future = new CompletableFuture<>();
-                    // Use the correct async method from RankManager
                     rankManager.getRank(player, rankName -> {
                         playerRankNames.put(player.getUniqueId(), rankName);
-                        future.complete(null); // Mark this player's lookup as complete
+                        future.complete(null);
                     });
                     return future;
                 }).toArray(CompletableFuture[]::new)).thenRun(() -> {
 
-            // Step 5: Sort players based on their now-retrieved rank weights.
             onlinePlayers.sort((p1, p2) -> {
                 String rankName1 = playerRankNames.getOrDefault(p1.getUniqueId(), "Default").toLowerCase();
                 String rankName2 = playerRankNames.getOrDefault(p2.getUniqueId(), "Default").toLowerCase();
@@ -78,13 +68,11 @@ public class ListCommand extends BaseCommand {
                 int weight2 = rankWeights.getOrDefault(rankName2, 0);
 
                 if (weight1 != weight2) {
-                    return Integer.compare(weight2, weight1); // Sort by weight descending
+                    return Integer.compare(weight2, weight1);
                 }
-                return p1.getName().compareToIgnoreCase(p2.getName()); // Then alphabetically
+                return p1.getName().compareToIgnoreCase(p2.getName());
             });
 
-            // Step 6: Build the final display strings.
-            // Use the RankManager's own sorting logic for consistency.
             String rankDisplay = rankManager.getSortedRanks().stream()
                     .map(rankName -> CC.translate(rankColors.getOrDefault(rankName.toLowerCase(), "&f") + rankName))
                     .collect(Collectors.joining(CC.translate("&7, ")));
@@ -99,7 +87,6 @@ public class ListCommand extends BaseCommand {
 
             String finalPlayerCount = CC.translate("&7(" + onlinePlayers.size() + "/" + Bukkit.getMaxPlayers() + ") ");
 
-            // Step 7: Send the final messages back on the main server thread.
             Bukkit.getScheduler().runTask(plugin, () -> {
                 sender.sendMessage(rankDisplay);
                 sender.sendMessage(finalPlayerCount + playerDisplay);

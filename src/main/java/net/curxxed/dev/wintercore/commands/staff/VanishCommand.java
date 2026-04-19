@@ -3,6 +3,7 @@ package net.curxxed.dev.wintercore.commands.staff;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.database.redis.packet.packets.VanishPacket;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -61,7 +62,7 @@ public class VanishCommand extends BaseCommand {
                 Bukkit.getOnlinePlayers().forEach(p -> p.showPlayer(player));
                 player.sendMessage(ChatColor.AQUA + "You are no longer vanished!");
                 plugin.getRankManager().refreshPlayerDisplay(player);
-                plugin.getRedisManager().syncVanishState(player, false);
+                plugin.getRedisManager().publish(new VanishPacket(plugin.getConfig().getString("server-name", "Unknown"), System.currentTimeMillis(), player.getUniqueId(), player.getName(), false));
                 sendStaffNotificationStatic(player, playerRankColor, false, plugin);
                 nowVanished = false;
             } else {
@@ -71,7 +72,7 @@ public class VanishCommand extends BaseCommand {
                         .forEach(p -> p.hidePlayer(player));
                 player.sendMessage(ChatColor.AQUA + "You are now vanished!");
                 plugin.getRankManager().refreshPlayerDisplay(player);
-                plugin.getRedisManager().syncVanishState(player, true);
+                plugin.getRedisManager().publish(new VanishPacket(plugin.getConfig().getString("server-name", "Unknown"), System.currentTimeMillis(), player.getUniqueId(), player.getName(), true));
                 sendStaffNotificationStatic(player, playerRankColor, true, plugin);
                 nowVanished = true;
             }

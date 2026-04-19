@@ -9,6 +9,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class Utilities {
@@ -131,7 +132,7 @@ public class Utilities {
     }
 
     public static @NonNull List<Player> getOnlinePlayers() {
-        return new ArrayList<>(Bukkit.getOnlinePlayers());
+        return new ArrayList<>((Collection<? extends Player>) Bukkit.getOnlinePlayers());
     }
 
 
@@ -153,6 +154,12 @@ public class Utilities {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static Class<?> resolveAuthlibClass(String relative) {
+        try { return Class.forName("com.mojang.authlib." + relative); } catch (ClassNotFoundException ignored) {}
+        try { return Class.forName("net.minecraft.util.com.mojang.authlib." + relative); } catch (ClassNotFoundException ignored) {}
+        throw new RuntimeException("Cannot locate authlib class: " + relative);
     }
 
     public static Class<?> getNMSClass(String what) {

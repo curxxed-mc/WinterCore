@@ -32,7 +32,7 @@ public class RankManager {
     public RankManager(WinterCore plugin) {
         this.plugin = plugin;
         this.configManager = new RankConfigManager(plugin);
-        this.cacheService = new RankCacheService(plugin);
+        this.cacheService = new RankCacheService(plugin, plugin.getDatabaseManager().getProfileRepository());
         this.displayManager = new RankDisplayManager(plugin, configManager);
     }
 
@@ -46,7 +46,6 @@ public class RankManager {
     }
 
     public void startAutoCacheRefresh() {
-        cacheService.re();
     }
 
     public void reloadRanksConfig() {
@@ -101,9 +100,11 @@ public class RankManager {
     }
 
     public void getRank(Player player, Consumer<String> callback) {
-        plugin.getRedisManager().getDisguise(player.getUniqueId(), disguiseJson -> {
-            String disguiseRank = extractDisguiseField(disguiseJson, "rank");
-            if (disguiseRank != null) { callback.accept(disguiseRank); return; }
+        plugin.getDisguiseRegistry().getEffectiveRank(player, rank -> {
+            if (rank != null) {
+                callback.accept(rank);
+                return;
+            }
             cacheService.get(player.getUniqueId(), callback);
         });
     }
@@ -155,6 +156,10 @@ public class RankManager {
         return configManager.getPrefix(getRankSync(player));
     }
 
+    public String getRankPrefixSync(String rank) {
+        return configManager.getPrefix(rank);
+    }
+
     public void refreshPlayerDisplay(Player player) {
         getRank(player, rank -> {
             String color = configManager.getColor(rank);
@@ -180,21 +185,19 @@ public class RankManager {
     }
 
     public void getDisguiseRank(Player player, Consumer<String> callback) {
-        plugin.getRedisManager().getDisguise(player.getUniqueId(), disguiseJson -> {
-            String disguiseRank = extractDisguiseField(disguiseJson, "rank");
-            if (disguiseRank != null) { callback.accept(disguiseRank); return; }
-            getRank(player, callback);
-        });
+        plugin.getDisguiseRegistry().getEffectiveRank(player, callback);
     }
 
     public String getDisguiseRankSync(Player player) {
-        String rank = extractDisguiseField(plugin.getRedisManager().getDisguiseSync(player.getUniqueId()), "rank");
-        return rank != null ? rank : getRankSync(player);
+        String disguiseJson = plugin.getDisguiseRegistry().getDisguiseDataSync(player.getUniqueId());
+        return extractDisguiseField(disguiseJson, "rank") != null ?
+                extractDisguiseField(disguiseJson, "rank") : getRankSync(player);
     }
 
     public String getDisguiseColorPreferenceSync(Player player) {
-        String color = extractDisguiseField(plugin.getRedisManager().getDisguiseSync(player.getUniqueId()), "color");
-        return color != null ? color : getColorPreferenceSync(player);
+        String disguiseJson = plugin.getDisguiseRegistry().getDisguiseDataSync(player.getUniqueId());
+        return extractDisguiseField(disguiseJson, "color") != null ?
+                extractDisguiseField(disguiseJson, "color") : getColorPreferenceSync(player);
     }
 
     public void setMessageColorPreference(Player player, String colorCode) {

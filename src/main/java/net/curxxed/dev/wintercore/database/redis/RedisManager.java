@@ -24,18 +24,43 @@ public final class RedisManager {
         this.plugin = plugin;
         this.serverName = plugin.getConfig().getString("server-name", "Unknown");
         this.codec = new RedisPacketCodec(new Gson());
-        this.handler = new BukkitRedisPacketHandler(plugin);
+        this.handler = new BukkitRedisPacketHandler(plugin, plugin.getDisguiseEventListener());
     }
 
     public void start() {
+        startHeartbeat();
         startListening();
     }
 
-    public void publish(RedisPacket<BukkitRedisPacketHandler> packet) {
+    public void stop() {
+        stopHeartbeat();
+    }
+
+    public void publish(RedisPacket<?> packet) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.publish(CHANNEL, codec.encode(packet));
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to publish Redis packet: " + e.getMessage());
+        }
+    }
+
+    private void startHeartbeat() {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            try (Jedis jedis = plugin.getRedisPool().getResource()) {
+                String key = "server:" + serverName + ":heartbeat";
+                jedis.set(key, "1");
+                jedis.expire(key, 30);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to write heartbeat: " + e.getMessage());
+            }
+        }, 0L, 200L);
+    }
+
+    private void stopHeartbeat() {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            jedis.del("server:" + serverName + ":heartbeat");
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to remove heartbeat: " + e.getMessage());
         }
     }
 
@@ -48,16 +73,22 @@ public final class RedisManager {
                         if (!CHANNEL.equals(channel)) {
                             return;
                         }
+
                         try {
-                            final RedisPacket<RedisPacketHandler> packet = (RedisPacket<RedisPacketHandler>) codec.decode(message);
+                            final RedisPacket<RedisPacketHandler> packet =
+                                    (RedisPacket<RedisPacketHandler>) codec.decode(message);
 
                             if (serverName.equalsIgnoreCase(packet.getSourceServer())) {
                                 return;
                             }
 
                             Bukkit.getScheduler().runTask(plugin, () -> {
-                                Bukkit.getPluginManager().callEvent(new RedisPacketReceivedEvent(packet));
-                                packet.handle(handler);
+                                try {
+                                    Bukkit.getPluginManager().callEvent(new RedisPacketReceivedEvent(packet));
+                                    packet.handle(handler);
+                                } catch (Exception e) {
+                                    plugin.getLogger().warning("Failed to handle Redis packet: " + e.getMessage());
+                                }
                             });
                         } catch (Exception e) {
                             plugin.getLogger().warning("Failed to decode Redis packet: " + e.getMessage());

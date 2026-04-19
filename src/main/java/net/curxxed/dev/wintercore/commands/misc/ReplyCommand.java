@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.commands.misc;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.listeners.PlayerListener;
+import net.curxxed.dev.wintercore.player.PlayerService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
@@ -22,7 +22,7 @@ import java.util.UUID;
 public class ReplyCommand extends BaseCommand {
 
     private final WinterCore plugin;
-    private final PlayerListener playerListener;
+    private final PlayerService playerService;
 
     private static final Map<UUID, LastMessageInfo> lastMessageMap = new java.util.concurrent.ConcurrentHashMap<>();
     private static final long REPLY_TIMEOUT_MILLIS = 180_000; // 3 minutes
@@ -30,7 +30,7 @@ public class ReplyCommand extends BaseCommand {
     public ReplyCommand(WinterCore plugin) {
         super(plugin);
         this.plugin = plugin;
-        this.playerListener = plugin.getPlayerListener();
+        this.playerService = plugin.getPlayerService();
     }
 
     public static void setLastSender(Player recipient, Player sender) {
@@ -84,7 +84,7 @@ public class ReplyCommand extends BaseCommand {
             return;
         }
         String message = String.join(" ", args);
-        playerListener.sendPrivateMessage(player, lastSender, message);
+        playerService.sendPrivateMessage(player, lastSender, message);
         setLastSender(lastSender, player); // allow reply chain
     }
 }

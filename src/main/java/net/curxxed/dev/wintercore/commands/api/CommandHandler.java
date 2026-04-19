@@ -69,11 +69,17 @@ public class CommandHandler {
         PluginCommand pluginCommand = pluginCommandConstructor.newInstance(info.name(), plugin);
 
         pluginCommand.setExecutor(commandExecutor);
-        pluginCommand.setTabCompleter(commandExecutor); // BaseCommand now implements TabExecutor
+        pluginCommand.setTabCompleter(commandExecutor);
         pluginCommand.setAliases(Arrays.asList(info.aliases()));
         pluginCommand.setDescription(info.description());
         pluginCommand.setUsage(info.usage());
-        pluginCommand.setPermission(info.permission());
+        
+        // Join permission array with space for Bukkit API compatibility
+        String[] permissions = info.permission();
+        if (permissions.length > 0) {
+            pluginCommand.setPermission(String.join(" ", permissions));
+        }
+        
         pluginCommand.setPermissionMessage(CC.translate("&cYou do not have permission to use this command."));
 
         commandMap.register(plugin.getDescription().getName(), pluginCommand);

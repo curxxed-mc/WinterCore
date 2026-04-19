@@ -1,9 +1,9 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.database.DatabaseManager;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -22,12 +22,12 @@ import java.util.UUID;
     )
 public class WarningCommand extends BaseCommand {
     private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
+    private final ModerationService moderationService;
 
     public WarningCommand(WinterCore plugin) {
         super(plugin);
         this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
+        this.moderationService = plugin.getDatabaseManager().getModerationService();
     }
 
     @Override
@@ -42,7 +42,7 @@ public class WarningCommand extends BaseCommand {
         String issuer = commandArgs.getSender().getName();
         UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
         String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        databaseManager.addWarning(displayName, reason, issuer);
+        moderationService.addWarning(displayName, reason, issuer);
         commandArgs.getSender().sendMessage(ChatColor.GREEN + "You have warned " + displayName + " for: " + reason);
         Player target = Bukkit.getPlayer(targetUUID);
         if (target != null) {

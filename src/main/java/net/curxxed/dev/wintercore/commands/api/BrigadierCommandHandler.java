@@ -9,12 +9,11 @@ import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.List;
 
-@SuppressWarnings({"rawtypes"})
 public class BrigadierCommandHandler {
-
     private final WinterCore plugin;
     private final List<BaseCommand> commands;
-
+    // Someone said this is the equivalent of a C struct definition but instead of the compiler checking it,
+    //we're just hoping these classes exist at runtime.
     private final Class<?> literalBuilderClass;
     private final Class<?> greedyStringClass;
     private final Class<?> requiredBuilderClass;
@@ -197,8 +196,13 @@ public class BrigadierCommandHandler {
             CommandSender sender = getSenderFromSource(source);
             if (sender == null) return false;
             if (info.inGameOnly() && !(sender instanceof Player)) return false;
-            String perm = info.permission();
-            return perm == null || perm.isEmpty() || sender.hasPermission(perm);
+            String[] permissions = info.permission();
+            if (permissions.length == 0) return true;
+            // Check if sender has any of the required permissions
+            for (String perm : permissions) {
+                if (sender.hasPermission(perm)) return true;
+            }
+            return false;
         } catch (Exception e) {
             return false;
         }

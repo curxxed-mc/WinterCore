@@ -102,7 +102,9 @@ public class WhoIsDisguisedCommand extends BaseCommand {
                             plugin.getLogger().warning("Error parsing disguise JSON for " + uuidStr);
                         }
 
-                        String realName = plugin.getDatabaseManager().getPlayerName(uuid);
+                        CompletableFuture<String> nameFuture = new CompletableFuture<>();
+                        plugin.getDatabaseManager().getIdentityService().getPlayerName(uuid, nameFuture::complete);
+                        String realName = nameFuture.get(2, TimeUnit.SECONDS);
 
                         if (realName == null) {
                             OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);

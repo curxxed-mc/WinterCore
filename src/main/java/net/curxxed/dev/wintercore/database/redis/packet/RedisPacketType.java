@@ -8,5 +8,8 @@ public enum RedisPacketType {
     REMOTE_COMMAND,
     PLAYER_REPORT,
     DISGUISE_STATE,
-    CONFIG_SYNC
+    CONFIG_SYNC,
+    CHAT_BROADCAST,
+    VANISH_STATE,
+    PLAYER_UPDATE
 }
