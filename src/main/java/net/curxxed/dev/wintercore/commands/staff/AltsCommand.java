@@ -44,7 +44,7 @@ public class AltsCommand extends BaseCommand {
             commandArgs.getSender().sendMessage(CC.translate("&cPlayer not found."));
             return;
         }
-        plugin.getDatabaseManager().getAlts(target.getUniqueId(), alts -> {
+        plugin.getDatabaseManager().getIdentityService().getAlts(target.getUniqueId(), alts -> {
             if (alts.isEmpty()) {
                 commandArgs.getSender().sendMessage(CC.translate("&a" + target.getName() + " has no detected alts."));
                 return;
@@ -56,7 +56,7 @@ public class AltsCommand extends BaseCommand {
                 OfflinePlayer altPlayer = Bukkit.getOfflinePlayer(altUUID);
                 String name = altPlayer.getName() != null ? altPlayer.getName() : altUUID.toString();
                 boolean isOnline = altPlayer.isOnline();
-                plugin.getDatabaseManager().isPlayerMuted(altUUID, isMuted -> plugin.getDatabaseManager().isPlayerBanned(altUUID, isBanned -> {
+                plugin.getDatabaseManager().getModerationService().isPlayerMuted(altUUID, isMuted -> plugin.getDatabaseManager().getModerationService().isPlayerBanned(altUUID, isBanned -> {
                     String color;
                     if (isBanned) {
                         color = CC.translate("&4"); // DARK_RED

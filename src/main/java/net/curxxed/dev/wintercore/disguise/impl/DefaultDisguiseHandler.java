@@ -35,15 +35,10 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     public DefaultDisguiseHandler(final WinterCore plugin, final DisguiseRegistry disguiseRegistry) {
         super(plugin);
         this.disguiseRegistry = disguiseRegistry;
-        this.gameProfileClass = resolveAuthlibClass("GameProfile");
-        this.propertyClass    = resolveAuthlibClass("properties.Property");
+        this.gameProfileClass = Utilities.resolveAuthlibClass("GameProfile");
+        this.propertyClass    = Utilities.resolveAuthlibClass("properties.Property");
     }
 
-    private static Class<?> resolveAuthlibClass(String relative) {
-        try { return Class.forName("com.mojang.authlib." + relative); } catch (ClassNotFoundException ignored) {}
-        try { return Class.forName("net.minecraft.util.com.mojang.authlib." + relative); } catch (ClassNotFoundException ignored) {}
-        throw new RuntimeException("Cannot locate authlib class: " + relative);
-    }
 
     private Object getGameProfile(Object entityPlayer) throws Exception {
         return entityPlayer.getClass().getMethod("getProfile").invoke(entityPlayer);
@@ -191,7 +186,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                             String nameColor  = getRankString(rank, "name-color", "&f");
                             String coloredPrefix = CC.translate(rawPrefix);
 
-                            disguiseRegistry.setDisguiseInfo(player, name, rank, skin, nameColor, coloredPrefix);
+                            disguiseRegistry.publishDisguiseState(player, name, rank, skin, nameColor, coloredPrefix);
                             disguiseRegistry.getEffectiveColor(player, color -> {
                                 if (plugin.getNameTagColorManager() != null) {
                                     plugin.getNameTagColorManager().applyColor(player, color);
@@ -220,7 +215,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     public void unDisguise(final Player player, final boolean save, Consumer<DisguiseCallback> callback) {
         final DisguiseData disguiseData = plugin.getDisguiseDataMap().get(player.getUniqueId());
         if (disguiseData == null) {
-            plugin.getRedisManager().clearDisguise(player.getUniqueId());
+            disguiseRegistry.publishClearDisguise(player);
             callback.accept(DisguiseCallback.NOT_DISGUISED);
             return;
         }
@@ -264,7 +259,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             if (!save) {
                 plugin.getRankManager().refreshPlayerDisplay(player);
                 Bukkit.getPluginManager().callEvent(new PlayerUnDisguiseEvent(player, disguiseData.getName(), originalName, disguiseData.getRank()));
-                plugin.getRedisManager().clearDisguise(player.getUniqueId());
+                disguiseRegistry.publishClearDisguise(player);
                 callback.accept(DisguiseCallback.SUCCESS);
                 return;
             }
@@ -293,7 +288,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             disguiseRanks.remove(player.getUniqueId());
             disguiseRegistry.clear(player);
             plugin.getRankManager().refreshPlayerDisplay(player);
-            plugin.getRedisManager().clearDisguise(player.getUniqueId());
+            disguiseRegistry.publishClearDisguise(player);
 
             callback.accept(DisguiseCallback.SUCCESS);
         } catch (Exception e) {

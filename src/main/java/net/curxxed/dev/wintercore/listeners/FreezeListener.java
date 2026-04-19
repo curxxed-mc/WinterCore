@@ -1,6 +1,7 @@
 package net.curxxed.dev.wintercore.listeners;
 
 import lombok.Getter;
+import net.curxxed.dev.wintercore.player.PlayerService;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -21,27 +22,27 @@ import java.util.Set;
 
 public class FreezeListener implements Listener {
     private final Set<Player> frozenPlayers = new HashSet<>();
-    private final PlayerListener playerListener;
+    private final PlayerService playerService;
     @Getter
     public static FreezeListener instance;
 
 
-    public FreezeListener(PlayerListener playerListener) {
-        this.playerListener = playerListener;
+    public FreezeListener(PlayerService playerService) {
+        this.playerService = playerService;
         instance = this;
     }
 
     public void freezePlayer(Player player, Player staff) {
         frozenPlayers.add(player);
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, Integer.MAX_VALUE, 1, false, false));
-        playerListener.sendFreezeNotification(player, staff,true);
+        playerService.broadcastFreeze(player, staff,true);
     }
 
     public void unfreezePlayer(Player player, Player staff) {
         frozenPlayers.remove(player);
         player.removePotionEffect(PotionEffectType.BLINDNESS);
 
-        playerListener.sendFreezeNotification(player, staff,false);
+        playerService.broadcastFreeze(player, staff,false);
     }
 
     public boolean isFrozen(Player player) {

@@ -26,37 +26,21 @@ public abstract class DisguiseHandler {
     public final WinterCore plugin;
     public Map<String, SkinFetcher.SkinProperty> skinData;
     public Map<String, ItemStack> itemsData;
-
-    // Tracks names whose skin is currently being fetched, so we don't fire
-    // duplicate HTTP requests if the player somehow clicks before the first
-    // fetch completes.
     private final Set<String> pendingFetches = ConcurrentHashMap.newKeySet();
 
     public DisguiseHandler(WinterCore plugin) {
-        this.skinData  = new ConcurrentHashMap<>();   // was HashMap – safe now for concurrent access
+        this.skinData  = new ConcurrentHashMap<>();
         this.itemsData = new HashMap<>();
         this.plugin    = plugin;
     }
 
-    /**
-     * Fetches skin data for {@code name}, using the in-memory cache when
-     * available so that subsequent calls (e.g. rank-selection click after
-     * the pre-fetch in {@link #openDisguiseMenu}) are instant.
-     */
     public void fetchSkinData(String name, Consumer<SkinFetcher.SkinProperty> callback) {
         String key = name.toLowerCase();
-
-        // ── 1. Already cached → return immediately, no network call ──────────
         SkinFetcher.SkinProperty cached = skinData.get(key);
         if (cached != null) {
             callback.accept(cached);
             return;
         }
-
-        // ── 2. Fetch is already in-flight → just queue the callback ──────────
-        // (simple guard: if another thread is already fetching this name we
-        // still call fetchSkin but the result will overwrite the same map
-        // slot, which is harmless.  A full queue would be overkill here.)
 
         SkinFetcher.fetchSkin(name, (skin, err) -> {
             pendingFetches.remove(key);
@@ -72,35 +56,18 @@ public abstract class DisguiseHandler {
         pendingFetches.add(key);
     }
 
-    /**
-     * Opens the rank-selection menu <em>and</em> kicks off the skin fetch in
-     * the background immediately.  By the time the staff member clicks a rank
-     * (even within ~1 second) the skin will already be in the cache, making
-     * the actual disguise application instantaneous.
-     */
     public void openDisguiseMenu(Player player, String targetName) {
         DisguiseMenu.setPendingTarget(player, targetName);
-
-        // Pre-fetch skin now, while the menu is open.
-        // fetchSkinData is safe to call even if a fetch is already running –
-        // the cache check at the top will short-circuit on the second call.
         String key = targetName.toLowerCase();
         if (!skinData.containsKey(key) && !pendingFetches.contains(key)) {
             fetchSkinData(targetName, skin -> {
-                // Result is stored in skinData automatically; nothing else to do.
                 if (skin == null) {
                     Bukkit.getLogger().warning("[Disguise] Pre-fetch for '" + targetName + "' returned no skin.");
                 }
             });
         }
-
-        // Open the menu straight away – don't make the player wait.
         new DisguiseMenu(plugin, this, targetName).open(player);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Everything below is unchanged
-    // ─────────────────────────────────────────────────────────────────────────
 
     public void sendPacket(Player player, Object packet) {
         Utilities.sendPacket(player, packet);

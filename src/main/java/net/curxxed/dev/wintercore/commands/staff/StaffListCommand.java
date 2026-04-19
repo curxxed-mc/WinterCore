@@ -5,14 +5,14 @@ import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.menus.StaffListMenu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.ChatColor;
+import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
         name = "stafflist",
         description = "View the staff list.",
         usage = "/stafflist",
-        permission = "wintercore.stafflist",
+        permission = {"wintercore.stafflist", "wintercore.staff", "wintercore.admin", "wintercore.manager"},
         inGameOnly = true
 )
 public class StaffListCommand extends BaseCommand {
@@ -25,14 +25,10 @@ public class StaffListCommand extends BaseCommand {
     public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
 
-        if (!player.hasPermission("wintercore.stafflist")
-                && !player.hasPermission("wintercore.staff")
-                && !player.hasPermission("wintercore.admin")
-                && !player.hasPermission("wintercore.manager")) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+        if (plugin.getNRS() == null) {
+            player.sendMessage(CC.translate("&cThe staff list is currently unavailable. Please try again later."));
             return;
         }
-
-        new StaffListMenu(plugin).open(player);
+        new StaffListMenu(plugin, plugin.getNRS()).open(player);
     }
 }

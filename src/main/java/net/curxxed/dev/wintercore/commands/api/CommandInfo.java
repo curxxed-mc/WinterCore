@@ -29,7 +29,7 @@ public @interface CommandInfo {
      * The permission node required to execute this command.
      * @return The permission node.
      */
-    String permission() default "";
+    String[] permission() default {};
 
     /**
      * A brief description of what the command does.

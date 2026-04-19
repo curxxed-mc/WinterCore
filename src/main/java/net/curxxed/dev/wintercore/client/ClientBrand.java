@@ -2,6 +2,7 @@ package net.curxxed.dev.wintercore.client;
 
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -39,7 +40,7 @@ public class ClientBrand implements PluginMessageListener {
             String mcVersion = getMinecraftVersion(player.getUniqueId());
 
             plugin.getRankManager().getRank(player, rank -> plugin.getRankManager().getColorPreference(rank, rankColor -> {
-                String coloredName = CC.translate(rankColor) + plugin.getPlayerListener().getRealName(player) + CC.translate("&r");
+                String coloredName = CC.translate(rankColor) + plugin.getPlayerService().getIdentity(player) + CC.translate("&r");
                 String staffMessage = CC.translate("&9[S] ") + coloredName + CC.translate("&b joined using: &e") + friendlyName
                         + CC.translate("&7 (") + mcVersion + CC.translate("&7)");
                 for (Player online : Bukkit.getServer().getOnlinePlayers()) {
@@ -55,7 +56,7 @@ public class ClientBrand implements PluginMessageListener {
 
     private String getMinecraftVersion(UUID uuid) {
         if (!VIA_PRESENT) {
-            return "Unknown";
+            return Utilities.IS_1_7 ? "Unknown (ViaVersion not supported on 1.7)" : "Unknown (ViaVersion not installed)";
         }
         return ViaHelper.getVersion(uuid);
     }

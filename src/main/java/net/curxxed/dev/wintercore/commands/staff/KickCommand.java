@@ -1,13 +1,14 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.database.DatabaseManager;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -21,12 +22,12 @@ import java.util.UUID;
     )
 public class KickCommand extends BaseCommand {
     private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
+    private final ModerationService moderationService;
 
     public KickCommand(WinterCore plugin) {
         super(plugin);
         this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
+        this.moderationService = plugin.getDatabaseManager().getModerationService();
     }
 
     @Override
@@ -53,9 +54,8 @@ public class KickCommand extends BaseCommand {
         String reason = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length)) : "No reason provided";
         String playerName = args[0];
         UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
-        databaseManager.incrementKickCount(targetUUID);
+        moderationService.incrementKickCount(targetUUID);
         target.kickPlayer(ChatColor.RED + "You have been kicked for: " + reason);
         player.sendMessage(ChatColor.GREEN + "Player " + target.getName() + " has been kicked for: " + reason);
     }
 }
-

@@ -56,7 +56,6 @@ public class AuthManager {
             return;
         }
 
-        // Check Redis for a valid existing session
         if (isAuthenticated(player)) {
             player.sendMessage("§a§lAuthenticated §8(session resumed)");
             return;
@@ -79,7 +78,7 @@ public class AuthManager {
 
     public boolean authenticate(Player player, int totpCode) {
         UUID uuid = player.getUniqueId();
-        String secret = repository.getSecret(uuid);
+        String secret = repository.getSecret(uuid).join();
 
         if (secret == null) return false;
 

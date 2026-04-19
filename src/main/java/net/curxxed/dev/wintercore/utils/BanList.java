@@ -29,7 +29,7 @@ public class BanList implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onLogin(PlayerLoginEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        databaseManager.isPlayerBanned(uuid, isBanned -> {
+        databaseManager.getModerationService().isPlayerBanned(uuid, isBanned -> {
             if (isBanned) {
                 bannedCache.add(uuid);
             } else {

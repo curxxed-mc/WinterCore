@@ -58,11 +58,11 @@ public class TagsManager {
     }
 
     public void setPlayerTag(UUID uuid, String tagId) {
-        plugin.getDatabaseManager().setPlayerTag(uuid, tagId);
+        plugin.getDatabaseManager().getProfileService().setPlayerTag(uuid, tagId);
     }
 
     public void getPlayerTag(UUID uuid, Consumer<Tag> callback) {
-        plugin.getDatabaseManager().getPlayerTag(uuid, tagId -> {
+        plugin.getDatabaseManager().getProfileService().getPlayerTag(uuid, tagId -> {
             Tag tag = tagId != null ? getTag(tagId) : null;
             callback.accept(tag);
         });

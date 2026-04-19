@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.commands.staff;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.database.DatabaseManager;
+import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
@@ -21,12 +21,12 @@ import java.util.UUID;
     )
 public class UnmuteCommand extends BaseCommand {
     private final WinterCore plugin;
-    private final DatabaseManager databaseManager;
+    private final ModerationService moderationService;
 
     public UnmuteCommand(WinterCore plugin) {
         super(plugin);
         this.plugin = plugin;
-        this.databaseManager = plugin.getDatabaseManager();
+        this.moderationService = plugin.getDatabaseManager().getModerationService();
     }
 
     @Override
@@ -43,12 +43,12 @@ public class UnmuteCommand extends BaseCommand {
         String playerName = args[0];
         UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
         String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        databaseManager.isPlayerMuted(targetUUID, isMuted -> {
+        moderationService.isPlayerMuted(targetUUID, isMuted -> {
             if (!isMuted) {
                 commandArgs.getSender().sendMessage(CC.translate("&cPlayer " + displayName + " is not muted."));
                 return;
             }
-            databaseManager.unmutePlayer(targetUUID);
+            moderationService.unmutePlayer(targetUUID);
             commandArgs.getSender().sendMessage(CC.translate("&aYou have unmuted " + displayName + "."));
             Player target = Bukkit.getPlayer(targetUUID);
             if (target != null) {

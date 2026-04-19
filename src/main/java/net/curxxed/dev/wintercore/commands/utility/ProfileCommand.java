@@ -1,20 +1,25 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.staff.VanishCommand;
-import net.curxxed.dev.wintercore.database.RedisManager;
-import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.database.redis.RedisSocials;
 import net.curxxed.dev.wintercore.listeners.FreezeListener;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
-import org.bukkit.*;
+import net.curxxed.dev.wintercore.utils.Utilities;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.event.*;
-import org.bukkit.event.inventory.*;
-import org.bukkit.inventory.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.lang.reflect.Field;
@@ -31,10 +36,10 @@ public class ProfileCommand extends BaseCommand implements Listener {
 
     private final WinterCore plugin;
     private final RankManager rankManager;
-    private final RedisManager redis;
+    private final RedisSocials redis;
     private final Set<UUID> clickCooldown = new HashSet<>();
 
-    public ProfileCommand(WinterCore plugin, RedisManager redis) {
+    public ProfileCommand(WinterCore plugin, RedisSocials redis) {
         super(plugin);
         this.plugin = plugin;
         this.rankManager = plugin.getRankManager();
@@ -173,16 +178,33 @@ public class ProfileCommand extends BaseCommand implements Listener {
         SkullMeta meta = (SkullMeta) head.getItemMeta();
 
         try {
-            GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-            profile.getProperties().put("textures", new Property("textures", texture));
+            Class<?> gameProfileClass = Utilities.resolveAuthlibClass("GameProfile");
+            Class<?> propertyClass = Utilities.resolveAuthlibClass("properties.Property");
+
+            Object profile = gameProfileClass
+                    .getConstructor(UUID.class, String.class)
+                    .newInstance(UUID.randomUUID(), null);
+
+            Object property = propertyClass
+                    .getConstructor(String.class, String.class)
+                    .newInstance("textures", texture);
+
+            Object properties = gameProfileClass.getMethod("getProperties").invoke(profile);
+
+            properties.getClass()
+                    .getMethod("put", Object.class, Object.class)
+                    .invoke(properties, "textures", property);
+
             Field profileField = meta.getClass().getDeclaredField("profile");
             profileField.setAccessible(true);
             profileField.set(meta, profile);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         meta.setDisplayName(ChatColor.AQUA + name);
+
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + (value != null ? value : "Not set"));
         if (isSelf) {
