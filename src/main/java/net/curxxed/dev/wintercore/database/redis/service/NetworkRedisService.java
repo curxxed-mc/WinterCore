@@ -46,6 +46,24 @@ public final class NetworkRedisService {
         return alive;
     }
 
+    public void setStaffLastSeen(UUID uuid, long timestamp) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            jedis.hset("staff:last-seen", uuid.toString(), String.valueOf(timestamp));
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to set staff last seen for " + uuid + ": " + e.getMessage());
+        }
+    }
+
+    public long getStaffLastSeen(UUID uuid) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            String val = jedis.hget("staff:last-seen", uuid.toString());
+            return val != null ? Long.parseLong(val) : 0L;
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to get staff last seen for " + uuid + ": " + e.getMessage());
+            return 0L;
+        }
+    }
+
     public void setStaffLastServer(UUID uuid, String server) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.hset("staff:last-server", uuid.toString(), server);
@@ -76,6 +94,36 @@ public final class NetworkRedisService {
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to get cached username for " + uuid + ": " + e.getMessage());
             return null;
+        }
+    }
+
+    public void setSwitching(UUID uuid, String serverName) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            // Set the server they are leaving, and expire it after 3 seconds
+            jedis.setex("staff:switching:" + uuid.toString(), 3, serverName);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to set switching flag: " + e.getMessage());
+        }
+    }
+
+    public String getAndRemoveSwitching(UUID uuid) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            String key = "staff:switching:" + uuid.toString();
+            String previousServer = jedis.get(key);
+            if (previousServer != null) {
+                jedis.del(key); // Remove it so the quit task knows to abort
+            }
+            return previousServer;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public boolean isStillSwitching(UUID uuid) {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            return jedis.exists("staff:switching:" + uuid.toString());
+        } catch (Exception e) {
+            return false;
         }
     }
 }
