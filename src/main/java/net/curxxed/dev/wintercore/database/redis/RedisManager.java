@@ -100,4 +100,15 @@ public final class RedisManager {
             }
         });
     }
+
+    public void publishAndHandleLocally(RedisPacket<RedisPacketHandler> packet) {
+        publish(packet);
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            try {
+                packet.handle(handler);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to handle local packet: " + e.getMessage());
+            }
+        });
+    }
 }

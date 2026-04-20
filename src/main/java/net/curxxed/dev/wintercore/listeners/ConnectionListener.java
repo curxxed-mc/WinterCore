@@ -1,6 +1,7 @@
 package net.curxxed.dev.wintercore.listeners;
 
 import net.curxxed.dev.wintercore.client.ClientBrandCommand;
+import net.curxxed.dev.wintercore.database.redis.packet.packets.ServerSwitchPacket;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.StaffActivityPacket;
 import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
 import net.curxxed.dev.wintercore.database.service.IdentityService;
@@ -140,50 +141,66 @@ public class ConnectionListener implements Listener {
         UUID uuid = player.getUniqueId();
         String serverName = plugin.getConfig().getString("server-name", "unknown");
 
-        networkRedisService.setStaffLastServer(uuid, serverName);
-        networkRedisService.cacheUsername(uuid, player.getName());
-
         rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, color -> {
-            String lastServer = lastServers.get(uuid);
-            Long lastSeen = lastSeenTimes.get(uuid);
-            Long joinTime = joinTimes.get(uuid);
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                Map<String, String> staffServers = networkRedisService.getStaffLastServers();
+                String lastServer = staffServers.get(uuid.toString());
+                long lastSeen = networkRedisService.getStaffLastSeen(uuid);
+                long joinTime = joinTimes.getOrDefault(uuid, System.currentTimeMillis());
 
-            boolean isSwitch = lastServer != null && !lastServer.equals(serverName) &&
-                    lastSeen != null && joinTime != null &&
-                    (joinTime - lastSeen < 30000);
+                boolean isSwitch = lastServer != null
+                        && !lastServer.equalsIgnoreCase(serverName)
+                        && lastSeen > 0
+                        && (joinTime - lastSeen < 5000);
 
-            lastServers.put(uuid, serverName);
+                networkRedisService.setStaffLastServer(uuid, serverName);
+                networkRedisService.cacheUsername(uuid, player.getName());
 
-            String realName = player.getName();
-            if (isSwitch) {
-                disguiseEventListener.onServerSwitch(player);
-                plugin.getRedisManager().publish(new StaffActivityPacket(
-                        serverName, System.currentTimeMillis(), "switch-message",
-                        realName, color, lastServer, serverName
-                ));
-            } else {
-                plugin.getRedisManager().publish(new StaffActivityPacket(
-                        serverName, System.currentTimeMillis(), "join-message",
-                        realName, color, "", serverName
-                ));
-            }
+                String realName = player.getName();
+                final String resolvedLastServer = lastServer;
+
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (isSwitch) {
+                        disguiseEventListener.onServerSwitch(player);
+                        plugin.getRedisManager().publish(new ServerSwitchPacket(
+                                serverName, System.currentTimeMillis(),
+                                uuid, resolvedLastServer, serverName
+                        ));
+                        plugin.getRedisManager().publishAndHandleLocally(new StaffActivityPacket(
+                                serverName, System.currentTimeMillis(), "switch",
+                                realName, color, resolvedLastServer, serverName
+                        ));
+                    } else {
+                        plugin.getRedisManager().publishAndHandleLocally(new StaffActivityPacket(
+                                serverName, System.currentTimeMillis(), "join",
+                                realName, color, "", serverName
+                        ));
+                    }
+                });
+            });
         }));
     }
 
     private void broadcastStaffQuit(Player player) {
         if (!isStaff(player)) return;
         UUID uuid = player.getUniqueId();
+        String currentServer = plugin.getConfig().getString("server-name", "unknown");
 
-        networkRedisService.removeStaffLastServer(uuid);
+        networkRedisService.setStaffLastSeen(uuid, System.currentTimeMillis());
 
         rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, color -> {
-            String currentServer = plugin.getConfig().getString("server-name", "unknown");
-            String lastServer = lastServers.getOrDefault(uuid, "unknown");
+            Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+                Map<String, String> staffServers = networkRedisService.getStaffLastServers();
+                String updatedServer = staffServers.get(uuid.toString());
 
-            plugin.getRedisManager().publish(new StaffActivityPacket(
-                    currentServer, System.currentTimeMillis(), "quit",
-                    player.getName(), color, currentServer, lastServer
-            ));
+                if (updatedServer == null || updatedServer.equalsIgnoreCase(currentServer)) {
+                    networkRedisService.removeStaffLastServer(uuid);
+                    plugin.getRedisManager().publishAndHandleLocally(new StaffActivityPacket(
+                            currentServer, System.currentTimeMillis(), "quit",
+                            player.getName(), color, currentServer, ""
+                    ));
+                }
+            }, 40L);
         }));
     }
 
