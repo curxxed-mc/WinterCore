@@ -1,6 +1,7 @@
 package net.curxxed.dev.wintercore.menus;
 
 import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
+import net.curxxed.dev.wintercore.database.redis.packet.packets.RankTagSyncPacket;
 import net.curxxed.dev.wintercore.menu.Button;
 import net.curxxed.dev.wintercore.menu.ButtonBuilder;
 import net.curxxed.dev.wintercore.menu.Menu;
@@ -269,6 +270,12 @@ public class RankMenu extends Menu {
 
             plugin.getDatabaseManager().getProfileService().setRankWithMeta(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
             plugin.getDatabaseManager().getModerationService().addRankGrant(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
+            plugin.getRedisManager().publish(new RankTagSyncPacket(
+                    plugin.getConfig().getString("server-name", "Unknown"),
+                    System.currentTimeMillis(),
+                    gs.targetUUID,
+                    gs.rank
+            ));
 
             String grantedName = Bukkit.getOfflinePlayer(gs.targetUUID).getName();
             player.sendMessage(CC.translate("&aGranted rank &e" + gs.rank + " &ato &b" + grantedName + "&a."));

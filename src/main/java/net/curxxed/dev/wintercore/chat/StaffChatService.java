@@ -44,7 +44,7 @@ public final class StaffChatService {
     private void buildAndPublish(Player player, String message, String prefix, String color, ChatBroadcastPacket.ChatType type) {
         plugin.getDisguiseRegistry().getEffectivePrefix(player, disguisePrefix -> {
             String formatted = CC.translate(prefix) + disguisePrefix + player.getDisplayName() + ": " + CC.translate(color) + message + ChatColor.RESET;
-            plugin.getRedisManager().publish(new ChatBroadcastPacket(
+            plugin.getRedisManager().publishAndHandleLocally(new ChatBroadcastPacket(
                     plugin.getConfig().getString("server-name", "Unknown"),
                     System.currentTimeMillis(),
                     type,

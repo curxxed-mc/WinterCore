@@ -128,14 +128,29 @@ public class ServerManagerCommand extends BaseCommand {
 
     private void fetchInfo(CommandSender sender, String server) {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
-            String key = "server:" + server + ":info";
+            String resolvedServer = resolveServerName(jedis, server);
+            if (resolvedServer == null) {
+                reply(sender, "&cNo online server matched '" + server + "'.");
+                return;
+            }
+
+            String key = "server:" + resolvedServer + ":info";
             if (!jedis.exists(key)) {
-                reply(sender, "&cNo info found for server '" + server + "'.");
+                if (!jedis.exists("server:" + resolvedServer + ":heartbeat")) {
+                    reply(sender, "&cNo info found for server '" + resolvedServer + "'.");
+                    return;
+                }
+
+                List<String> pending = new ArrayList<>();
+                pending.add("&bInfo for " + resolvedServer + ":");
+                pending.add(" &7Status: &aOnline");
+                pending.add(" &7Details: &ePending heartbeat data...");
+                replyLines(sender, pending);
                 return;
             }
 
             List<String> lines = new ArrayList<>();
-            lines.add("&bInfo for " + server + ":");
+            lines.add("&bInfo for " + resolvedServer + ":");
             lines.add(" &7TPS: &a" + jedis.hget(key, "tps"));
             lines.add(" &7Players: &e" + jedis.hget(key, "players") + "/" + jedis.hget(key, "maxPlayers"));
             lines.add(" &7Whitelisted: &6" + jedis.hget(key, "whitelisted"));
@@ -169,6 +184,33 @@ public class ServerManagerCommand extends BaseCommand {
 
         plugin.getRedisManager().publish(packet);
         reply(sender, "&aSent command to " + server + ".");
+    }
+
+    private String resolveServerName(Jedis jedis, String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return null;
+        }
+
+        String requested = input.trim();
+        String exactHeartbeatKey = "server:" + requested + ":heartbeat";
+        if (jedis.exists(exactHeartbeatKey)) {
+            return requested;
+        }
+
+        String cursor = ScanParams.SCAN_POINTER_START;
+        ScanParams params = new ScanParams().match("server:*:heartbeat").count(100);
+        do {
+            ScanResult<String> result = jedis.scan(cursor, params);
+            for (String key : result.getResult()) {
+                String[] parts = key.split(":");
+                if (parts.length >= 3 && parts[1].equalsIgnoreCase(requested)) {
+                    return parts[1];
+                }
+            }
+            cursor = result.getCursor();
+        } while (!ScanParams.SCAN_POINTER_START.equals(cursor));
+
+        return null;
     }
 
     private void reply(CommandSender sender, String message) {

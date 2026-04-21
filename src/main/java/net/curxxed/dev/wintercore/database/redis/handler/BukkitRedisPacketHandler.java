@@ -23,6 +23,27 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
     }
 
     @Override
+    public void handle(RankTagSyncPacket packet) {
+        Player player = Bukkit.getPlayer(packet.getTargetUuid());
+        if (player == null || !player.isOnline()) {
+            return;
+        }
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            String rank = packet.getRank();
+            if (rank != null && !rank.trim().isEmpty()) {
+                plugin.getRankManager().cachePlayerRank(player, rank);
+            } else {
+                plugin.getRankManager().refreshCache(player);
+            }
+
+            plugin.getRankManager().refreshPlayerDisplay(player);
+            plugin.getRankManager().refreshPlayerDisplayForAll(player);
+            plugin.getPlayerService().loadPlayerData(player.getUniqueId(), player.getName());
+        });
+    }
+
+    @Override
     public void handle(ServerSwitchPacket packet) {
         Player player = Bukkit.getPlayer(packet.getUuid());
         if (player == null) return;
@@ -108,29 +129,43 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
     @Override
     public void handle(DisguiseStatePacket packet) {
         Player player = Bukkit.getPlayer(packet.getUuid());
-        if (player == null || plugin.getNameTagColorManager() == null) return;
+        if (plugin.getNameTagColorManager() == null) return;
 
         if (packet.isDisguised()) {
-            String json = packet.getDisguiseJson();
+            String name = null;
             String color = "&f";
 
-            if (json != null) {
+            if (packet.getDisguiseJson() != null && !packet.getDisguiseJson().isEmpty()) {
                 try {
                     com.google.gson.JsonObject obj =
-                            new com.google.gson.JsonParser().parse(json).getAsJsonObject();
+                            com.google.gson.JsonParser.parseString(packet.getDisguiseJson()).getAsJsonObject();
+
+                    if (obj.has("name")) {
+                        name = obj.get("name").getAsString();
+                    }
                     if (obj.has("color")) {
                         color = obj.get("color").getAsString();
                     }
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    plugin.getLogger().warning("[Disguise] Failed to parse disguise JSON: " + e.getMessage());
                 }
             }
 
-            plugin.getNameTagColorManager().applyColor(player, color);
+            if (player != null) {
+                plugin.getNameTagColorManager().applyDisguise(
+                        player,
+                        name != null ? name : player.getName(),
+                        color
+                );
+            }
         } else {
-            plugin.getNameTagColorManager().applyColor(
-                    player,
-                    plugin.getRankManager().getColorPreferenceSync(player)
-            );
+            if (player != null) {
+                plugin.getNameTagColorManager().clearDisguise(player);
+                plugin.getNameTagColorManager().applyColor(
+                        player,
+                        plugin.getRankManager().getColorPreferenceSync(player)
+                );
+            }
         }
     }
 
@@ -163,25 +198,30 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
 
     @Override
     public void handle(ChatBroadcastPacket packet) {
-        String permission;
-        if (packet.getChatType() == ChatBroadcastPacket.ChatType.MANAGER) {
-            permission = "wintercore.manager";
-        } else if (packet.getChatType() == ChatBroadcastPacket.ChatType.ADMIN) {
-            permission = "wintercore.admin";
-        } else {
-            permission = "wintercore.staff";
-        }
-
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (Player online : Bukkit.getOnlinePlayers()) {
-                if (online.hasPermission(permission)
-                        || online.hasPermission("wintercore.manager")
-                        || online.isOp()) {
+                if (canReceiveChatBroadcast(online, packet.getChatType())) {
                     online.sendMessage(packet.getMessage());
                 }
             }
             plugin.getLogger().info(packet.getMessage().replaceAll("§.", ""));
         });
+    }
+
+    private boolean canReceiveChatBroadcast(Player player, ChatBroadcastPacket.ChatType chatType) {
+        if (player.isOp()) {
+            return true;
+        }
+        if (chatType == ChatBroadcastPacket.ChatType.MANAGER) {
+            return player.hasPermission("wintercore.manager");
+        }
+        if (chatType == ChatBroadcastPacket.ChatType.ADMIN) {
+            return player.hasPermission("wintercore.admin")
+                    || player.hasPermission("wintercore.manager");
+        }
+        return player.hasPermission("wintercore.staff")
+                || player.hasPermission("wintercore.admin")
+                || player.hasPermission("wintercore.manager");
     }
 
     @Override
@@ -205,6 +245,8 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
         Player player = Bukkit.getPlayer(packet.getTargetUuid());
         if (player != null && player.isOnline()) {
             plugin.getPlayerService().loadPlayerData(player.getUniqueId(), player.getName());
+            plugin.getRankManager().refreshCache(player);
+            plugin.getRankManager().refreshPlayerDisplayForAll(player);
         }
     }
 
@@ -216,3 +258,4 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
         }
     }
 }
+
