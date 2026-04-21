@@ -40,6 +40,9 @@ public class DisguiseRegistry {
     }
 
     public void setDisguised(Player player, SkinFetcher.SkinProperty skin) {
+        if (player == null || skin == null) {
+            return;
+        }
         originalSkins.put(player.getUniqueId(), skin);
         disguisedPlayers.add(player.getUniqueId());
     }
@@ -85,16 +88,25 @@ public class DisguiseRegistry {
     }
 
     public void publishDisguiseState(Player player, String disguiseName, String disguiseRank, String skin, String color, String prefix) {
+        String serverName = WinterCore.getInstance().getConfig().getString("server-name", "Unknown");
         JsonObject obj = new JsonObject();
         obj.addProperty("name", disguiseName);
         obj.addProperty("rank", disguiseRank);
         obj.addProperty("skin", skin);
         obj.addProperty("color", color);
         obj.addProperty("prefix", prefix);
+        obj.addProperty("server", serverName);
         String json = obj.toString();
         disguiseDataCache.put(player.getUniqueId(), json);
+
+        try (redis.clients.jedis.Jedis jedis = WinterCore.getInstance().getRedisPool().getResource()) {
+            jedis.setex("player:disguise:" + player.getUniqueId(), 7200, json);
+        } catch (Exception e) {
+            WinterCore.getInstance().getLogger().warning("Failed to persist disguise data: " + e.getMessage());
+        }
+
         redisManager.publish(new DisguiseStatePacket(
-                WinterCore.getInstance().getConfig().getString("server-name", "Unknown"),
+                serverName,
                 System.currentTimeMillis(),
                 player.getUniqueId(),
                 true,
@@ -104,6 +116,13 @@ public class DisguiseRegistry {
 
     public void publishClearDisguise(Player player) {
         disguiseDataCache.remove(player.getUniqueId());
+
+        try (redis.clients.jedis.Jedis jedis = WinterCore.getInstance().getRedisPool().getResource()) {
+            jedis.del("player:disguise:" + player.getUniqueId());
+        } catch (Exception e) {
+            WinterCore.getInstance().getLogger().warning("Failed to clear disguise data: " + e.getMessage());
+        }
+
         redisManager.publish(new DisguiseStatePacket(
                 WinterCore.getInstance().getConfig().getString("server-name", "Unknown"),
                 System.currentTimeMillis(),
@@ -111,6 +130,22 @@ public class DisguiseRegistry {
                 false,
                 null
         ));
+    }
+
+    public String getDisguiseDataSync(UUID uuid) {
+        String cached = disguiseDataCache.get(uuid);
+        if (cached != null && !cached.isEmpty()) return cached;
+
+        try (redis.clients.jedis.Jedis jedis = WinterCore.getInstance().getRedisPool().getResource()) {
+            String persisted = jedis.get("player:disguise:" + uuid);
+            if (persisted != null && !persisted.isEmpty()) {
+                disguiseDataCache.put(uuid, persisted);
+                return persisted;
+            }
+        } catch (Exception e) {
+            WinterCore.getInstance().getLogger().warning("Failed to load disguise data: " + e.getMessage());
+        }
+        return "";
     }
 
     public void getEffectiveRank(Player player, Consumer<String> callback) {
@@ -153,8 +188,11 @@ public class DisguiseRegistry {
 
     public void updateColorCache(Player player) {
         UUID uuid = player.getUniqueId();
-        String disguiseJson = disguiseDataCache.get(uuid);
-        String color = extractField(disguiseJson, "color");
+        String color = null;
+        if (disguisedPlayers.contains(uuid)) {
+            String disguiseJson = disguiseDataCache.get(uuid);
+            color = extractField(disguiseJson, "color");
+        }
         if (color == null) {
             color = RankManager.getInstance().getColorPreferenceSync(player);
         }
@@ -174,10 +212,6 @@ public class DisguiseRegistry {
 
     public void removeColorCache(UUID uuid) {
         colorCache.remove(uuid);
-    }
-
-    public String getDisguiseDataSync(UUID uuid) {
-        return disguiseDataCache.getOrDefault(uuid, "");
     }
 
     public void cacheDisguiseData(UUID uuid, String disguiseJson) {

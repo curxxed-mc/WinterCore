@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Getter;
 import net.curxxed.dev.wintercore.database.cache.RankCacheService;
+import net.curxxed.dev.wintercore.database.redis.packet.packets.RankTagSyncPacket;
 import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
@@ -94,6 +95,12 @@ public class RankManager {
         displayManager.sendRankUpdateToBungee(player.getName(), rank);
         Bukkit.getPluginManager().callEvent(new RankChangeEvent(player, rank, getRankSync(player)));
         displayManager.applyRank(player, rank, color);
+        plugin.getRedisManager().publish(new RankTagSyncPacket(
+                plugin.getConfig().getString("server-name", "Unknown"),
+                System.currentTimeMillis(),
+                player.getUniqueId(),
+                rank
+        ));
 
         player.sendMessage(CC.translate("&aYour rank has been set to " + rank + " by " + giver.getName() + "."));
         giver.sendMessage(CC.translate("&aYou have set " + player.getName() + "'s rank to " + rank + "."));

@@ -7,9 +7,13 @@ import net.curxxed.dev.wintercore.database.redis.handler.RedisPacketHandler;
 import net.curxxed.dev.wintercore.database.redis.packet.RedisPacket;
 import net.curxxed.dev.wintercore.database.redis.packet.RedisPacketCodec;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
+
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public final class RedisManager {
 
@@ -50,6 +54,15 @@ public final class RedisManager {
                 String key = "server:" + serverName + ":heartbeat";
                 jedis.set(key, "1");
                 jedis.expire(key, 30);
+
+                ServerInfoSnapshot snapshot = collectServerInfoSnapshot();
+                String infoKey = "server:" + serverName + ":info";
+                jedis.hset(infoKey, "tps", snapshot.tps);
+                jedis.hset(infoKey, "players", String.valueOf(snapshot.players));
+                jedis.hset(infoKey, "maxPlayers", String.valueOf(snapshot.maxPlayers));
+                jedis.hset(infoKey, "whitelisted", String.valueOf(snapshot.whitelisted));
+                jedis.hset(infoKey, "updatedAt", String.valueOf(System.currentTimeMillis()));
+                jedis.expire(infoKey, 30);
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to write heartbeat: " + e.getMessage());
             }
@@ -59,8 +72,62 @@ public final class RedisManager {
     private void stopHeartbeat() {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.del("server:" + serverName + ":heartbeat");
+            jedis.del("server:" + serverName + ":info");
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to remove heartbeat: " + e.getMessage());
+        }
+    }
+
+    private ServerInfoSnapshot collectServerInfoSnapshot() {
+        try {
+            if (Bukkit.isPrimaryThread()) {
+                return buildServerInfoSnapshot();
+            }
+            return Bukkit.getScheduler().callSyncMethod(plugin, this::buildServerInfoSnapshot).get(2, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to collect server info snapshot: " + e.getMessage());
+            return new ServerInfoSnapshot("0.00", 0, 0, false);
+        }
+    }
+
+    private ServerInfoSnapshot buildServerInfoSnapshot() {
+        int players = Bukkit.getOnlinePlayers().size();
+        int maxPlayers = Bukkit.getMaxPlayers();
+        boolean whitelisted = Bukkit.hasWhitelist();
+
+        double tpsValue = 20.0D;
+        try {
+            double[] tps = Utilities.getTPS();
+            if (tps != null && tps.length > 0) {
+                tpsValue = tps[0];
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (Double.isNaN(tpsValue) || Double.isInfinite(tpsValue)) {
+            tpsValue = 20.0D;
+        }
+        tpsValue = Math.min(20.0D, Math.max(0.0D, tpsValue));
+
+        return new ServerInfoSnapshot(
+                String.format(Locale.US, "%.2f", tpsValue),
+                players,
+                maxPlayers,
+                whitelisted
+        );
+    }
+
+    private static final class ServerInfoSnapshot {
+        private final String tps;
+        private final int players;
+        private final int maxPlayers;
+        private final boolean whitelisted;
+
+        private ServerInfoSnapshot(String tps, int players, int maxPlayers, boolean whitelisted) {
+            this.tps = tps;
+            this.players = players;
+            this.maxPlayers = maxPlayers;
+            this.whitelisted = whitelisted;
         }
     }
 
