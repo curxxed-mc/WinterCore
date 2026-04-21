@@ -14,96 +14,84 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class NameTagColorManager implements Listener {
 
-    private static final String TEAM_PREFIX    = "wc_";
-    private static final String FALLBACK_RANK  = "Default";
+    private static final String TEAM_PREFIX = "wc_";
+    private static final String FALLBACK_RANK = "Default";
     private static final String FALLBACK_COLOR = "&f";
-
-    /**
-     * The prefix applied above a staff-mode player's head.
-     * §7 makes the asterisk AND the name that follows both render gray.
-     * 2 chars — well within the 16-char 1.7/1.8 team-prefix limit.
-     */
     private static final String STAFF_PREFIX = CC.translate("&7*");
 
     private final WinterCore plugin;
+    private final Map<UUID, Scoreboard> viewerBoards = new ConcurrentHashMap<>();
+    private final Map<UUID, String> rankCache = new ConcurrentHashMap<>();
+    private final Map<UUID, String> colorOverrides = new ConcurrentHashMap<>();
+    private final Map<UUID, String> disguiseNames = new ConcurrentHashMap<>();
+    private final Set<UUID> staffMode = ConcurrentHashMap.newKeySet();
 
-    // Per-viewer scoreboards so every player sees the same tags independently.
-    private final Map<UUID, Scoreboard> viewerBoards   = new ConcurrentHashMap<>();
-    // Last-known rank for each online player (used when staff mode ends).
-    private final Map<UUID, String>     rankCache      = new ConcurrentHashMap<>();
-    // Explicit color override (set by disguise system, chat-color command, etc.)
-    private final Map<UUID, String>     colorOverrides = new ConcurrentHashMap<>();
-    // Players currently in staff mode.
-    private final Set<UUID>             staffMode      = ConcurrentHashMap.newKeySet();
-
-    // Rank name -> scoreboard team key, rebuilt on load/reload.
     private volatile Map<String, String> rankTeamKey = Collections.emptyMap();
 
     public NameTagColorManager(WinterCore plugin) {
         this.plugin = plugin;
     }
 
-    // lifecycle
-
     public void load() {
         rebuildRankIndex();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+
         for (Player p : Utilities.getOnlinePlayers()) {
             viewerBoards.put(p.getUniqueId(), createBoardForViewer(p));
+            updatePlayerListName(p);
         }
     }
 
     public void unload() {
         Scoreboard main = Bukkit.getScoreboardManager().getMainScoreboard();
         for (Player p : Utilities.getOnlinePlayers()) {
-            try { p.setScoreboard(main); } catch (Exception ignored) {}
+            try {
+                p.setScoreboard(main);
+                safeSetPlayerListName(p, p.getName());
+            } catch (Exception ignored) {
+            }
         }
+
         viewerBoards.clear();
         rankCache.clear();
         colorOverrides.clear();
+        disguiseNames.clear();
         staffMode.clear();
     }
 
-    // public API
-
-    /**
-     * Called by RankDisplayManager / RankManager when a player's rank changes.
-     * Stores the rank and triggers a board refresh. If the player is currently
-     * in staff mode the stored rank is preserved silently and the staff tag
-     * keeps showing - it will snap back to the rank color when staff mode ends.
-     */
     public void applyRank(Player player, String rankName) {
-        colorOverrides.remove(player.getUniqueId());
-        rankCache.put(player.getUniqueId(), rankName);
-        scheduleRefresh(player);   // applyToBoard checks staffMode internally
+        UUID uuid = player.getUniqueId();
+        rankCache.put(uuid, rankName);
+
+        if (!disguiseNames.containsKey(uuid)) {
+            colorOverrides.remove(uuid);
+        }
+
+        scheduleRefresh(player);
     }
 
-    /**
-     * Called when an explicit color override is set (disguise, chat-color, etc.).
-     * Same guard as applyRank - staff tag wins if active.
-     */
     public void applyColor(Player player, String color) {
         colorOverrides.put(player.getUniqueId(), color != null ? color : FALLBACK_COLOR);
         scheduleRefresh(player);
     }
 
-    /**
-     * Toggles the gray-asterisk staff-mode prefix for the player.
-     * This is the ONLY place staffMode is mutated, keeping enable/disable
-     * symmetrical and preventing stale state.
-     */
     public void setStaffMode(Player player, boolean active) {
         if (active) {
             staffMode.add(player.getUniqueId());
         } else {
             staffMode.remove(player.getUniqueId());
         }
-        // A single refresh re-renders with or without the staff prefix.
         scheduleRefresh(player);
     }
 
@@ -114,20 +102,47 @@ public class NameTagColorManager implements Listener {
     public void fullRefresh() {
         Bukkit.getScheduler().runTask(plugin, () -> {
             rebuildRankIndex();
-            for (Scoreboard board : viewerBoards.values()) {
-                for (Player target : Utilities.getOnlinePlayers()) {
+            for (Player target : Utilities.getOnlinePlayers()) {
+                updatePlayerListName(target);
+                for (Scoreboard board : viewerBoards.values()) {
                     applyToBoard(board, target);
                 }
             }
         });
     }
 
-    // events
+    public String getVisibleName(Player player) {
+        return disguiseNames.getOrDefault(player.getUniqueId(), player.getName());
+    }
+
+    public void applyDisguise(Player player, String disguiseName, String color) {
+        UUID uuid = player.getUniqueId();
+        if (disguiseName == null || disguiseName.isEmpty()) {
+            disguiseName = player.getName();
+        }
+
+        disguiseNames.put(uuid, disguiseName);
+        colorOverrides.put(uuid, color != null ? color : FALLBACK_COLOR);
+
+        updatePlayerListName(player);
+        scheduleRefresh(player);
+    }
+
+    public void clearDisguise(Player player) {
+        UUID uuid = player.getUniqueId();
+        disguiseNames.remove(uuid);
+        colorOverrides.remove(uuid);
+
+        updatePlayerListName(player);
+        scheduleRefresh(player);
+    }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         Player joining = event.getPlayer();
         viewerBoards.put(joining.getUniqueId(), createBoardForViewer(joining));
+        updatePlayerListName(joining);
+
         for (Map.Entry<UUID, Scoreboard> entry : viewerBoards.entrySet()) {
             if (entry.getKey().equals(joining.getUniqueId())) continue;
             applyToBoard(entry.getValue(), joining);
@@ -137,37 +152,28 @@ public class NameTagColorManager implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
         Player leaving = event.getPlayer();
-        UUID   uuid    = leaving.getUniqueId();
-        String name    = leaving.getName();
+        UUID uuid = leaving.getUniqueId();
+        String name = leaving.getName();
 
         viewerBoards.remove(uuid);
         rankCache.remove(uuid);
         colorOverrides.remove(uuid);
         staffMode.remove(uuid);
+        disguiseNames.remove(uuid);
 
         for (Scoreboard board : viewerBoards.values()) {
             removeEntryFromBoard(board, name);
         }
     }
 
-    // core rendering
-
-    /**
-     * The single source of truth for what prefix a player receives on a board.
-     * All public mutators call this through scheduleRefresh.
-     *
-     *   Staff mode ON  ->  "§7*"  (gray; bleeds into name -> §7*PlayerName)
-     *   Staff mode OFF ->  rank/override color code  (e.g. §a -> §aPlayerName)
-     */
     private void applyToBoard(Scoreboard board, Player target) {
-        UUID   uuid     = target.getUniqueId();
+        UUID uuid = target.getUniqueId();
         String rankName = rankCache.getOrDefault(uuid, FALLBACK_RANK);
-        String teamKey  = rankTeamKey.getOrDefault(rankName, TEAM_PREFIX + "99");
-        String entry    = target.getName();
+        String teamKey = rankTeamKey.getOrDefault(rankName, TEAM_PREFIX + "99");
+        String entry = getVisibleName(target);
 
         final String prefix;
         if (staffMode.contains(uuid)) {
-            // Gray asterisk bleeds into the name: §7* + PlayerName = §7*PlayerName
             prefix = STAFF_PREFIX;
         } else {
             String rawColor = colorOverrides.containsKey(uuid)
@@ -180,18 +186,17 @@ public class NameTagColorManager implements Listener {
         Team team = board.getTeam(teamKey);
         if (team == null) team = board.registerNewTeam(teamKey);
 
-        // Move player out of any wrong team first.
         for (Team t : board.getTeams()) {
             if (!t.getName().equals(teamKey) && t.hasEntry(entry)) {
                 t.removeEntry(entry);
             }
         }
+
         if (!team.hasEntry(entry)) team.addEntry(entry);
 
         team.setPrefix(prefix);
         team.setSuffix("");
 
-        // Team#setColor (1.13+) for accurate tab-list color; skip in staff mode.
         if (!staffMode.contains(uuid) && NameTagVersionHelper.HAS_TEAM_COLOR_API) {
             org.bukkit.ChatColor primary = NameTagVersionHelper.extractPrimaryColor(prefix);
             if (primary != null) {
@@ -199,19 +204,24 @@ public class NameTagColorManager implements Listener {
                     team.getClass()
                             .getMethod("setColor", org.bukkit.ChatColor.class)
                             .invoke(team, primary);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         }
     }
 
-    // helpers
-
     private void scheduleRefresh(Player target) {
         Bukkit.getScheduler().runTask(plugin, () -> {
+            updatePlayerListName(target);
             for (Scoreboard board : viewerBoards.values()) {
                 applyToBoard(board, target);
             }
         });
+    }
+
+    private void updatePlayerListName(Player player) {
+        if (player == null || !player.isOnline()) return;
+        safeSetPlayerListName(player, getVisibleName(player));
     }
 
     private Scoreboard createBoardForViewer(Player viewer) {
@@ -238,13 +248,15 @@ public class NameTagColorManager implements Listener {
             rankTeamKey = Collections.emptyMap();
             return;
         }
+
         List<String> names = new ArrayList<>(section.getKeys(false));
         names.sort((a, b) -> {
             int wa = section.getInt(a + ".weight", 0);
             int wb = section.getInt(b + ".weight", 0);
             int cmp = Integer.compare(wb, wa);
-            return cmp != 0 ? cmp : a.compareTo(b);
+            return cmp != 0 ? cmp : a.compareToIgnoreCase(b);
         });
+
         Map<String, String> built = new HashMap<>();
         for (int i = 0; i < names.size(); i++) {
             built.put(names.get(i), TEAM_PREFIX + String.format("%02d", i));
@@ -256,5 +268,17 @@ public class NameTagColorManager implements Listener {
         ConfigurationSection section = plugin.getRankManager().getRanksSection();
         if (section == null) return FALLBACK_COLOR;
         return section.getString(rankName + ".name-color", FALLBACK_COLOR);
+    }
+
+    private static void safeSetPlayerListName(Player player, String name) {
+        if (player == null) return;
+        try {
+            if (name != null && name.length() <= 16) {
+                player.setPlayerListName(name);
+            } else {
+                player.setPlayerListName(player.getName());
+            }
+        } catch (Throwable ignored) {
+        }
     }
 }

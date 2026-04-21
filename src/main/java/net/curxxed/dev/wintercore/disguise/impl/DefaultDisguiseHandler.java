@@ -36,9 +36,8 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         super(plugin);
         this.disguiseRegistry = disguiseRegistry;
         this.gameProfileClass = Utilities.resolveAuthlibClass("GameProfile");
-        this.propertyClass    = Utilities.resolveAuthlibClass("properties.Property");
+        this.propertyClass = Utilities.resolveAuthlibClass("properties.Property");
     }
-
 
     private Object getGameProfile(Object entityPlayer) throws Exception {
         return entityPlayer.getClass().getMethod("getProfile").invoke(entityPlayer);
@@ -67,16 +66,23 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         for (Map.Entry<Object, Object> entry : entries) {
             Object prop = entry.getValue();
             JsonObject obj = new JsonObject();
-            obj.addProperty("key",        (String) entry.getKey());
+            obj.addProperty("key", (String) entry.getKey());
             obj.addProperty("value-name", (String) propertyClass.getMethod("getName").invoke(prop));
-            obj.addProperty("value",      (String) propertyClass.getMethod("getValue").invoke(prop));
-            obj.addProperty("signature",  (String) propertyClass.getMethod("getSignature").invoke(prop));
+            obj.addProperty("value", (String) propertyClass.getMethod("getValue").invoke(prop));
+            obj.addProperty("signature", (String) propertyClass.getMethod("getSignature").invoke(prop));
             out.add(obj);
         }
     }
 
     private void setProfileName(Object gameProfile, String newName) {
         changeField(gameProfile, "name", newName);
+    }
+
+    private void setTablistName(Player player, String name) {
+        try {
+            player.setDisplayName(name);
+        } catch (Throwable ignored) {
+        }
     }
 
     private void sendPlayerInfoPacket(String action, Object entityPlayer, Player observer) throws Exception {
@@ -105,22 +111,28 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
     @Override
     public void disguise(final Player player, final String rank, final String name, final String skin, Consumer<DisguiseCallback> callback) {
-        if (player == null || !player.isOnline()) { callback.accept(DisguiseCallback.ERROR); return; }
+        if (player == null || !player.isOnline()) {
+            callback.accept(DisguiseCallback.ERROR);
+            return;
+        }
 
         if (plugin.getRankManager().getRanksSection().getConfigurationSection(rank) == null) {
-            callback.accept(DisguiseCallback.NO_RANK_FOUND); return;
-        }
-        Player check = Bukkit.getPlayerExact(name);
-        if (check != null && !check.getName().equals(player.getName())) {
-            callback.accept(DisguiseCallback.GLOBAL_PLAYER_FOUND); return;
+            callback.accept(DisguiseCallback.NO_RANK_FOUND);
+            return;
         }
 
-        final boolean flying      = player.isFlying();
+        Player check = Bukkit.getPlayerExact(name);
+        if (check != null && !check.getName().equals(player.getName())) {
+            callback.accept(DisguiseCallback.GLOBAL_PLAYER_FOUND);
+            return;
+        }
+
+        final boolean flying = player.isFlying();
         final boolean allowFlight = player.getAllowFlight();
 
         try {
             final Object entityPlayer = Utilities.getEntityPlayer(player);
-            final Object gameProfile  = getGameProfile(entityPlayer);
+            final Object gameProfile = getGameProfile(entityPlayer);
 
             final JsonObject data = new JsonObject();
             data.addProperty("name", player.getName());
@@ -134,14 +146,15 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             disguiseRanks.put(player.getUniqueId(), rank);
 
             fetchSkinData(skin, skinProperty -> {
-                disguiseRegistry.setDisguised(player, skinProperty);
-
-                String value     = "ewogICJ0aW1lc3RhbXAiIDogMTU5OTkxNzE1OTc4NiwKICAicHJvZmlsZUlkIiA6ICJhZDI1N2Q0ZmJmZjc0YWRhOTY3ZDM0YWZjM2Q5NTcyNCIsCiAgInByb2ZpbGVOYW1lIiA6ICJGYWNlU2xhcF8iLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmQzYjA2YzM4NTA0ZmZjMDIyOWI5NDkyMTQ3YzY5ZmNmNTlmZDJlZDc4ODVmNzg1MDIxNTJmNzdiNGQ1MGRlMSIKICAgIH0KICB9Cn0=";
-                String signature = "ICq7KLYfdYPI4v3aFxEvpYadhFoYptjKtEhybC4vFnHd081JHiLTuSIqtYPwpqCSkIG+ooUrUMJ/Qka+ieKuOqefmQ+03apVmCeQVnqcYVMyzJTvp69q1Q1TPlc7G/tLgtyF+Ct/E6u/kZ6Dc494VsuXQj6wfLg7+yqqb2Y9PAr2Np91x0AbKithM1vOqvXAcvZRGILp/BAhZ817myXa/CkrvTxFEbiXbD8isWw+tIXLlPi+3Ck5r6KS3tHBGH7/IeY2WM7DN5/vRATfkKGo2F+H6s8IB9t/2bIWG39TKmxYg6wX0daa/FkpEhXb7O61HvhOnpmewKs0b40sK+E5+IC+tx9SlDLsFFeTALjpc2qwOOQ25ITFN4EgdHaP9bO4PGrcIHB7lz7fIRwJSxxHAsxfqc5nzRogy3cXFvsa8pByPGSSdvNzysYN2wGOyIaY+oMXPCfrnGVuno1cJk4L/8noGCX9pLRUd/Ow2WSjTl6zaIfgiEa4d7JWdxdL9/+UQja6oKoQldbMpRTwQPL5uyGbkrirPMNud1s1qaBVrrDUDQoJM0XrYxSF+TtUWRd3kWTN7x7QWdh+8hFECB9H5Kl6k0TyLTSAJkFbKE6aKSLXnSPW7Rb7F/6D3/NRFuDKLDm1exdKBRG3qr0ThB1LhOSE8nOOztETDoPkZJEwWho=";
-                if (skinProperty != null) {
-                    value     = skinProperty.value;
-                    signature = skinProperty.signature;
+                if (skinProperty == null) {
+                    callback.accept(DisguiseCallback.ERROR);
+                    return;
                 }
+
+                String value = skinProperty.value;
+                String signature = skinProperty.signature;
+
+                disguiseRegistry.setDisguised(player, skinProperty);
 
                 try {
                     clearProperties(gameProfile);
@@ -152,15 +165,19 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                             Bukkit.getOnlinePlayers().forEach(o -> o.hidePlayer(player));
                             Bukkit.getOnlinePlayers().forEach(o -> o.showPlayer(player));
 
+                            setProfileName(gameProfile, name);
+                            setTablistName(player, name);
+
                             broadcastPlayerInfoPacket("REMOVE", entityPlayer);
 
                             Class<?> destroyClass = getNMSClass("PacketPlayOutEntityDestroy");
                             int entityId = (int) entityPlayer.getClass().getMethod("getId").invoke(entityPlayer);
                             Object packetDestroy = destroyClass.getConstructor(int[].class).newInstance((Object) new int[]{entityId});
-                            for (Player online : Bukkit.getOnlinePlayers()) sendPacket(online, packetDestroy);
+                            for (Player online : Bukkit.getOnlinePlayers()) {
+                                sendPacket(online, packetDestroy);
+                            }
 
                             String displayField = Utilities.IS_1_7 ? "listName" : "displayName";
-                            setProfileName(gameProfile, name);
                             changeField(entityPlayer, displayField, name);
 
                             broadcastPlayerInfoPacket("ADD", entityPlayer);
@@ -168,7 +185,9 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                             Class<?> spawnClass = getNMSClass("PacketPlayOutNamedEntitySpawn");
                             Object packetSpawn = getConstructorWithParameterExact(spawnClass, 1)
                                     .newInstance(safeCastTo(entityPlayer, getNMSClass("EntityHuman")));
-                            for (Player online : Bukkit.getOnlinePlayers()) sendPacket(online, packetSpawn);
+                            for (Player online : Bukkit.getOnlinePlayers()) {
+                                sendPacket(online, packetSpawn);
+                            }
 
                             sendEquipmentPackets(entityPlayer, entityId);
 
@@ -182,14 +201,14 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                                 player.updateInventory();
                             });
 
-                            String rawPrefix  = getRankString(rank, "prefix", "");
-                            String nameColor  = getRankString(rank, "name-color", "&f");
+                            String rawPrefix = getRankString(rank, "prefix", "");
+                            String nameColor = getRankString(rank, "name-color", "&f");
                             String coloredPrefix = CC.translate(rawPrefix);
 
                             disguiseRegistry.publishDisguiseState(player, name, rank, skin, nameColor, coloredPrefix);
                             disguiseRegistry.getEffectiveColor(player, color -> {
                                 if (plugin.getNameTagColorManager() != null) {
-                                    plugin.getNameTagColorManager().applyColor(player, color);
+                                    plugin.getNameTagColorManager().applyDisguise(player, name, nameColor);
                                 }
                             });
 
@@ -215,17 +234,21 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     public void unDisguise(final Player player, final boolean save, Consumer<DisguiseCallback> callback) {
         final DisguiseData disguiseData = plugin.getDisguiseDataMap().get(player.getUniqueId());
         if (disguiseData == null) {
+            if (plugin.getNameTagColorManager() != null) {
+                plugin.getNameTagColorManager().clearDisguise(player);
+            }
+            plugin.getRankManager().refreshPlayerDisplay(player);
             disguiseRegistry.publishClearDisguise(player);
             callback.accept(DisguiseCallback.NOT_DISGUISED);
             return;
         }
 
-        final boolean flying      = player.isFlying();
+        final boolean flying = player.isFlying();
         final boolean allowFlight = player.getAllowFlight();
 
         try {
             final Object entityPlayer = Utilities.getEntityPlayer(player);
-            final Object gameProfile  = getGameProfile(entityPlayer);
+            final Object gameProfile = getGameProfile(entityPlayer);
             final JsonObject profileData = disguiseData.getInfo();
 
             if (profileData.has("properties")) {
@@ -249,17 +272,26 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             Class<?> destroyClass = getNMSClass("PacketPlayOutEntityDestroy");
             int entityId = (int) entityPlayer.getClass().getMethod("getId").invoke(entityPlayer);
             Object packetDestroy = destroyClass.getConstructor(int[].class).newInstance((Object) new int[]{entityId});
-            for (Player online : Bukkit.getOnlinePlayers()) sendPacket(online, packetDestroy);
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                sendPacket(online, packetDestroy);
+            }
 
             final String originalName = profileData.get("name").getAsString();
             String displayField = Utilities.IS_1_7 ? "listName" : "displayName";
             setProfileName(gameProfile, originalName);
             changeField(entityPlayer, displayField, originalName);
+            setTablistName(player, originalName);
 
             if (!save) {
+                plugin.getDisguiseDataMap().remove(player.getUniqueId());
+                disguiseRanks.remove(player.getUniqueId());
+                disguiseRegistry.clear(player);
+                if (plugin.getNameTagColorManager() != null) {
+                    plugin.getNameTagColorManager().clearDisguise(player);
+                }
                 plugin.getRankManager().refreshPlayerDisplay(player);
-                Bukkit.getPluginManager().callEvent(new PlayerUnDisguiseEvent(player, disguiseData.getName(), originalName, disguiseData.getRank()));
                 disguiseRegistry.publishClearDisguise(player);
+                Bukkit.getPluginManager().callEvent(new PlayerUnDisguiseEvent(player, disguiseData.getName(), originalName, disguiseData.getRank()));
                 callback.accept(DisguiseCallback.SUCCESS);
                 return;
             }
@@ -269,7 +301,9 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             Class<?> spawnClass = getNMSClass("PacketPlayOutNamedEntitySpawn");
             Object packetSpawn = getConstructorWithParameterExact(spawnClass, 1)
                     .newInstance(safeCastTo(entityPlayer, getNMSClass("EntityHuman")));
-            for (Player online : Bukkit.getOnlinePlayers()) sendPacket(online, packetSpawn);
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                sendPacket(online, packetSpawn);
+            }
 
             sendEquipmentPackets(entityPlayer, entityId);
 
@@ -283,12 +317,15 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                 player.updateInventory();
             });
 
-            Bukkit.getPluginManager().callEvent(new PlayerUnDisguiseEvent(player, disguiseData.getName(), originalName, disguiseData.getRank()));
             plugin.getDisguiseDataMap().remove(player.getUniqueId());
             disguiseRanks.remove(player.getUniqueId());
             disguiseRegistry.clear(player);
+            if (plugin.getNameTagColorManager() != null) {
+                plugin.getNameTagColorManager().clearDisguise(player);
+            }
             plugin.getRankManager().refreshPlayerDisplay(player);
             disguiseRegistry.publishClearDisguise(player);
+            Bukkit.getPluginManager().callEvent(new PlayerUnDisguiseEvent(player, disguiseData.getName(), originalName, disguiseData.getRank()));
 
             callback.accept(DisguiseCallback.SUCCESS);
         } catch (Exception e) {
@@ -300,18 +337,30 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     @Override
     public void disguise(Player player, String targetName, Consumer<DisguiseCallback> callback) {
         String version = Utilities.getServerVersion();
-        if (!(Utilities.IS_1_7 || version.startsWith("v1_8"))) { callback.accept(DisguiseCallback.ERROR); return; }
-        if (player == null || !player.isOnline()) { callback.accept(DisguiseCallback.NOT_ONLINE); return; }
-        if (targetName.equalsIgnoreCase(player.getName())) { callback.accept(DisguiseCallback.SAME_NAME); return; }
+        if (!(Utilities.IS_1_7 || version.startsWith("v1_8"))) {
+            callback.accept(DisguiseCallback.ERROR);
+            return;
+        }
+        if (player == null || !player.isOnline()) {
+            callback.accept(DisguiseCallback.NOT_ONLINE);
+            return;
+        }
+        if (targetName.equalsIgnoreCase(player.getName())) {
+            callback.accept(DisguiseCallback.SAME_NAME);
+            return;
+        }
 
         Player check = Bukkit.getPlayerExact(targetName);
-        if (check != null && !check.getName().equals(player.getName())) { callback.accept(DisguiseCallback.GLOBAL_PLAYER_FOUND); return; }
+        if (check != null && !check.getName().equals(player.getName())) {
+            callback.accept(DisguiseCallback.GLOBAL_PLAYER_FOUND);
+            return;
+        }
 
         try {
             if (!plugin.getDisguiseDataMap().containsKey(player.getUniqueId())) {
                 Object entityPlayer = Utilities.getEntityPlayer(player);
-                Object gameProfile  = getGameProfile(entityPlayer);
-                JsonObject data     = new JsonObject();
+                Object gameProfile = getGameProfile(entityPlayer);
+                JsonObject data = new JsonObject();
                 data.addProperty("name", player.getName());
                 data.addProperty("uuid", player.getUniqueId().toString());
                 JsonArray props = new JsonArray();
@@ -332,8 +381,14 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     @Override
     public void undisguise(Player player, Consumer<DisguiseCallback> callback) {
         String version = Utilities.getServerVersion();
-        if (!(Utilities.IS_1_7 || version.startsWith("v1_8"))) { callback.accept(DisguiseCallback.ERROR); return; }
-        if (player == null || !player.isOnline()) { callback.accept(DisguiseCallback.NOT_ONLINE); return; }
+        if (!(Utilities.IS_1_7 || version.startsWith("v1_8"))) {
+            callback.accept(DisguiseCallback.ERROR);
+            return;
+        }
+        if (player == null || !player.isOnline()) {
+            callback.accept(DisguiseCallback.NOT_ONLINE);
+            return;
+        }
         unDisguise(player, true, callback);
     }
 
@@ -346,8 +401,12 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                     Object pkt = packetEquip.getConstructor(Integer.TYPE, Integer.TYPE, getNMSClass("ItemStack"))
                             .newInstance(entityId, i,
                                     safeCastTo(entityPlayer.getClass().getMethod("getEquipment", Integer.TYPE).invoke(entityPlayer, i), getNMSClass("ItemStack")));
-                    for (Player online : Bukkit.getOnlinePlayers()) sendPacket(online, pkt);
-                } catch (Exception e) { e.printStackTrace(); }
+                    for (Player online : Bukkit.getOnlinePlayers()) {
+                        sendPacket(online, pkt);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             });
         } else {
             try {
@@ -357,9 +416,13 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                     Object pkt = packetEquip.getConstructor(Integer.TYPE, enumSlotsClass, getNMSClass("ItemStack"))
                             .newInstance(entityId, constant,
                                     safeCastTo(entityPlayer.getClass().getMethod("getEquipment", enumSlotsClass).invoke(entityPlayer, constant), getNMSClass("ItemStack")));
-                    for (Player online : Bukkit.getOnlinePlayers()) sendPacket(online, pkt);
+                    for (Player online : Bukkit.getOnlinePlayers()) {
+                        sendPacket(online, pkt);
+                    }
                 }
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

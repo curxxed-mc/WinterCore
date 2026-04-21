@@ -19,6 +19,15 @@ public final class RedisPacketCodec {
     }
 
     private void registerDefaults() {
+        deserializers.put(RedisPacketType.RANK_TAG_SYNC, json -> new RankTagSyncPacket(
+                json.get("sourceServer").getAsString(),
+                json.get("timestamp").getAsLong(),
+                UUID.fromString(json.get("targetUuid").getAsString()),
+                json.has("rank") && !json.get("rank").isJsonNull()
+                        ? json.get("rank").getAsString()
+                        : ""
+        ));
+
         deserializers.put(RedisPacketType.SERVER_SWITCH, json -> new ServerSwitchPacket(
                 json.get("sourceServer").getAsString(),
                 json.get("timestamp").getAsLong(),
@@ -80,6 +89,13 @@ public final class RedisPacketCodec {
                 json.get("timestamp").getAsLong(),
                 ChatBroadcastPacket.ChatType.valueOf(json.get("chatType").getAsString()),
                 json.get("message").getAsString()
+        ));
+        deserializers.put(RedisPacketType.VANISH_STATE, json -> new VanishPacket(
+                json.get("sourceServer").getAsString(),
+                json.get("timestamp").getAsLong(),
+                UUID.fromString(json.get("playerUuid").getAsString()),
+                json.get("playerName").getAsString(),
+                json.get("vanished").getAsBoolean()
         ));
         deserializers.put(RedisPacketType.PLAYER_UPDATE, json -> new PlayerUpdatePacket(
                 json.get("sourceServer").getAsString(),

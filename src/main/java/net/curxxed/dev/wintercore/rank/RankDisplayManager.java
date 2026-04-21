@@ -38,6 +38,7 @@ public class RankDisplayManager {
 
     public void applyNameTag(Player player, String rankName) {
         if (plugin.getNameTagColorManager() == null) return;
+
         if (config.isShowRankAboveHead()) {
             plugin.getNameTagColorManager().applyRank(player, rankName);
         } else {
@@ -85,19 +86,15 @@ public class RankDisplayManager {
     }
 
     private void applyVisuals(Player player, String color) {
-        String coloredName = CC.translate(color) + player.getName() + ChatColor.RESET;
+        String visibleName = player.getName();
+        if (plugin.getNameTagColorManager() != null) {
+            visibleName = plugin.getNameTagColorManager().getVisibleName(player);
+        }
+
+        String coloredName = CC.translate(color) + visibleName + ChatColor.RESET;
+
         Bukkit.getScheduler().runTask(plugin, () -> {
             player.setDisplayName(coloredName);
-            safeSetPlayerListName(player, coloredName);
-
         });
-    }
-
-    private static void safeSetPlayerListName(Player player, String name) {
-        if (name != null && name.length() <= 16) {
-            player.setPlayerListName(name);
-        } else {
-            player.setPlayerListName(player.getName());
-        }
     }
 }

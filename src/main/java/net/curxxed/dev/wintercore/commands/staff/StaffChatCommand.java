@@ -36,9 +36,11 @@ public class StaffChatCommand extends BaseCommand {
         String message = String.join(" ", args.getArgs());
 
         switch (args.getLabel().toLowerCase()) {
+            case "staffchat":
             case "sc": staffChatService.sendStaffMessage(player, message); break;
             case "ac": staffChatService.sendAdminMessage(player, message); break;
             case "mc": staffChatService.sendManagerMessage(player, message); break;
+            default: staffChatService.sendStaffMessage(player, message); break;
         }
     }
 }

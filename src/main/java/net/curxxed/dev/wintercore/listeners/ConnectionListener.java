@@ -7,12 +7,12 @@ import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
 import net.curxxed.dev.wintercore.database.service.IdentityService;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
+import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -51,6 +51,7 @@ public class ConnectionListener implements Listener {
     public void onLogin(PlayerLoginEvent event) {
         Player player = event.getPlayer();
         identityService.recordPlayerIP(player.getUniqueId(), event.getAddress().getHostAddress());
+        networkRedisService.cacheUsername(player.getUniqueId(), player.getName());
         try {
             WinterCorePermissibleInjector.initPlayer(player);
         } catch (Exception e) {
@@ -107,8 +108,6 @@ public class ConnectionListener implements Listener {
         if (plugin.getDisguiseRegistry().isDisguised(player)) {
             plugin.getDisguiseRegistry().getEffectiveColor(player, color -> {
                 plugin.getNameTagColorManager().applyColor(player, color);
-                String formatted = CC.translate(color) + player.getName() + ChatColor.RESET;
-                player.setPlayerListName(formatted);
             });
         } else {
             rankManager.refreshPlayerDisplay(player);
@@ -140,8 +139,9 @@ public class ConnectionListener implements Listener {
         if (!isStaff(player)) return;
         UUID uuid = player.getUniqueId();
         String serverName = plugin.getConfig().getString("server-name", "unknown");
+        String realName = resolveRealName(player);
 
-        rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, color -> {
+        rankManager.getRank(uuid, rank -> rankManager.getColorPreference(rank, color -> {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 Map<String, String> staffServers = networkRedisService.getStaffLastServers();
                 String lastServer = staffServers.get(uuid.toString());
@@ -154,10 +154,10 @@ public class ConnectionListener implements Listener {
                         && (joinTime - lastSeen < 5000);
 
                 networkRedisService.setStaffLastServer(uuid, serverName);
-                networkRedisService.cacheUsername(uuid, player.getName());
+                networkRedisService.cacheUsername(uuid, realName);
 
-                String realName = player.getName();
                 final String resolvedLastServer = lastServer;
+                final String resolvedRealName = realName;
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     if (isSwitch) {
@@ -168,12 +168,12 @@ public class ConnectionListener implements Listener {
                         ));
                         plugin.getRedisManager().publishAndHandleLocally(new StaffActivityPacket(
                                 serverName, System.currentTimeMillis(), "switch",
-                                realName, color, resolvedLastServer, serverName
+                                resolvedRealName, color, resolvedLastServer, serverName
                         ));
                     } else {
                         plugin.getRedisManager().publishAndHandleLocally(new StaffActivityPacket(
                                 serverName, System.currentTimeMillis(), "join",
-                                realName, color, "", serverName
+                                resolvedRealName, color, "", serverName
                         ));
                     }
                 });
@@ -185,10 +185,11 @@ public class ConnectionListener implements Listener {
         if (!isStaff(player)) return;
         UUID uuid = player.getUniqueId();
         String currentServer = plugin.getConfig().getString("server-name", "unknown");
+        String realName = resolveRealName(player);
 
         networkRedisService.setStaffLastSeen(uuid, System.currentTimeMillis());
 
-        rankManager.getRank(player, rank -> rankManager.getColorPreference(rank, color -> {
+        rankManager.getRank(uuid, rank -> rankManager.getColorPreference(rank, color -> {
             Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
                 Map<String, String> staffServers = networkRedisService.getStaffLastServers();
                 String updatedServer = staffServers.get(uuid.toString());
@@ -197,11 +198,33 @@ public class ConnectionListener implements Listener {
                     networkRedisService.removeStaffLastServer(uuid);
                     plugin.getRedisManager().publishAndHandleLocally(new StaffActivityPacket(
                             currentServer, System.currentTimeMillis(), "quit",
-                            player.getName(), color, currentServer, ""
+                            realName, color, currentServer, ""
                     ));
                 }
             }, 40L);
         }));
+    }
+
+    private String resolveRealName(Player player) {
+        UUID uuid = player.getUniqueId();
+
+        String cached = networkRedisService.getCachedUsername(uuid.toString());
+        if (cached != null && !cached.trim().isEmpty()) {
+            return cached;
+        }
+
+        DisguiseData data = plugin.getDisguiseDataMap().get(uuid);
+        if (data != null && data.getInfo() != null && data.getInfo().has("name")) {
+            try {
+                String original = data.getInfo().get("name").getAsString();
+                if (original != null && !original.trim().isEmpty()) {
+                    return original;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        return player.getName();
     }
 
     private void warnMissingPlaceholderAPI(Player player) {
