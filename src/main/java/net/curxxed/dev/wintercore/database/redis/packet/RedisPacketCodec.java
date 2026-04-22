@@ -59,6 +59,20 @@ public final class RedisPacketCodec {
                 json.get("command").getAsString()
         ));
 
+        deserializers.put(RedisPacketType.MODERATION_ACTION, json -> new ModerationActionPacket(
+                json.get("sourceServer").getAsString(),
+                json.get("timestamp").getAsLong(),
+                ModerationActionPacket.ActionType.valueOf(json.get("actionType").getAsString()),
+                UUID.fromString(json.get("targetUuid").getAsString()),
+                json.get("targetName").getAsString(),
+                json.get("issuer").getAsString(),
+                json.get("reason").getAsString(),
+                json.has("expiresAt") && !json.get("expiresAt").isJsonNull()
+                        ? json.get("expiresAt").getAsLong()
+                        : null,
+                json.get("silent").getAsBoolean()
+        ));
+
         deserializers.put(RedisPacketType.PLAYER_REPORT, json -> new PlayerReportPacket(
                 json.get("sourceServer").getAsString(),
                 json.get("timestamp").getAsLong(),

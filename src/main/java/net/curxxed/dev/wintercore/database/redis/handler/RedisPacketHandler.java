@@ -8,6 +8,7 @@ public interface RedisPacketHandler {
     void handle(ServerStatusPacket packet);
     void handle(StaffActivityPacket packet);
     void handle(RemoteCommandPacket packet);
+    void handle(ModerationActionPacket packet);
     void handle(PlayerReportPacket packet);
     void handle(DisguiseStatePacket packet);
     void handle(ConfigSyncPacket packet);

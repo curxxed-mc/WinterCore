@@ -4,6 +4,7 @@ import net.curxxed.dev.wintercore.database.redis.packet.packets.*;
 import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.ModerationMessages;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -108,18 +109,48 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
     }
 
     @Override
+    public void handle(ModerationActionPacket packet) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (plugin.getBanList() != null) {
+                if (packet.getActionType() == ModerationActionPacket.ActionType.BAN_APPLIED) {
+                    plugin.getBanList().applyBan(packet.getTargetUuid(), packet.getReason(), packet.getExpiresAt(), true);
+                } else {
+                    plugin.getBanList().removeBan(packet.getTargetUuid());
+                }
+            }
+
+            if (packet.getActionType() != ModerationActionPacket.ActionType.BAN_APPLIED) {
+                return;
+            }
+
+            String formatted = ModerationMessages.formatBanAnnouncement(
+                    packet.getTargetName(),
+                    packet.getIssuer(),
+                    packet.getReason(),
+                    packet.getExpiresAt(),
+                    packet.isSilent()
+            );
+
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                if (!packet.isSilent() || isStaffAudience(online)) {
+                    online.sendMessage(formatted);
+                }
+            }
+        });
+    }
+
+    @Override
     public void handle(PlayerReportPacket packet) {
-        String formattedMessage = CC.translate("&7[&9S&7] "
-                + packet.getReporter() + "&b reported "
-                + packet.getReported() + "&b for: "
-                + "&e" + packet.getReason() + "&7 (Server: " + packet.getServer() + ")");
+        String formattedMessage = ModerationMessages.formatReportMessage(
+                packet.getReporter(),
+                packet.getReported(),
+                packet.getReason(),
+                packet.getServer()
+        );
 
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (Player online : Bukkit.getOnlinePlayers()) {
-                if (online.hasPermission("wintercore.staff")
-                        || online.hasPermission("wintercore.admin")
-                        || online.hasPermission("wintercore.manager")
-                        || online.isOp()) {
+                if (isStaffAudience(online)) {
                     online.sendMessage(formattedMessage);
                 }
             }
@@ -220,6 +251,13 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                     || player.hasPermission("wintercore.manager");
         }
         return player.hasPermission("wintercore.staff")
+                || player.hasPermission("wintercore.admin")
+                || player.hasPermission("wintercore.manager");
+    }
+
+    private boolean isStaffAudience(Player player) {
+        return player.isOp()
+                || player.hasPermission("wintercore.staff")
                 || player.hasPermission("wintercore.admin")
                 || player.hasPermission("wintercore.manager");
     }
