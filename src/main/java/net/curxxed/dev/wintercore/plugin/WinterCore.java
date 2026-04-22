@@ -9,7 +9,6 @@ import net.curxxed.dev.wintercore.client.ClientBrandCommand;
 import net.curxxed.dev.wintercore.commands.api.BrigadierCommandHandler;
 import net.curxxed.dev.wintercore.commands.api.CommandHandler;
 import net.curxxed.dev.wintercore.commands.bungee.ServerManagerCommand;
-import net.curxxed.dev.wintercore.commands.bungee.SyncCommand;
 import net.curxxed.dev.wintercore.commands.gamemode.GameModeCommand;
 import net.curxxed.dev.wintercore.commands.misc.*;
 import net.curxxed.dev.wintercore.commands.social.DiscordCommand;
@@ -38,6 +37,7 @@ import net.curxxed.dev.wintercore.menus.MenuConfig;
 import net.curxxed.dev.wintercore.menus.RankMenu;
 import net.curxxed.dev.wintercore.nametags.NameTagColorManager;
 import net.curxxed.dev.wintercore.placeholders.Placeholder;
+import net.curxxed.dev.wintercore.permissions.PermissionConfigManager;
 import net.curxxed.dev.wintercore.rank.RankCommand;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.staff.StaffModeListener;
@@ -96,6 +96,7 @@ public final class WinterCore extends JavaPlugin {
     private CommandHandler commandHandler;
     private AuthModule authModule;
     private MenuConfig menuConfig;
+    private PermissionConfigManager permissionConfigManager;
     private NameTagColorManager nameTagColorManager;
     private StaffChatService staffChatService;
     private NetworkRedisService NRS;
@@ -119,6 +120,7 @@ public final class WinterCore extends JavaPlugin {
         RankManager.initialize(this);
         this.rankManager = RankManager.getInstance();
         this.rankManager.startAutoCacheRefresh();
+        this.permissionConfigManager = new PermissionConfigManager(this);
 
         getServer().getScheduler().runTaskTimerAsynchronously(
                 this,
@@ -282,7 +284,6 @@ public final class WinterCore extends JavaPlugin {
 
         pm.registerEvents(socialInput, this);
         pm.registerEvents(new StaffModeListener(this, staffModeManager), this);
-        pm.registerEvents(tagsGUI, this);
         pm.registerEvents(disguiseEventListener, this);
         pm.registerEvents(banList, this);
     }
@@ -340,7 +341,6 @@ public final class WinterCore extends JavaPlugin {
         commandHandler.register(ReplyCommand.class);
         commandHandler.register(AltsCommand.class);
         commandHandler.register(WhoIsDisguisedCommand.class);
-        commandHandler.register(SyncCommand.class);
 
         this.authModule = new AuthModule(this, databaseManager.getMongoDatabase());
         this.authModule.register(commandHandler);

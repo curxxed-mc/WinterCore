@@ -38,7 +38,8 @@ public class DisguiseEventListener implements Listener {
                 JsonObject obj = new JsonParser().parse(disguiseJson).getAsJsonObject();
                 String name = obj.get("name").getAsString();
                 String rank = obj.get("rank").getAsString();
-                String skin = obj.has("skinName") ? obj.get("skinName").getAsString() : name;
+                String skin = obj.has("skin") ? obj.get("skin").getAsString()
+                        : (obj.has("skinName") ? obj.get("skinName").getAsString() : name);
 
                 Bukkit.getScheduler().runTaskLater(plugin, () ->
                         disguiseHandler.disguise(joining, rank, name, skin, result -> {

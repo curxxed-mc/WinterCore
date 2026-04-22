@@ -1,7 +1,6 @@
 package net.curxxed.dev.wintercore.permissions;
 
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.*;
@@ -56,6 +55,19 @@ public class WinterCorePermissible extends PermissibleBase {
         rawPermissions.put(lower, value);
     }
 
+    public void removeRawPermission(String node) {
+        if (node == null) {
+            return;
+        }
+        String lower = node.toLowerCase(Locale.ENGLISH);
+        rawPermissions.remove(lower);
+        if (lower.startsWith("-")) {
+            rawPermissions.remove(lower.substring(1));
+        } else {
+            rawPermissions.remove("-" + lower);
+        }
+    }
+
     public void clearRawPermissions() {
         rawPermissions.clear();
     }
@@ -63,11 +75,7 @@ public class WinterCorePermissible extends PermissibleBase {
     @Override
     public boolean isPermissionSet(String name) {
         if (name == null) {
-            if (Bukkit.getPluginManager().getPlugin("FastBoard") != null) {
-                Utilities.stop();
-                return false;
-            }
-            throw new IllegalArgumentException("Permission name cannot be null");
+            return false;
         }
         String lower = name.toLowerCase(Locale.ENGLISH);
         if (rawPermissions.containsKey("-" + lower)) return true;

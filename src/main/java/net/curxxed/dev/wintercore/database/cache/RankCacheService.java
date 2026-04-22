@@ -71,4 +71,18 @@ public class RankCacheService {
     public String getColor(UUID uuid) {
         return colorCache.getOrDefault(uuid, "&f");
     }
+
+    public void cleanupExpiredEntries() {
+        long now = System.currentTimeMillis();
+        for (Map.Entry<UUID, Long> entry : lastRefresh.entrySet()) {
+            if (now - entry.getValue() <= CACHE_TTL_MS) {
+                continue;
+            }
+
+            UUID uuid = entry.getKey();
+            rankCache.remove(uuid);
+            colorCache.remove(uuid);
+            lastRefresh.remove(uuid);
+        }
+    }
 }

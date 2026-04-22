@@ -36,6 +36,10 @@ public class ChatListener implements Listener {
         event.setCancelled(true);
         Player player = event.getPlayer();
         String message = event.getMessage();
+        Bukkit.getScheduler().runTask(plugin, () -> handleChat(player, message));
+    }
+
+    private void handleChat(Player player, String message) {
         if (playerService.isRestricted(player)) {
             return;
         }

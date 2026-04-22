@@ -5,6 +5,7 @@ import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
@@ -24,43 +25,47 @@ public class AuthCommand extends BaseCommand {
 
     @Override
     public void execute(CommandArguments args) {
-        Player player = args.getPlayer();
+        final Player player = args.getPlayer();
 
         if (!player.hasPermission(AuthManager.STAFF_PERMISSION)) {
-            player.sendMessage("§c2FA is reserved for staff members.");
-            return;
-        }
-
-        if (!authManager.hasSecretConfigured(player.getUniqueId())) {
-            player.sendMessage("§cYou haven't set up 2FA yet. Use §e/2fa setup §cto get started.");
-            return;
-        }
-
-        if (authManager.isAuthenticated(player)) {
-            player.sendMessage("§aYou are already authenticated.");
+            player.sendMessage(CC.translate("&c2FA is reserved for staff members."));
             return;
         }
 
         if (args.length() == 0) {
-            player.sendMessage("§cUsage: §e/auth <6-digit code>");
+            player.sendMessage(CC.translate("&cUsage: &e/auth <6-digit code>"));
             return;
         }
 
-        int code;
+        final int code;
         try {
             code = Integer.parseInt(args.getArgs()[0].trim());
         } catch (NumberFormatException e) {
-            player.sendMessage("§cInvalid code — please enter the 6-digit number from your authenticator app.");
+            player.sendMessage(CC.translate("&cInvalid code. Enter the 6-digit code from your authenticator app."));
             return;
         }
 
-        if (authManager.authenticate(player, code)) {
-            player.sendMessage("");
-            player.sendMessage("§a§l  ✔ Authenticated successfully!");
-            player.sendMessage("§7  Session valid for §e12 hours §7or until your IP changes.");
-            player.sendMessage("");
-        } else {
-            player.sendMessage("§c✘ Invalid code. Please check your authenticator app and try again.");
-        }
+        authManager.hasSecretConfiguredAsync(player.getUniqueId(), hasSecret -> {
+            if (!hasSecret) {
+                player.sendMessage(CC.translate("&cYou have not set up 2FA yet. Use &e/2fa setup &cto begin."));
+                return;
+            }
+
+            if (authManager.isAuthenticated(player)) {
+                player.sendMessage(CC.translate("&aYou are already authenticated."));
+                return;
+            }
+
+            authManager.authenticateAsync(player, code, success -> {
+                if (success) {
+                    player.sendMessage("");
+                    player.sendMessage(CC.translate("&a&lAuthenticated successfully."));
+                    player.sendMessage(CC.translate("&7Session valid for &e12 hours &7or until your IP changes."));
+                    player.sendMessage("");
+                } else {
+                    player.sendMessage(CC.translate("&cInvalid code. Please check your authenticator app and try again."));
+                }
+            });
+        });
     }
 }

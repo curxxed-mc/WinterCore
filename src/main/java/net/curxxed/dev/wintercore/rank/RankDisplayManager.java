@@ -73,14 +73,26 @@ public class RankDisplayManager {
 
     private void applyPermissions(Player player, String rankName) {
         try {
-            WinterCorePermissible permissible = (WinterCorePermissible)
-                    WinterCorePermissibleInjector.HUMAN_ENTITY_PERMISSIBLE_FIELD.get(player);
+            Object current = WinterCorePermissibleInjector.HUMAN_ENTITY_PERMISSIBLE_FIELD.get(player);
+            if (!(current instanceof WinterCorePermissible)) {
+                WinterCorePermissibleInjector.initPlayer(player);
+                current = WinterCorePermissibleInjector.HUMAN_ENTITY_PERMISSIBLE_FIELD.get(player);
+            }
+            if (!(current instanceof WinterCorePermissible)) {
+                plugin.getLogger().warning("Failed to resolve custom permissible for " + player.getName());
+                return;
+            }
+
+            WinterCorePermissible permissible = (WinterCorePermissible) current;
             permissible.clearRawPermissions();
             for (String permission : config.getPermissionsForRank(rankName)) {
                 permissible.addRawPermission(permission, true);
             }
+            if (plugin.getPermissionConfigManager() != null) {
+                plugin.getPermissionConfigManager().applyOverrides(player.getUniqueId(), permissible);
+            }
             permissible.recalculatePermissions();
-        } catch (IllegalAccessException e) {
+        } catch (Exception e) {
             plugin.getLogger().severe("Failed to update permissions for " + player.getName() + ": " + e.getMessage());
         }
     }
