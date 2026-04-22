@@ -7,17 +7,8 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(8))
     }
-}
-
-repositories {
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-    maven { url = uri("https://libraries.minecraft.net/") }
-    maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/public/") }
-    maven { url = uri("https://repo.dmulloy2.net/repository/public/") }
-    maven { url = uri("https://oss.sonatype.org/content/groups/public/") }
-    maven { url = uri("https://repo.extendedclip.com/content/repositories/placeholderapi/") }
-    maven { url = uri("https://repo.viaversion.com/") }
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 dependencies {
@@ -38,20 +29,17 @@ dependencies {
     implementation("com.warrenstrange:googleauth:1.5.0")
 }
 
-tasks {
-    shadowJar {
-        relocate("com.google.common", "net.curxxed.dev.wintercore.libs.google.common")
-        relocate("redis.clients", "net.curxxed.dev.wintercore.libs.redis")
-        minimize()
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
+}
 
-        archiveClassifier.set("")
-    }
+tasks.shadowJar {
+    archiveClassifier.set("")
+    relocate("com.google.common", "net.curxxed.dev.wintercore.libs.google.common")
+    relocate("redis.clients", "net.curxxed.dev.wintercore.libs.redis")
+    minimize()
+}
 
-    withType<JavaCompile> {
-        options.encoding = "UTF-8"
-    }
-
-    build {
-        dependsOn(shadowJar)
-    }
+tasks.assemble {
+    dependsOn(tasks.shadowJar)
 }

@@ -202,29 +202,58 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
 
     @Override
     public void handle(ConfigSyncPacket packet) {
-        if (packet.getConfigType() == ConfigSyncPacket.ConfigType.RANKS) {
-            File target = new File(plugin.getDataFolder(), "ranks.yml");
-            writeFile(target, packet.getYaml());
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                plugin.getRankManager().reloadRanksConfig();
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    plugin.getRankManager().refreshPlayerDisplay(p);
-                }
-                plugin.getLogger().info("[Sync] ranks.yml received from "
-                        + packet.getSourceServer() + " and applied.");
-            });
-        } else {
-            File target = new File(plugin.getDataFolder(), "tags.yml");
-            writeFile(target, packet.getYaml());
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                plugin.getTagsManager().loadTags();
-                plugin.getTagsGUI().refresh();
-                plugin.getLogger().info("[Sync] tags.yml received from "
-                        + packet.getSourceServer() + " and applied.");
-            });
+        final ConfigSyncPacket.ConfigType type = packet.getConfigType();
+        final File target;
+        switch (type) {
+            case CONFIG:
+                target = new File(plugin.getDataFolder(), "config.yml");
+                break;
+            case RANKS:
+                target = new File(plugin.getDataFolder(), "ranks.yml");
+                break;
+            case TAGS:
+                target = new File(plugin.getDataFolder(), "tags.yml");
+                break;
+            case MENUS:
+                target = new File(plugin.getDataFolder(), "menus.yml");
+                break;
+            case PERMISSIONS:
+                target = new File(plugin.getDataFolder(), "permissions.yml");
+                break;
+            default:
+                plugin.getLogger().warning("[Sync] Unsupported config type received: " + type);
+                return;
         }
+
+        writeFile(target, packet.getYaml());
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            switch (type) {
+                case CONFIG:
+                    plugin.reloadConfig();
+                    break;
+                case RANKS:
+                    plugin.getRankManager().reloadRanksConfig();
+                    refreshDisplaysForOnlinePlayers();
+                    break;
+                case TAGS:
+                    plugin.getTagsManager().loadTags();
+                    plugin.getTagsGUI().refresh();
+                    break;
+                case MENUS:
+                    plugin.getMenuConfig().load();
+                    break;
+                case PERMISSIONS:
+                    plugin.getPermissionConfigManager().load();
+                    refreshDisplaysForOnlinePlayers();
+                    break;
+                default:
+                    break;
+            }
+
+            plugin.getLogger().info("[Sync] " + target.getName() + " received from "
+                    + packet.getSourceServer() + " and applied.");
+        });
     }
 
     @Override
@@ -293,6 +322,15 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
             Files.write(file.toPath(), yaml.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             plugin.getLogger().warning("Failed to write " + file.getName() + ": " + e.getMessage());
+        }
+    }
+
+    private void refreshDisplaysForOnlinePlayers() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            plugin.getRankManager().refreshPlayerDisplay(player);
+            if (plugin.getPlayerService() != null) {
+                plugin.getPlayerService().loadPlayerData(player.getUniqueId(), player.getName());
+            }
         }
     }
 }

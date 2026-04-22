@@ -5,6 +5,7 @@ import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
@@ -32,76 +33,81 @@ public class TwoFACommand extends BaseCommand {
             return;
         }
 
-        switch (args.getArgs()[0].toLowerCase()) {
-            case "setup":
-                handleSetup(player);
-                break;
-            case "disable":
-                handleDisable(player, args);
-                break;
-            default:
-                sendUsage(player);
-                break;
+        String mode = args.getArgs()[0].toLowerCase();
+        if ("setup".equals(mode)) {
+            handleSetup(player);
+            return;
         }
+        if ("disable".equals(mode)) {
+            handleDisable(player, args);
+            return;
+        }
+
+        sendUsage(player);
     }
 
     private void handleSetup(Player player) {
-        if (authManager.hasSecretConfigured(player.getUniqueId())) {
-            player.sendMessage("§c2FA is already configured on your account.");
-            player.sendMessage("§7Run §e/2fa disable <code> §7to reset it first.");
-            return;
-        }
+        authManager.hasSecretConfiguredAsync(player.getUniqueId(), configured -> {
+            if (configured) {
+                player.sendMessage(CC.translate("&c2FA is already configured on your account."));
+                player.sendMessage(CC.translate("&7Run &e/2fa disable <code> &7to reset it first."));
+                return;
+            }
 
-        AuthManager.SetupResult result = authManager.generateAndSaveSecret(player);
+            AuthManager.SetupResult result = authManager.generateAndSaveSecret(player);
 
-        player.sendMessage("");
-        player.sendMessage("§6§l  2FA Setup");
-        player.sendMessage("§7  Scan the QR code or enter the key manually into");
-        player.sendMessage("§7  Google Authenticator, Authy, or any TOTP app.");
-        player.sendMessage("");
-        player.sendMessage("§e  Secret Key: §f" + result.secret);
-        player.sendMessage("");
-        player.sendMessage("§b  OTP URL (paste into a QR generator):");
-        player.sendMessage("§f  " + result.otpUrl);
-        player.sendMessage("");
-        player.sendMessage("§c§l  ⚠ Save your secret key somewhere safe!");
-        player.sendMessage("");
+            player.sendMessage("");
+            player.sendMessage(CC.translate("&6&l2FA Setup"));
+            player.sendMessage(CC.translate("&7Scan the QR code or enter the key manually into a TOTP app."));
+            player.sendMessage("");
+            player.sendMessage(CC.translate("&eSecret Key: &f" + result.secret));
+            player.sendMessage("");
+            player.sendMessage(CC.translate("&bOTP URL (paste into a QR generator):"));
+            player.sendMessage(CC.translate("&f" + result.otpUrl));
+            player.sendMessage("");
+            player.sendMessage(CC.translate("&cSave your secret key in a safe place."));
+            player.sendMessage("");
 
-        authManager.completeSetup(player);
+            authManager.completeSetup(player);
+        });
     }
 
     private void handleDisable(Player player, CommandArguments args) {
-        if (!authManager.hasSecretConfigured(player.getUniqueId())) {
-            player.sendMessage("§c2FA is not configured on your account.");
-            return;
-        }
+        authManager.hasSecretConfiguredAsync(player.getUniqueId(), configured -> {
+            if (!configured) {
+                player.sendMessage(CC.translate("&c2FA is not configured on your account."));
+                return;
+            }
 
-        if (args.length() < 2) {
-            player.sendMessage("§cYou must confirm with your current code: §e/2fa disable <code>");
-            return;
-        }
+            if (args.length() < 2) {
+                player.sendMessage(CC.translate("&cYou must confirm with your current code: &e/2fa disable <code>"));
+                return;
+            }
 
-        int code;
-        try {
-            code = Integer.parseInt(args.getArgs()[1].trim());
-        } catch (NumberFormatException e) {
-            player.sendMessage("§cInvalid code — please enter your 6-digit authenticator code.");
-            return;
-        }
+            final int code;
+            try {
+                code = Integer.parseInt(args.getArgs()[1].trim());
+            } catch (NumberFormatException e) {
+                player.sendMessage(CC.translate("&cInvalid code. Enter your 6-digit authenticator code."));
+                return;
+            }
 
-        if (authManager.authenticate(player, code)) {
-            authManager.disableAuth(player);
-            player.sendMessage("§a2FA has been disabled on your account.");
-        } else {
-            player.sendMessage("§c✘ Invalid code — 2FA was NOT disabled.");
-        }
+            authManager.authenticateAsync(player, code, success -> {
+                if (success) {
+                    authManager.disableAuth(player);
+                    player.sendMessage(CC.translate("&a2FA has been disabled on your account."));
+                } else {
+                    player.sendMessage(CC.translate("&cInvalid code. 2FA was not disabled."));
+                }
+            });
+        });
     }
 
     private void sendUsage(Player player) {
         player.sendMessage("");
-        player.sendMessage("§6§l  2FA Commands");
-        player.sendMessage("§e  /2fa setup            §7— Set up 2FA for your account");
-        player.sendMessage("§e  /2fa disable <code>   §7— Remove 2FA (requires current code)");
+        player.sendMessage(CC.translate("&6&l2FA Commands"));
+        player.sendMessage(CC.translate("&e/2fa setup &7- Set up 2FA for your account"));
+        player.sendMessage(CC.translate("&e/2fa disable <code> &7- Remove 2FA (requires current code)"));
         player.sendMessage("");
     }
 }

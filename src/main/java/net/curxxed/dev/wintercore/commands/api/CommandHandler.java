@@ -74,10 +74,12 @@ public class CommandHandler {
         pluginCommand.setDescription(info.description());
         pluginCommand.setUsage(info.usage());
         
-        // Join permission array with space for Bukkit API compatibility
+        // Let BaseCommand handle multi-node checks; Bukkit permission field only supports a single node.
         String[] permissions = info.permission();
-        if (permissions.length > 0) {
-            pluginCommand.setPermission(String.join(" ", permissions));
+        if (permissions.length == 1) {
+            pluginCommand.setPermission(permissions[0]);
+        } else {
+            pluginCommand.setPermission(null);
         }
         
         pluginCommand.setPermissionMessage(CC.translate("&cYou do not have permission to use this command."));

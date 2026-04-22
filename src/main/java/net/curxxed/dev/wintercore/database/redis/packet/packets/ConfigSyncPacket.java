@@ -8,8 +8,11 @@ import net.curxxed.dev.wintercore.database.redis.packet.RedisPacketType;
 public final class ConfigSyncPacket extends AbstractRedisPacket {
 
     public enum ConfigType {
+        CONFIG,
         RANKS,
-        TAGS
+        TAGS,
+        MENUS,
+        PERMISSIONS
     }
 
     private final ConfigType configType;

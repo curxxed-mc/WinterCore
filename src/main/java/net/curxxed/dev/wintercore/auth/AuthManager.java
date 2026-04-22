@@ -5,6 +5,7 @@ import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
 import net.curxxed.dev.wintercore.auth.repository.AuthRepository;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 public class AuthManager {
 
@@ -42,32 +44,46 @@ public class AuthManager {
     public void handleJoin(Player player) {
         if (!isStaff(player)) return;
 
-        UUID uuid = player.getUniqueId();
+        final UUID uuid = player.getUniqueId();
+        final String currentIp = resolveIp(player);
 
-        if (!repository.hasSecret(uuid)) {
-            pendingSetup.add(uuid);
-            player.sendMessage("");
-            player.sendMessage("§c§l  ⚠ 2FA Setup Required");
-            player.sendMessage("§7  2FA is mandatory for staff. You must configure it before proceeding.");
-            player.sendMessage("§7  Use §e/2fa setup §7to get started.");
-            player.sendMessage("§7  You have §e30 seconds §7or you will be kicked.");
-            player.sendMessage("");
-            scheduleKickTimer(player, "§c§lSetup Timeout\n\n§72FA setup is mandatory for staff.\n§7Please reconnect and run /2fa setup.");
-            return;
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            boolean hasSecret = repository.hasSecret(uuid);
+            AuthSession session = hasSecret ? getSession(uuid) : null;
+            boolean resumed = session != null && session.isValid(currentIp);
 
-        if (isAuthenticated(player)) {
-            player.sendMessage("§a§lAuthenticated §8(session resumed)");
-            return;
-        }
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Player online = Bukkit.getPlayer(uuid);
+                if (online == null || !online.isOnline()) {
+                    return;
+                }
 
-        scheduleKickTimer(player, "§c§lAuthentication Timeout\n\n§7You did not authenticate within 30 seconds.\n§7Please reconnect and enter your 2FA code.");
+                if (!hasSecret) {
+                    pendingSetup.add(uuid);
+                    online.sendMessage("");
+                    online.sendMessage(CC.translate("&c&l2FA Setup Required"));
+                    online.sendMessage(CC.translate("&7 2FA is mandatory for staff."));
+                    online.sendMessage(CC.translate("&7 Use &e/2fa setup &7to get started."));
+                    online.sendMessage(CC.translate("&7 You have &e30 seconds&7 or you will be kicked."));
+                    online.sendMessage("");
+                    scheduleKickTimer(online, CC.translate("&c&lSetup Timeout\n\n&72FA setup is mandatory for staff.\n&7Please reconnect and run /2fa setup."));
+                    return;
+                }
 
-        player.sendMessage("");
-        player.sendMessage("§c§l  ⚠ Authentication Required");
-        player.sendMessage("§7  You have §e30 seconds §7to verify your identity.");
-        player.sendMessage("§7  Use §e/auth <6-digit code> §7from your authenticator app.");
-        player.sendMessage("");
+                if (resumed) {
+                    online.sendMessage(CC.translate("&a&lAuthenticated &8(session resumed)"));
+                    return;
+                }
+
+                scheduleKickTimer(online, CC.translate("&c&lAuthentication Timeout\n\n&7You did not authenticate within 30 seconds.\n&7Please reconnect and enter your 2FA code."));
+
+                online.sendMessage("");
+                online.sendMessage(CC.translate("&c&lAuthentication Required"));
+                online.sendMessage(CC.translate("&7 You have &e30 seconds &7to verify your identity."));
+                online.sendMessage(CC.translate("&7 Use &e/auth <6-digit code> &7from your authenticator app."));
+                online.sendMessage("");
+            });
+        });
     }
 
     public void handleQuit(Player player) {
@@ -78,22 +94,33 @@ public class AuthManager {
 
     public boolean authenticate(Player player, int totpCode) {
         UUID uuid = player.getUniqueId();
-        String secret = repository.getSecret(uuid).join();
-
-        if (secret == null) return false;
-
-        if (googleAuth.authorize(secret, totpCode)) {
-            long expiry = System.currentTimeMillis() + SESSION_DURATION_MS;
-            try (Jedis jedis = jedisPool.getResource()) {
-                String key = "auth:session:" + uuid;
-                jedis.hset(key, "ip", resolveIp(player));
-                jedis.hset(key, "expiry", String.valueOf(expiry));
-                jedis.expireAt(key, expiry / 1000);
-            }
+        boolean success = authenticate(uuid, resolveIp(player), totpCode);
+        if (success) {
             cancelKickTimer(uuid);
-            return true;
         }
-        return false;
+        return success;
+    }
+
+    public void authenticateAsync(Player player, int totpCode, Consumer<Boolean> callback) {
+        UUID uuid = player.getUniqueId();
+        String currentIp = resolveIp(player);
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            boolean success = authenticate(uuid, currentIp, totpCode);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (success) {
+                    cancelKickTimer(uuid);
+                }
+                callback.accept(success);
+            });
+        });
+    }
+
+    public void hasSecretConfiguredAsync(UUID uuid, Consumer<Boolean> callback) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            boolean configured = repository.hasSecret(uuid);
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(configured));
+        });
     }
 
     public SetupResult generateAndSaveSecret(Player player) {
@@ -113,12 +140,12 @@ public class AuthManager {
         pendingSetup.remove(uuid);
         cancelKickTimer(uuid);
 
-        scheduleKickTimer(player, "§c§lAuthentication Timeout\n\n§7You did not authenticate within 30 seconds.\n§7Please reconnect and enter your 2FA code.");
+        scheduleKickTimer(player, CC.translate("&c&lAuthentication Timeout\n\n&7You did not authenticate within 30 seconds.\n&7Please reconnect and enter your 2FA code."));
 
         player.sendMessage("");
-        player.sendMessage("§a  2FA configured! Now authenticate to continue.");
-        player.sendMessage("§7  Use §e/auth <6-digit code> §7from your authenticator app.");
-        player.sendMessage("§7  You have §e30 seconds§7.");
+        player.sendMessage(CC.translate("&a2FA configured. Now authenticate to continue."));
+        player.sendMessage(CC.translate("&7 Use &e/auth <6-digit code> &7from your authenticator app."));
+        player.sendMessage(CC.translate("&7 You have &e30 seconds&7."));
         player.sendMessage("");
     }
 
@@ -126,7 +153,7 @@ public class AuthManager {
         UUID uuid = player.getUniqueId();
         repository.deleteSecret(uuid);
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.del("auth:session:" + uuid);
+            jedis.del(sessionKey(uuid));
         }
         cancelKickTimer(uuid);
     }
@@ -141,19 +168,9 @@ public class AuthManager {
 
     public boolean isAuthenticated(Player player) {
         if (!isStaff(player)) return true;
-        if (!repository.hasSecret(player.getUniqueId())) return false;
 
-        try (Jedis jedis = jedisPool.getResource()) {
-            String key = "auth:session:" + player.getUniqueId();
-            if (!jedis.exists(key)) return false;
-
-            String ip = jedis.hget(key, "ip");
-            String expiryStr = jedis.hget(key, "expiry");
-            if (ip == null || expiryStr == null) return false;
-
-            long expiry = Long.parseLong(expiryStr);
-            return System.currentTimeMillis() < expiry && resolveIp(player).equals(ip);
-        }
+        AuthSession session = getSession(player.getUniqueId());
+        return session != null && session.isValid(resolveIp(player));
     }
 
     public boolean isPendingAuth(Player player) {
@@ -190,7 +207,53 @@ public class AuthManager {
     }
 
     private String resolveIp(Player player) {
+        if (player == null || player.getAddress() == null || player.getAddress().getAddress() == null) {
+            return "";
+        }
         return player.getAddress().getAddress().getHostAddress();
+    }
+
+    private boolean authenticate(UUID uuid, String currentIp, int totpCode) {
+        String secret = repository.getSecret(uuid).join();
+        if (secret == null) return false;
+        if (!googleAuth.authorize(secret, totpCode)) return false;
+
+        long expiresAt = System.currentTimeMillis() + SESSION_DURATION_MS;
+        saveSession(new AuthSession(uuid, currentIp, expiresAt));
+        return true;
+    }
+
+    private void saveSession(AuthSession session) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String key = sessionKey(session.getPlayerUUID());
+            jedis.hset(key, "ip", session.getIpAddress());
+            jedis.hset(key, "expiry", String.valueOf(session.getExpiresAt()));
+            jedis.expireAt(key, session.getExpiresAt() / 1000L);
+        }
+    }
+
+    private AuthSession getSession(UUID uuid) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String key = sessionKey(uuid);
+            String ip = jedis.hget(key, "ip");
+            String expiryValue = jedis.hget(key, "expiry");
+            if (ip == null || expiryValue == null) {
+                return null;
+            }
+
+            long expiresAt;
+            try {
+                expiresAt = Long.parseLong(expiryValue);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+
+            return new AuthSession(uuid, ip, expiresAt);
+        }
+    }
+
+    private String sessionKey(UUID uuid) {
+        return "auth:session:" + uuid;
     }
 
     public static class SetupResult {
