@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 
 public class TagCacheService {
 
+    private static final String NO_TAG = "__NO_TAG__";
+
     private final WinterCore plugin;
     private final ProfileRepository profileRepository;
 
@@ -23,7 +25,8 @@ public class TagCacheService {
 
     public void get(UUID uuid, Consumer<String> callback) {
         if (tagCache.containsKey(uuid)) {
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(tagCache.get(uuid)));
+            String cached = tagCache.get(uuid);
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(NO_TAG.equals(cached) ? null : cached));
             return;
         }
 
@@ -34,18 +37,20 @@ public class TagCacheService {
             } catch (Exception ignored) {
             }
 
-            tagCache.put(uuid, tag);
-            String finalTag = tag;
+            String cachedValue = tag == null ? NO_TAG : tag;
+            tagCache.put(uuid, cachedValue);
+            String finalTag = NO_TAG.equals(cachedValue) ? null : cachedValue;
             Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalTag));
         });
     }
 
     public String getSync(UUID uuid) {
-        return tagCache.get(uuid);
+        String cached = tagCache.get(uuid);
+        return NO_TAG.equals(cached) ? null : cached;
     }
 
     public void put(UUID uuid, String tag) {
-        tagCache.put(uuid, tag);
+        tagCache.put(uuid, tag == null ? NO_TAG : tag);
     }
 
     public void invalidate(UUID uuid) {

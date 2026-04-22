@@ -25,7 +25,6 @@ public final class SocialInput implements Listener {
         this.socials = socials;
 
         registerValidators();
-        Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
     public boolean waitForInput(Player player, String platform) {

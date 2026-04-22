@@ -8,6 +8,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
+
 @CommandInfo(
         name = "sudo",
             description = "Forces a player to run a command or chat.",
@@ -24,7 +26,7 @@ public class SudoCommand extends BaseCommand {
 
     @Override
     public void execute(CommandArguments commandArgs) {
-        if (commandArgs.length() < 2) {
+        if (commandArgs.length() < 3) {
             commandArgs.getSender().sendMessage(ChatColor.RED + "Usage: /sudo <player> <command|chat> <message>");
             return;
         }
@@ -37,19 +39,22 @@ public class SudoCommand extends BaseCommand {
 
         String action = commandArgs.getArgs()[1].toLowerCase();
         if (action.equals("chat")) {
-            if (commandArgs.length() < 3) {
-                commandArgs.getSender().sendMessage(ChatColor.RED + "Usage: /sudo <player> chat <message>");
-                return;
-            }
-            String message = String.join(" ", commandArgs.getArgs()).substring(
-                    commandArgs.getArgs()[0].length() + commandArgs.getArgs()[0].length() + 2
-            );
+            String message = String.join(" ", Arrays.copyOfRange(commandArgs.getArgs(), 2, commandArgs.length()));
             target.chat(message);
             commandArgs.getSender().sendMessage(ChatColor.GREEN + "Forced " + target.getName() + " to send a chat message.");
-        } else {
-            String commandToExecute = String.join(" ", commandArgs.getArgs()).substring(commandArgs.getArgs()[0].length() + 1);
+            return;
+        }
+
+        if (action.equals("command")) {
+            String commandToExecute = String.join(" ", Arrays.copyOfRange(commandArgs.getArgs(), 2, commandArgs.length())).trim();
+            if (commandToExecute.startsWith("/")) {
+                commandToExecute = commandToExecute.substring(1);
+            }
             target.performCommand(commandToExecute);
             commandArgs.getSender().sendMessage(ChatColor.GREEN + "Forced " + target.getName() + " to execute: /" + commandToExecute);
+            return;
         }
+
+        commandArgs.getSender().sendMessage(ChatColor.RED + "Invalid mode. Use command or chat.");
     }
 }

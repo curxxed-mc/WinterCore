@@ -32,7 +32,6 @@ public class PlayerService implements Listener {
         this.plugin = plugin;
         this.moderationService = plugin.getDatabaseManager().getModerationService();
         this.profileService = plugin.getDatabaseManager().getProfileService();
-        Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

@@ -47,6 +47,7 @@ public class RankManager {
     }
 
     public void startAutoCacheRefresh() {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, cacheService::cleanupExpiredEntries, 20L * 60L, 20L * 60L);
     }
 
     public void reloadRanksConfig() {
