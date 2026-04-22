@@ -3,7 +3,6 @@ package net.curxxed.dev.wintercore.commands.utility;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.player.PlayerService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.tags.TagsManager;
 import org.bukkit.Bukkit;
@@ -55,7 +54,6 @@ public class ReportCommand extends BaseCommand {
         reporter.sendMessage(ChatColor.GREEN + "You have reported " + ChatColor.WHITE + target.getName() +
                 ChatColor.GREEN + " for: " + ChatColor.WHITE + reason);
 
-        PlayerService playerService = new PlayerService(plugin);
-        playerService.sendReport(reporter, target, reason);
+        plugin.getPlayerService().sendReport(reporter, target, reason);
     }
 }

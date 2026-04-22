@@ -107,7 +107,7 @@ public class PlayerService implements Listener {
         if (reporter == null || target == null || reason == null || reason.trim().isEmpty()) return;
 
         String originServer = plugin.getConfig().getString("server-name", "Unknown");
-        plugin.getRedisManager().publish(new PlayerReportPacket(
+        plugin.getRedisManager().publishAndHandleLocally(new PlayerReportPacket(
                 originServer, System.currentTimeMillis(), reporter.getName(), target.getName(), reason, originServer
         ));
     }

@@ -16,6 +16,28 @@ public final class ModerationService {
     private final ProfileRepository profiles;
     private final IdentityService identityService;
 
+    public static final class ActiveBan {
+        private final String reason;
+        private final Long expiration;
+
+        public ActiveBan(String reason, Long expiration) {
+            this.reason = reason;
+            this.expiration = expiration;
+        }
+
+        public String getReason() {
+            return reason;
+        }
+
+        public Long getExpiration() {
+            return expiration;
+        }
+
+        public boolean isPermanent() {
+            return expiration == null;
+        }
+    }
+
     public ModerationService(WinterCore plugin, ProfileRepository profiles, IdentityService identityService) {
         this.plugin = plugin;
         this.profiles = profiles;
@@ -48,64 +70,55 @@ public final class ModerationService {
         });
     }
 
-    public void isPlayerBanned(UUID uuid, Consumer<Boolean> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            boolean banned = false;
-
-            try {
-                Document doc = profiles.findById(uuid);
-                if (doc != null && doc.containsKey("activeBan")) {
-                    Document banDoc = (Document) doc.get("activeBan");
-                    Long expiration = banDoc.getLong("expiration");
-
-                    if (expiration == null || expiration > System.currentTimeMillis()) {
-                        banned = true;
-                    } else {
-                        profiles.unset(uuid, "activeBan");
-                    }
-                }
-            } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE, "Could not check ban status for " + uuid, e);
+    public ActiveBan getActiveBan(UUID uuid) {
+        try {
+            Document doc = profiles.findById(uuid);
+            if (doc == null || !doc.containsKey("activeBan")) {
+                return null;
             }
 
-            boolean finalBanned = banned;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalBanned));
+            Document banDoc = (Document) doc.get("activeBan");
+            if (banDoc == null) {
+                return null;
+            }
+
+            Long expiration = banDoc.getLong("expiration");
+            if (expiration != null && expiration <= System.currentTimeMillis()) {
+                profiles.unset(uuid, "activeBan");
+                return null;
+            }
+
+            String reason = banDoc.getString("reason");
+            return new ActiveBan(reason, expiration);
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Could not fetch active ban for " + uuid, e);
+            return null;
+        }
+    }
+
+    public void getActiveBan(UUID uuid, Consumer<ActiveBan> callback) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            ActiveBan activeBan = getActiveBan(uuid);
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(activeBan));
         });
+    }
+
+    public void isPlayerBanned(UUID uuid, Consumer<Boolean> callback) {
+        getActiveBan(uuid, activeBan -> callback.accept(activeBan != null));
     }
 
     public void getBanReason(UUID uuid, Consumer<String> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            String reason = null;
-            try {
-                Document doc = profiles.findById(uuid);
-                if (doc != null && doc.containsKey("activeBan")) {
-                    reason = ((Document) doc.get("activeBan")).getString("reason");
-                }
-            } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE, "Could not fetch ban reason for " + uuid, e);
-            }
-
-            String finalReason = reason;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalReason));
-        });
+        getActiveBan(uuid, activeBan -> callback.accept(activeBan != null ? activeBan.getReason() : null));
     }
 
     public void getBanDetails(UUID uuid, Consumer<Map<String, Object>> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        getActiveBan(uuid, activeBan -> {
             Map<String, Object> details = new HashMap<>();
-            try {
-                Document doc = profiles.findById(uuid);
-                if (doc != null && doc.containsKey("activeBan")) {
-                    Document banDoc = (Document) doc.get("activeBan");
-                    details.put("expiration", banDoc.get("expiration"));
-                    details.put("reason", banDoc.getString("reason"));
-                }
-            } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE, "Could not fetch ban details for " + uuid, e);
+            if (activeBan != null) {
+                details.put("expiration", activeBan.getExpiration());
+                details.put("reason", activeBan.getReason());
             }
-
-            Map<String, Object> finalDetails = details;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalDetails));
+            callback.accept(details);
         });
     }
 

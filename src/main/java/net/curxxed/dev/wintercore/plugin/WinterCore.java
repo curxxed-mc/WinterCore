@@ -99,6 +99,7 @@ public final class WinterCore extends JavaPlugin {
     private NameTagColorManager nameTagColorManager;
     private StaffChatService staffChatService;
     private NetworkRedisService NRS;
+    private BanList banList;
 
     @Override
     public void onEnable() {
@@ -270,6 +271,7 @@ public final class WinterCore extends JavaPlugin {
         this.staffChatService = new StaffChatService(this);
         this.chatListener = new ChatListener(this, tagsManager, playerService, staffChatService);
         this.freezeListener = new FreezeListener(playerService);
+        this.banList = new BanList(this);
 
         pm.registerEvents(playerService, this);
         pm.registerEvents(chatListener, this);
@@ -282,7 +284,7 @@ public final class WinterCore extends JavaPlugin {
         pm.registerEvents(new StaffModeListener(this, staffModeManager), this);
         pm.registerEvents(tagsGUI, this);
         pm.registerEvents(disguiseEventListener, this);
-        pm.registerEvents(new BanList(this), this);
+        pm.registerEvents(banList, this);
     }
 
     private void registerCommands() {

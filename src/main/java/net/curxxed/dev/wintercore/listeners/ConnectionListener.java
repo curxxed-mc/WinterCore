@@ -5,7 +5,6 @@ import net.curxxed.dev.wintercore.database.redis.packet.packets.ServerSwitchPack
 import net.curxxed.dev.wintercore.database.redis.packet.packets.StaffActivityPacket;
 import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
 import net.curxxed.dev.wintercore.database.service.IdentityService;
-import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
@@ -30,7 +29,6 @@ public class ConnectionListener implements Listener {
     private final WinterCore plugin;
     private final RankManager rankManager;
     private final IdentityService identityService;
-    private final ModerationService moderationService;
     private final DisguiseEventListener disguiseEventListener;
     private final NetworkRedisService networkRedisService;
 
@@ -42,7 +40,6 @@ public class ConnectionListener implements Listener {
         this.plugin = plugin;
         this.rankManager = RankManager.getInstance();
         this.identityService = plugin.getDatabaseManager().getIdentityService();
-        this.moderationService = plugin.getDatabaseManager().getModerationService();
         this.disguiseEventListener = disguiseEventListener;
         this.networkRedisService = networkRedisService;
     }
@@ -70,7 +67,6 @@ public class ConnectionListener implements Listener {
 
         refreshDisplayForAll(player);
         applyNametag(player);
-        checkBan(player);
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             applyNametag(player);
@@ -112,27 +108,6 @@ public class ConnectionListener implements Listener {
         } else {
             rankManager.refreshPlayerDisplay(player);
         }
-    }
-
-    private void checkBan(Player player) {
-        moderationService.getBanDetails(player.getUniqueId(), banDetails -> {
-            if (banDetails == null || banDetails.isEmpty()) return;
-            Long expiration = (Long) banDetails.get("expiration");
-            String reason = (String) banDetails.get("reason");
-            String reasonText = reason != null ? reason : "No reason provided";
-
-            if (expiration != null) {
-                long timeLeft = expiration - System.currentTimeMillis();
-                String timeMessage;
-                if (timeLeft < 60000) timeMessage = (timeLeft / 1000) + " seconds";
-                else if (timeLeft < 3600000) timeMessage = (timeLeft / 60000) + " minutes";
-                else if (timeLeft < 86400000) timeMessage = (timeLeft / 3600000) + " hours";
-                else timeMessage = (timeLeft / 86400000) + " days";
-                player.sendMessage(CC.translate("&cYou are temporarily banned for: " + timeMessage + "\n&cReason: &b" + reasonText));
-            } else {
-                player.sendMessage(CC.translate("&cYou are permanently banned.\n&cReason: &b" + reasonText));
-            }
-        });
     }
 
     private void broadcastStaffJoin(Player player) {

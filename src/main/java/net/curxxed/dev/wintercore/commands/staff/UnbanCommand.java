@@ -3,6 +3,7 @@ package net.curxxed.dev.wintercore.commands.staff;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.database.redis.packet.packets.ModerationActionPacket;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
@@ -49,8 +50,22 @@ public class UnbanCommand extends BaseCommand {
                 commandArgs.getSender().sendMessage(CC.translate("&cPlayer " + displayName + " is not banned."));
                 return;
             }
+
             moderationService.unbanPlayer(targetUUID);
             commandArgs.getSender().sendMessage(CC.translate("&aPlayer " + displayName + " has been unbanned."));
+
+            plugin.getRedisManager().publishAndHandleLocally(new ModerationActionPacket(
+                    plugin.getConfig().getString("server-name", "Unknown"),
+                    System.currentTimeMillis(),
+                    ModerationActionPacket.ActionType.BAN_REMOVED,
+                    targetUUID,
+                    displayName != null ? displayName : targetName,
+                    commandArgs.getSender().getName(),
+                    "",
+                    null,
+                    false
+            ));
+
             Player target = Bukkit.getPlayer(targetUUID);
             if (target != null) {
                 target.sendMessage(CC.translate("&aYou have been unbanned."));

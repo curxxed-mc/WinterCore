@@ -1,10 +1,13 @@
 package net.curxxed.dev.wintercore.chat;
 
 import net.curxxed.dev.wintercore.database.redis.packet.packets.ChatBroadcastPacket;
+import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+
+import java.util.UUID;
 
 public final class StaffChatService {
 
@@ -42,14 +45,77 @@ public final class StaffChatService {
     }
 
     private void buildAndPublish(Player player, String message, String prefix, String color, ChatBroadcastPacket.ChatType type) {
-        plugin.getDisguiseRegistry().getEffectivePrefix(player, disguisePrefix -> {
-            String formatted = CC.translate(prefix) + disguisePrefix + player.getDisplayName() + ": " + CC.translate(color) + message + ChatColor.RESET;
-            plugin.getRedisManager().publishAndHandleLocally(new ChatBroadcastPacket(
-                    plugin.getConfig().getString("server-name", "Unknown"),
-                    System.currentTimeMillis(),
-                    type,
-                    formatted
-            ));
+        final String sourceServer = plugin.getConfig().getString("server-name", "Unknown");
+        final String realName = resolveRealName(player);
+
+        plugin.getRankManager().getRank(player.getUniqueId(), rank -> {
+            String rawRankPrefix = rank != null ? plugin.getRankManager().getRankPrefixSync(rank) : "";
+            String translatedRankPrefix = rawRankPrefix != null ? CC.translate(rawRankPrefix) : "";
+            plugin.getRankManager().getColorPreference(rank, nameColor -> {
+                String identity = formatIdentity(translatedRankPrefix, nameColor, realName);
+
+                String formatted = CC.translate(prefix)
+                        + CC.translate("&8[&7" + sourceServer + "&8] ")
+                        + identity
+                        + ChatColor.RESET
+                        + ": "
+                        + CC.translate(color)
+                        + message
+                        + ChatColor.RESET;
+
+                plugin.getRedisManager().publishAndHandleLocally(new ChatBroadcastPacket(
+                        sourceServer,
+                        System.currentTimeMillis(),
+                        type,
+                        formatted
+                ));
+            });
         });
+    }
+
+    private String formatIdentity(String translatedRankPrefix, String nameColor, String realName) {
+        String translatedNameColor = CC.translate(
+                (nameColor == null || nameColor.trim().isEmpty()) ? "&f" : nameColor
+        );
+        String coloredName = translatedNameColor + realName;
+
+        if (translatedRankPrefix == null) {
+            return coloredName;
+        }
+
+        String visible = CC.stripColor(translatedRankPrefix);
+        if (visible == null || visible.trim().isEmpty()) {
+            return coloredName;
+        }
+
+        if (translatedRankPrefix.endsWith(" ")) {
+            return translatedRankPrefix + coloredName;
+        }
+        return translatedRankPrefix + " " + coloredName;
+    }
+
+    private String resolveRealName(Player player) {
+        UUID uuid = player.getUniqueId();
+
+        DisguiseData data = plugin.getDisguiseDataMap().get(uuid);
+        if (data != null && data.getInfo() != null && data.getInfo().has("name") && !data.getInfo().get("name").isJsonNull()) {
+            try {
+                String original = data.getInfo().get("name").getAsString();
+                if (original != null && !original.trim().isEmpty()) {
+                    return original;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        try {
+            String cached = plugin.getNRS().getCachedUsername(uuid.toString());
+            if (cached != null && !cached.trim().isEmpty()) {
+                return cached;
+            }
+        } catch (Exception ignored) {
+        }
+
+        return player.getName();
     }
 }
