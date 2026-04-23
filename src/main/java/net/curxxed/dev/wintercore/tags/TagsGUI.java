@@ -53,7 +53,11 @@ public class TagsGUI extends Menu {
         UUID uuid = player.getUniqueId();
         pageByPlayer.put(uuid, Math.max(0, page));
         tagsManager.getPlayerTag(uuid, selectedTag -> {
-            selectedTagByPlayer.put(uuid, selectedTag != null ? selectedTag.getId() : null);
+            if (selectedTag != null) {
+                selectedTagByPlayer.put(uuid, selectedTag.getId());
+            } else {
+                selectedTagByPlayer.remove(uuid);
+            }
             open(player);
         });
     }
@@ -137,7 +141,11 @@ public class TagsGUI extends Menu {
 
             UUID uuid = player.getUniqueId();
             tagsManager.getPlayerTag(uuid, selectedTag -> {
-                selectedTagByPlayer.put(uuid, selectedTag != null ? selectedTag.getId() : null);
+                if (selectedTag != null) {
+                    selectedTagByPlayer.put(uuid, selectedTag.getId());
+                } else {
+                    selectedTagByPlayer.remove(uuid);
+                }
                 refresh(player);
                 player.sendMessage(CC.translate("&eTags were reloaded. Your menu has been refreshed."));
             });

@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.tags;
 
+import net.curxxed.dev.wintercore.player.WinterCorePlayer;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -59,6 +60,15 @@ public class TagsManager {
 
     public void setPlayerTag(UUID uuid, String tagId) {
         plugin.getDatabaseManager().getProfileService().setPlayerTag(uuid, tagId);
+
+        if (plugin.getPlayerService() == null) {
+            return;
+        }
+
+        WinterCorePlayer cachedPlayer = plugin.getPlayerService().getPlayerData(uuid);
+        if (cachedPlayer != null) {
+            cachedPlayer.setTag(tagId == null ? "" : tagId);
+        }
     }
 
     public void getPlayerTag(UUID uuid, Consumer<Tag> callback) {
