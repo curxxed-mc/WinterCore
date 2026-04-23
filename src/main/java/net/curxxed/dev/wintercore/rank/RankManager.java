@@ -6,6 +6,7 @@ import lombok.Getter;
 import net.curxxed.dev.wintercore.database.cache.RankCacheService;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.RankTagSyncPacket;
 import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
+import net.curxxed.dev.wintercore.player.WinterCorePlayer;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
@@ -52,6 +53,9 @@ public class RankManager {
 
     public void reloadRanksConfig() {
         configManager.load();
+        if (plugin.getNameTagColorManager() != null) {
+            plugin.getNameTagColorManager().fullRefresh();
+        }
     }
 
     public void saveRanksConfig() {
@@ -88,7 +92,7 @@ public class RankManager {
 
     public void setRank(Player player, String rank, Player giver) {
         plugin.getDatabaseManager().getProfileService().setRank(player.getUniqueId(), rank);
-        cacheService.put(player.getUniqueId(), rank);
+        cachePlayerRank(player, rank);
 
         String color = configManager.getColor(rank);
         cacheService.putColor(player.getUniqueId(), color);
@@ -113,16 +117,41 @@ public class RankManager {
                 callback.accept(rank);
                 return;
             }
-            cacheService.get(player.getUniqueId(), callback);
+            getRank(player.getUniqueId(), callback);
         });
     }
 
     public void getRank(UUID uuid, Consumer<String> callback) {
+        String cached = cacheService.peek(uuid);
+        if (cached != null && !cached.trim().isEmpty()) {
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+            return;
+        }
+
+        String playerDataRank = getPlayerDataRank(uuid);
+        if (playerDataRank != null) {
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(playerDataRank));
+            return;
+        }
+
         cacheService.get(uuid, callback);
     }
 
     public String getRankSync(Player player) {
-        return cacheService.getSync(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+        String cached = cacheService.peek(uuid);
+        if (cached != null) {
+            return cached;
+        }
+
+        if (plugin.getPlayerService() != null) {
+            WinterCorePlayer data = plugin.getPlayerService().getPlayerData(uuid);
+            if (data != null && data.getRank() != null && !data.getRank().trim().isEmpty()) {
+                return data.getRank();
+            }
+        }
+
+        return cacheService.getSync(uuid);
     }
 
     public String getRankSync(UUID uuid) {
@@ -131,6 +160,7 @@ public class RankManager {
 
     public void cachePlayerRank(Player player, String rank) {
         cacheService.put(player.getUniqueId(), rank);
+        updatePlayerDataRank(player.getUniqueId(), rank);
     }
 
     public void refreshCache(Player player) {
@@ -145,7 +175,7 @@ public class RankManager {
     public String getColorPreferenceSync(Player player) {
         String cached = cacheService.getColor(player.getUniqueId());
         if (!"&f".equals(cached)) return cached;
-        return configManager.getColor(cacheService.getSync(player.getUniqueId()));
+        return configManager.getColor(getRankSync(player));
     }
 
     public void cachePlayerColor(Player player, String color) {
@@ -235,6 +265,30 @@ public class RankManager {
 
     public void removeTargetPlayerUUID(UUID staffUUID) {
         targetPlayers.remove(staffUUID);
+    }
+
+    private String getPlayerDataRank(UUID uuid) {
+        if (plugin.getPlayerService() == null) {
+            return null;
+        }
+
+        WinterCorePlayer data = plugin.getPlayerService().getPlayerData(uuid);
+        if (data == null || data.getRank() == null || data.getRank().trim().isEmpty()) {
+            return null;
+        }
+
+        return data.getRank();
+    }
+
+    private void updatePlayerDataRank(UUID uuid, String rank) {
+        if (plugin.getPlayerService() == null) {
+            return;
+        }
+
+        WinterCorePlayer data = plugin.getPlayerService().getPlayerData(uuid);
+        if (data != null) {
+            data.setRank(rank != null && !rank.trim().isEmpty() ? rank : "Default");
+        }
     }
 
     private String extractDisguiseField(String disguiseJson, String field) {
