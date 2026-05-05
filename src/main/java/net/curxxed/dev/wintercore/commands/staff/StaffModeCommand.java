@@ -5,24 +5,21 @@ import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.staff.StaffModeManager;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
         name = "staffmode",
-            description = "Toggle staff mode.",
-            usage = "/staffmode",
-            inGameOnly = true
-    
-    )
+        description = "Toggle staff mode.",
+        usage = "/staffmode",
+        inGameOnly = true,
+        permission = {}
+)
 public class StaffModeCommand extends BaseCommand {
 
-    private final WinterCore plugin;
     private final StaffModeManager staffModeManager;
 
     public StaffModeCommand(WinterCore plugin, StaffModeManager staffModeManager) {
         super(plugin);
-        this.plugin = plugin;
         this.staffModeManager = staffModeManager;
     }
 
@@ -32,7 +29,8 @@ public class StaffModeCommand extends BaseCommand {
         Player player = commandArgs.getPlayer();
 
         if (!staffModeManager.hasStaffPermission(player)) {
-            player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+            send(player, "general.no-permission",
+                    "&cYou don't have permission to use this command.");
             return;
         }
 
@@ -43,3 +41,7 @@ public class StaffModeCommand extends BaseCommand {
         }
     }
 }
+
+
+
+

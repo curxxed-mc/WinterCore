@@ -5,16 +5,15 @@ import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
         name = "clearchat",
-            permission = "WinterCore.clearchat",
-            description = "Clear the chat for all players.",
-            usage = "/clearchat",
-            inGameOnly = false
-    )
+        description = "Clear the chat for all players.",
+        usage = "/clearchat",
+        inGameOnly = false,
+        permission = {"wintercore.clearchat", "WinterCore.clearchat"}
+)
 public class ClearChat extends BaseCommand {
 
     public ClearChat(WinterCore plugin) {
@@ -28,6 +27,11 @@ public class ClearChat extends BaseCommand {
                 player.sendMessage("");
             }
         }
-        commandArgs.getSender().sendMessage(ChatColor.GREEN + "Chat has been cleared.");
+        send(commandArgs.getSender(), "moderation.clear-chat.success",
+                "&aChat has been cleared.");
     }
 }
+
+
+
+

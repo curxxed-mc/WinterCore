@@ -6,7 +6,6 @@ import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
@@ -14,12 +13,11 @@ import java.util.UUID;
 
 @CommandInfo(
         name = "kick",
-        permission = "WinterCore.kick",
         description = "Kick players from the server.",
         usage = "/kick <player> [reason]",
-        inGameOnly = true
-    
-    )
+        inGameOnly = true,
+        permission = {"wintercore.kick", "WinterCore.kick"}
+)
 public class KickCommand extends BaseCommand {
     private final WinterCore plugin;
     private final ModerationService moderationService;
@@ -35,27 +33,36 @@ public class KickCommand extends BaseCommand {
         Player player = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
         if (player == null) {
-            commandArgs.getSender().sendMessage(ChatColor.RED + "Only players can use this command.");
-            return;
-        }
-        if (!player.hasPermission("WinterCore.kick")) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to kick players.");
+            send(commandArgs.getSender(), "moderation.kick.player-only",
+                    "&cOnly players can use this command.");
             return;
         }
         if (args.length < 1) {
-            player.sendMessage(ChatColor.RED + "Please specify reasons tokick the player.");
+            sendUsage(player);
             return;
         }
         Player target = plugin.getServer().getPlayer(args[0]);
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "Player not found.");
+            send(player, "general.player-not-found", "&cPlayer not found.");
             return;
         }
-        String reason = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length)) : "No reason provided";
+        String reason = args.length > 1
+                ? String.join(" ", Arrays.copyOfRange(args, 1, args.length))
+                : msg("moderation.kick.default-reason", "No reason provided");
         String playerName = args[0];
         UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
         moderationService.incrementKickCount(targetUUID);
-        target.kickPlayer(ChatColor.RED + "You have been kicked for: " + reason);
-        player.sendMessage(ChatColor.GREEN + "Player " + target.getName() + " has been kicked for: " + reason);
+        target.kickPlayer(msg("moderation.kick.target-kick-message",
+                "&cYou have been kicked for: {reason}",
+                "{reason}", reason));
+        send(player, "moderation.kick.actor-success",
+                "&aPlayer {target} has been kicked for: {reason}",
+                "{target}", target.getName(),
+                "{reason}", reason);
     }
 }
+
+
+
+
+

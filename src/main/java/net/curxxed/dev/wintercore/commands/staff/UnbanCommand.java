@@ -6,7 +6,6 @@ import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.ModerationActionPacket;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -14,12 +13,12 @@ import java.util.UUID;
 
 @CommandInfo(
         name = "unban",
-        permission = "WinterCore.unban",
         description = "Unban a player.",
         usage = "/unban <player>",
-        inGameOnly = false
-    
-    )
+        inGameOnly = false,
+        async = true,
+        permission = {"wintercore.unban", "WinterCore.unban"}
+)
 public class UnbanCommand extends BaseCommand {
     private final WinterCore plugin;
     private final ModerationService moderationService;
@@ -32,34 +31,42 @@ public class UnbanCommand extends BaseCommand {
 
     @Override
     public void execute(CommandArguments commandArgs) {
-        if (!commandArgs.getSender().hasPermission("WinterCore.unban")) {
-            commandArgs.getSender().sendMessage(CC.translate("&cYou do not have permission to unban players."));
-            return;
-        }
+        runSync(() -> executeOnMainThread(commandArgs));
+    }
+
+    private void executeOnMainThread(CommandArguments commandArgs) {
         String[] args = commandArgs.getArgs();
         if (args.length < 1) {
-            commandArgs.getSender().sendMessage(CC.translate("&cUsage: /unban <player>"));
+            sendUsage(commandArgs.getSender());
             return;
         }
         String targetName = args[0];
         UUID targetUUID = Bukkit.getOfflinePlayer(targetName).getUniqueId();
         // Always get the correct capitalization for the IGN
         String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        moderationService.isPlayerBanned(targetUUID, isBanned -> {
+        if (displayName == null || displayName.trim().isEmpty()) {
+            displayName = targetName;
+        }
+        final String finalDisplayName = displayName;
+        moderationService.isPlayerBanned(targetUUID, isBanned -> runSync(() -> {
             if (!isBanned) {
-                commandArgs.getSender().sendMessage(CC.translate("&cPlayer " + displayName + " is not banned."));
+                send(commandArgs.getSender(), "moderation.unban.not-banned",
+                        "&cPlayer {target} is not banned.",
+                        "{target}", finalDisplayName);
                 return;
             }
 
             moderationService.unbanPlayer(targetUUID);
-            commandArgs.getSender().sendMessage(CC.translate("&aPlayer " + displayName + " has been unbanned."));
+            send(commandArgs.getSender(), "moderation.unban.actor-success",
+                    "&aPlayer {target} has been unbanned.",
+                    "{target}", finalDisplayName);
 
             plugin.getRedisManager().publishAndHandleLocally(new ModerationActionPacket(
                     plugin.getConfig().getString("server-name", "Unknown"),
                     System.currentTimeMillis(),
                     ModerationActionPacket.ActionType.BAN_REMOVED,
                     targetUUID,
-                    displayName != null ? displayName : targetName,
+                    finalDisplayName,
                     commandArgs.getSender().getName(),
                     "",
                     null,
@@ -68,8 +75,9 @@ public class UnbanCommand extends BaseCommand {
 
             Player target = Bukkit.getPlayer(targetUUID);
             if (target != null) {
-                target.sendMessage(CC.translate("&aYou have been unbanned."));
+                send(target, "moderation.unban.target-success",
+                        "&aYou have been unbanned.");
             }
-        });
+        }));
     }
 }

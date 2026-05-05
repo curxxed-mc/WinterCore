@@ -1,22 +1,22 @@
 package net.curxxed.dev.wintercore.commands.social;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
         name = "discord",
-            description = "Get the Discord server link.",
-            usage = "/discord",
-            inGameOnly = true
-    
-    )
+        description = "Get the Discord server link.",
+        usage = "/discord",
+        inGameOnly = true,
+        permission = {}
+)
 public class DiscordCommand extends BaseCommand {
 
-    private final String discordLink = ChatColor.DARK_PURPLE + "discord.gg/wintercore";
+    private final String discordLink = CC.DARK_PURPLE + "discord.gg/wintercore";
 
     public DiscordCommand(WinterCore plugin) {
         super(plugin);
@@ -26,6 +26,10 @@ public class DiscordCommand extends BaseCommand {
 
     public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
-        player.sendMessage(ChatColor.AQUA + "Join our discord: " + discordLink);
+        player.sendMessage(CC.AQUA + "Join our discord: " + discordLink);
     }
 }
+
+
+
+

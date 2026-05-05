@@ -82,6 +82,10 @@ public final class ProfileService {
     }
 
     public void setChatColorPreference(UUID uuid, String colorCode) {
+        setChatColorPreference(uuid, colorCode, null);
+    }
+
+    public void setChatColorPreference(UUID uuid, String colorCode, Runnable callback) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
         {
             try {
@@ -89,12 +93,36 @@ public final class ProfileService {
                 rankCache.putColor(uuid, colorCode);
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, "Could not save chat color for " + uuid, e);
+            } finally {
+                if (callback != null) {
+                    Bukkit.getScheduler().runTask(plugin, callback);
+                }
             }
         });
     }
 
     public void getChatColorPreference(UUID uuid, Consumer<String> callback) {
-        String cached = rankCache.getColor(uuid);
-        Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+        String cached = rankCache.peekColor(uuid);
+        if (cached != null) {
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+            return;
+        }
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            String color;
+            try {
+                color = profiles.getChatColor(uuid);
+                if (color == null || color.trim().isEmpty()) {
+                    color = "&f";
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Could not fetch chat color for " + uuid, e);
+                color = "&f";
+            }
+
+            rankCache.putColor(uuid, color);
+            String finalColor = color;
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalColor));
+        });
     }
 }

@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
 @CommandInfo(
         name = "list",
         aliases = {"who", "online", "players"},
-        permission = "wintercore.command.list",
         description = "Displays the list of online players, sorted by rank.",
         usage = "/list",
-        async = true
+        async = true,
+        permission = {"wintercore.command.list"}
 )
 public class ListCommand extends BaseCommand {
 
@@ -35,6 +35,10 @@ public class ListCommand extends BaseCommand {
 
     @Override
     public void execute(CommandArguments args) {
+        runSync(() -> executeOnMainThread(args));
+    }
+
+    private void executeOnMainThread(CommandArguments args) {
         CommandSender sender = args.getSender();
         ConfigurationSection ranksSection = rankManager.getRanksSection();
         if (ranksSection == null) {
@@ -58,7 +62,7 @@ public class ListCommand extends BaseCommand {
                         future.complete(null);
                     });
                     return future;
-                }).toArray(CompletableFuture[]::new)).thenRun(() -> {
+                }).toArray(CompletableFuture[]::new)).thenRun(() -> runSync(() -> {
 
             onlinePlayers.sort((p1, p2) -> {
                 String rankName1 = playerRankNames.getOrDefault(p1.getUniqueId(), "Default").toLowerCase();
@@ -87,11 +91,9 @@ public class ListCommand extends BaseCommand {
 
             String finalPlayerCount = CC.translate("&7(" + onlinePlayers.size() + "/" + Bukkit.getMaxPlayers() + ") ");
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(rankDisplay);
-                sender.sendMessage(finalPlayerCount + playerDisplay);
-            });
-        });
+            sender.sendMessage(rankDisplay);
+            sender.sendMessage(finalPlayerCount + playerDisplay);
+        }));
     }
 }
 

@@ -6,7 +6,7 @@ import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.ModerationActionPacket;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.DurationParser;
 import net.curxxed.dev.wintercore.utils.ModerationMessages;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -14,20 +14,20 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 
 @CommandInfo(
         name = "ban",
-        permission = "WinterCore.ban",
         description = "Ban a player from the server.",
         usage = "/ban <player> [duration] <reason> [-s]",
-        inGameOnly = false
-    
-    )
+        inGameOnly = false,
+        async = true,
+        permission = {"wintercore.ban", "WinterCore.ban"}
+)
 public class BanCommand extends BaseCommand {
     private final WinterCore plugin;
     private final ModerationService moderationService;
@@ -41,14 +41,34 @@ public class BanCommand extends BaseCommand {
     @Override
 
     public void execute(CommandArguments commandArgs) {
-        if (!commandArgs.getSender().hasPermission("WinterCore.ban")) {
-            commandArgs.getSender().sendMessage(CC.translate("&cYou do not have permission to ban players."));
-            return;
+        runSync(() -> executeOnMainThread(commandArgs));
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandArguments args) {
+        if (args.length() == 0 || args.length() == 1) {
+            return completeOnlinePlayers(args);
         }
+
+        if (args.length() == 2) {
+            return completeCurrentArg(args, Arrays.asList("10m", "30m", "1h", "6h", "1d", "7d", "1w", "-s", "--silent"));
+        }
+
+        if (args.length() >= 3) {
+            String current = args.getOptionalString(args.length() - 1).orElse("");
+            if (current.startsWith("-")) {
+                return completeCurrentArg(args, Arrays.asList("-s", "--silent"));
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
+    private void executeOnMainThread(CommandArguments commandArgs) {
 
         String[] args = commandArgs.getArgs();
         if (args.length < 2) {
-            commandArgs.getSender().sendMessage(CC.translate("&cUsage: /ban <player> [duration] <reason> [-s]"));
+            sendUsage(commandArgs.getSender());
             return;
         }
 
@@ -62,15 +82,17 @@ public class BanCommand extends BaseCommand {
         boolean silent = remainingArgs.removeIf(arg -> arg.equalsIgnoreCase("-s") || arg.equalsIgnoreCase("--silent"));
 
         if (remainingArgs.isEmpty()) {
-            commandArgs.getSender().sendMessage(CC.translate("&cYou must provide a reason for the ban."));
+            send(commandArgs.getSender(), "moderation.ban.reason-required",
+                    "&cYou must provide a reason for the ban.");
             return;
         }
 
-        Duration duration = parseDuration(remainingArgs.get(0));
+        java.time.Duration duration = DurationParser.parse(remainingArgs.get(0));
         String reason;
         if (duration != null) {
             if (remainingArgs.size() < 2) {
-                commandArgs.getSender().sendMessage(CC.translate("&cYou must provide a reason for the ban."));
+                send(commandArgs.getSender(), "moderation.ban.reason-required",
+                        "&cYou must provide a reason for the ban.");
                 return;
             }
             reason = String.join(" ", remainingArgs.subList(1, remainingArgs.size())).trim();
@@ -79,16 +101,18 @@ public class BanCommand extends BaseCommand {
         }
 
         if (reason.isEmpty()) {
-            commandArgs.getSender().sendMessage(CC.translate("&cYou must provide a reason for the ban."));
+            send(commandArgs.getSender(), "moderation.ban.reason-required",
+                    "&cYou must provide a reason for the ban.");
             return;
         }
 
         String issuer = commandArgs.getSender().getName();
         String serverName = plugin.getConfig().getString("server-name", "Unknown");
 
-        moderationService.isPlayerBanned(targetUUID, isBanned -> {
+        moderationService.isPlayerBanned(targetUUID, isBanned -> runSync(() -> {
             if (isBanned) {
-                commandArgs.getSender().sendMessage(CC.translate("&cThis player is already banned."));
+                send(commandArgs.getSender(), "moderation.ban.already-banned",
+                        "&cThis player is already banned.");
                 return;
             }
 
@@ -100,8 +124,10 @@ public class BanCommand extends BaseCommand {
                     target.kickPlayer(ModerationMessages.formatBanKickMessage(issuer, reason, expirationTime.toEpochMilli()));
                 }
 
-                commandArgs.getSender().sendMessage(CC.translate("&aBanned &f" + displayName + "&a until &f"
-                        + ModerationMessages.formatTimestamp(expirationTime.toEpochMilli()) + "&a."));
+                send(commandArgs.getSender(), "moderation.ban.actor-success-temporary",
+                        "&aBanned &f{target}&a until &f{until}&a.",
+                        "{target}", displayName,
+                        "{until}", ModerationMessages.formatTimestamp(expirationTime.toEpochMilli()));
 
                 plugin.getRedisManager().publishAndHandleLocally(new ModerationActionPacket(
                         serverName,
@@ -121,7 +147,9 @@ public class BanCommand extends BaseCommand {
                     target.kickPlayer(ModerationMessages.formatBanKickMessage(issuer, reason, null));
                 }
 
-                commandArgs.getSender().sendMessage(CC.translate("&aBanned &f" + displayName + "&a permanently."));
+                send(commandArgs.getSender(), "moderation.ban.actor-success-permanent",
+                        "&aBanned &f{target}&a permanently.",
+                        "{target}", displayName);
 
                 plugin.getRedisManager().publishAndHandleLocally(new ModerationActionPacket(
                         serverName,
@@ -135,24 +163,6 @@ public class BanCommand extends BaseCommand {
                         silent
                 ));
             }
-        });
-    }
-
-    private Duration parseDuration(String durationString) {
-        try {
-            if (durationString.endsWith("h")) {
-                return Duration.ofHours(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
-            } else if (durationString.endsWith("m")) {
-                return Duration.ofMinutes(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
-            } else if (durationString.endsWith("d")) {
-                return Duration.ofDays(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
-            } else if (durationString.endsWith("s")) {
-                return Duration.ofSeconds(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
-            } else {
-                return null;
-            }
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        }));
     }
 }

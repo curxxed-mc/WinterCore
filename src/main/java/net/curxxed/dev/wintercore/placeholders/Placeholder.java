@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.placeholders;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.disguise.DisguiseRegistry;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
@@ -87,11 +88,11 @@ public class Placeholder extends PlaceholderExpansion implements Listener {
                             rankColor = "&f";
                         }
                     }
-                    return org.bukkit.ChatColor.translateAlternateColorCodes('&', (rankColor != null ? rankColor : "") + disguisedRank);
+                    return CC.translateAlternateColorCodes('&', (rankColor != null ? rankColor : "") + disguisedRank);
                 } else {
                     String realRank = rankManager.getRankSync(player);
                     String rankColor = rankManager.getColorPreferenceSync(player);
-                    return org.bukkit.ChatColor.translateAlternateColorCodes('&', (rankColor != null ? rankColor : "") + (realRank != null ? realRank : ""));
+                    return CC.translateAlternateColorCodes('&', (rankColor != null ? rankColor : "") + (realRank != null ? realRank : ""));
                 }
             }
             case "player_color": {
@@ -109,18 +110,18 @@ public class Placeholder extends PlaceholderExpansion implements Listener {
                             rankColor = "&f";
                         }
                     }
-                    return org.bukkit.ChatColor.translateAlternateColorCodes('&', rankColor != null ? rankColor : "");
+                    return CC.translateAlternateColorCodes('&', rankColor != null ? rankColor : "");
                 } else {
                     String color = rankManager.getColorPreferenceSync(player);
-                    return org.bukkit.ChatColor.translateAlternateColorCodes('&', color != null ? color : "");
+                    return CC.translateAlternateColorCodes('&', color != null ? color : "");
                 }
             }
             case "player_rank_name": {
                 if (disguised && disguisedRank != null && !disguisedRank.isEmpty()) {
-                    return disguisedRank.replaceAll("§.", "");
+                    return CC.stripColor(CC.translate(disguisedRank));
                 } else {
                     String realRank = rankManager.getRankSync(player);
-                    return realRank != null ? realRank.replaceAll("§.", "") : "";
+                    return realRank != null ? CC.stripColor(CC.translate(realRank)) : "";
                 }
             }
             case "player_rank_weight": {
@@ -155,3 +156,8 @@ public class Placeholder extends PlaceholderExpansion implements Listener {
         }
     }
 }
+
+
+
+
+

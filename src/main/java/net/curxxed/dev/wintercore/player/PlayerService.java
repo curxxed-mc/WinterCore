@@ -7,9 +7,7 @@ import net.curxxed.dev.wintercore.database.service.ProfileService;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -75,31 +73,33 @@ public class PlayerService implements Listener {
     public boolean isRestricted(Player player) {
         WinterCorePlayer data = cache.get(player.getUniqueId());
         if (data != null && data.isMuted()) {
-            player.sendMessage(CC.translate("&cYou are muted and cannot send messages."));
+            player.sendMessage(plugin.getMessageConfig().get("chat.muted",
+                    "&cYou are muted and cannot send messages."));
             return true;
         }
         return false;
     }
 
-
-
-    public void sendPrivateMessage(Player sender, Player recipient, String message) {
-        WinterCorePlayer sData = cache.get(sender.getUniqueId());
-        WinterCorePlayer rData = cache.get(recipient.getUniqueId());
-
-        if (sData == null || rData == null) {
-            sender.sendMessage(CC.translate("&cPlayer data is still loading..."));
+    public void setChatColorPreference(Player player, String colorCode) {
+        if (player == null || colorCode == null || colorCode.trim().isEmpty()) {
             return;
         }
 
-        ChatColor sColor = sData.getMessageColor();
-        ChatColor rColor = rData.getMessageColor();
+        WinterCorePlayer data = cache.computeIfAbsent(
+                player.getUniqueId(),
+                uuid -> new WinterCorePlayer(player.getUniqueId(), player.getName())
+        );
+        data.setChatColorCode(colorCode);
 
-        String toPrefix = ChatColor.YELLOW + "(To " + rColor + recipient.getDisplayName() + ChatColor.YELLOW + ") ";
-        String fromPrefix = ChatColor.YELLOW + "(From " + sColor + sender.getDisplayName() + ChatColor.YELLOW + ") ";
-
-        sender.spigot().sendMessage(new TextComponent(toPrefix + message));
-        recipient.spigot().sendMessage(new TextComponent(fromPrefix + message));
+        profileService.setChatColorPreference(player.getUniqueId(), colorCode, () -> {
+            if (plugin.getRedisManager() != null) {
+                String server = plugin.getConfig().getString("server-name", "Unknown");
+                plugin.getRedisManager().publish(new PlayerUpdatePacket(server, System.currentTimeMillis(), player.getUniqueId()));
+            }
+        });
+        if (plugin.getRankManager() != null) {
+            plugin.getRankManager().setMessageColorPreference(player, colorCode);
+        }
     }
 
     public void sendReport(Player reporter, Player target, String reason) {

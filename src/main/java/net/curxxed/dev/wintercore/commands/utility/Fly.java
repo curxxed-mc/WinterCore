@@ -1,21 +1,20 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
         name = "fly",
-            permission = "WinterCore.fly",
-            description = "Toggle flight for yourself or another player.",
-            usage = "/fly [player]",
-            inGameOnly = true
-    
-    )
+        description = "Toggle flight for yourself or another player.",
+        usage = "/fly [player]",
+        inGameOnly = true,
+        permission = {"wintercore.fly", "WinterCore.fly"}
+)
 public class Fly extends BaseCommand {
 
     public Fly(WinterCore plugin) {
@@ -35,7 +34,7 @@ public class Fly extends BaseCommand {
 
         Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null) {
-            commandArgs.getSender().sendMessage(ChatColor.RED + "Player not found!");
+            commandArgs.getSender().sendMessage(CC.RED + "Player not found!");
             return;
         }
 
@@ -46,15 +45,19 @@ public class Fly extends BaseCommand {
         target.setAllowFlight(!target.getAllowFlight());
 
         if (target.getAllowFlight()) {
-            target.sendMessage(ChatColor.GREEN + "You can now fly!");
+            target.sendMessage(CC.GREEN + "You can now fly!");
             if (!target.equals(sender)) {
-                sender.sendMessage(ChatColor.GREEN + target.getName() + " can now fly!");
+                sender.sendMessage(CC.GREEN + target.getName() + " can now fly!");
             }
         } else {
-            target.sendMessage(ChatColor.RED + "You can no longer fly!");
+            target.sendMessage(CC.RED + "You can no longer fly!");
             if (!target.equals(sender)) {
-                sender.sendMessage(ChatColor.RED + target.getName() + " can no longer fly!");
+                sender.sendMessage(CC.RED + target.getName() + " can no longer fly!");
             }
         }
     }
 }
+
+
+
+

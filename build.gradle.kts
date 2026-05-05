@@ -21,7 +21,6 @@ dependencies {
     //compileOnly(files("libs/spigot-1.7.10-SNAPSHOT-b1657.jar"))
     //compileOnly(files("libs/WinterSpigot-1.8.8-b2.0.7.jar"))
     implementation("org.mongodb:mongodb-driver-sync:3.12.14")
-    implementation("com.mojang:brigadier:1.3.10")
     implementation("redis.clients:jedis:5.2.0")
     implementation("org.slf4j:slf4j-simple:1.7.36")
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")

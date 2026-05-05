@@ -9,10 +9,10 @@ import org.bukkit.entity.Player;
 
 @CommandInfo(
         name = "chatcolor",
-        permission = "WinterCore.commands.chatcolor",
         description = "Open the chat colour selection menu.",
         usage = "/chatcolor",
-        inGameOnly = true
+        inGameOnly = true,
+        permission = {"wintercore.commands.chatcolor", "WinterCore.commands.chatcolor"}
 )
 public class ChatColorCommand extends BaseCommand {
 

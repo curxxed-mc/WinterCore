@@ -5,7 +5,6 @@ import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -13,12 +12,12 @@ import java.util.UUID;
 
 @CommandInfo(
         name = "unmute",
-        permission = "WinterCore.unmute",
         description = "Unmute a player.",
         usage = "/unmute <player>",
-        inGameOnly = false
-    
-    )
+        inGameOnly = false,
+        async = true,
+        permission = {"wintercore.unmute", "WinterCore.unmute"}
+)
 public class UnmuteCommand extends BaseCommand {
     private final WinterCore plugin;
     private final ModerationService moderationService;
@@ -31,29 +30,38 @@ public class UnmuteCommand extends BaseCommand {
 
     @Override
     public void execute(CommandArguments commandArgs) {
-        if (!commandArgs.getSender().hasPermission("WinterCore.unmute")) {
-            commandArgs.getSender().sendMessage(CC.translate("&cYou do not have permission to unmute players."));
-            return;
-        }
+        runSync(() -> executeOnMainThread(commandArgs));
+    }
+
+    private void executeOnMainThread(CommandArguments commandArgs) {
         String[] args = commandArgs.getArgs();
         if (args.length < 1) {
-            commandArgs.getSender().sendMessage(CC.translate("&cUsage: /unmute <player>"));
+            sendUsage(commandArgs.getSender());
             return;
         }
         String playerName = args[0];
         UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
         String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        moderationService.isPlayerMuted(targetUUID, isMuted -> {
+        if (displayName == null || displayName.trim().isEmpty()) {
+            displayName = playerName;
+        }
+        final String finalDisplayName = displayName;
+        moderationService.isPlayerMuted(targetUUID, isMuted -> runSync(() -> {
             if (!isMuted) {
-                commandArgs.getSender().sendMessage(CC.translate("&cPlayer " + displayName + " is not muted."));
+                send(commandArgs.getSender(), "moderation.unmute.not-muted",
+                        "&cPlayer {target} is not muted.",
+                        "{target}", finalDisplayName);
                 return;
             }
             moderationService.unmutePlayer(targetUUID);
-            commandArgs.getSender().sendMessage(CC.translate("&aYou have unmuted " + displayName + "."));
+            send(commandArgs.getSender(), "moderation.unmute.actor-success",
+                    "&aYou have unmuted {target}.",
+                    "{target}", finalDisplayName);
             Player target = Bukkit.getPlayer(targetUUID);
             if (target != null) {
-                target.sendMessage(CC.translate("&aYou have been unmuted."));
+                send(target, "moderation.unmute.target-success",
+                        "&aYou have been unmuted.");
             }
-        });
+        }));
     }
 }

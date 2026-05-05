@@ -5,19 +5,17 @@ import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.listeners.FreezeListener;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
         name = "freeze",
-            permission = "WinterCore.commands.freeze",
-            description = "Freeze or unfreeze player",
-            usage = "/freeze <player>",
-            inGameOnly = true
-    )
+        description = "Freeze or unfreeze player",
+        usage = "/freeze <player>",
+        inGameOnly = true,
+        permission = {"wintercore.commands.freeze", "WinterCore.commands.freeze"}
+)
 public class FreezeCommand extends BaseCommand {
     private final FreezeListener freezeListener;
-    private final String discordLink = "discord.gg/example";
 
     public FreezeCommand(FreezeListener freezeListener, WinterCore plugin) {
         super(plugin);
@@ -28,30 +26,38 @@ public class FreezeCommand extends BaseCommand {
     public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
 
-        if (!player.hasPermission("WinterCore.freeze")) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
-            return;
-        }
-
         if (commandArgs.length() != 1) {
-            player.sendMessage(ChatColor.RED + "Usage: /freeze <player>");
+            sendUsage(player);
             return;
         }
 
         Player target = commandArgs.getOptionalPlayer(0).orElse(null);
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "Player not found.");
+            send(player, "general.player-not-found", "&cPlayer not found.");
             return;
         }
 
         if (freezeListener.isFrozen(target)) {
             freezeListener.unfreezePlayer(target, player);
-            player.sendMessage(ChatColor.GREEN + "Unfroze " + target.getName() + ".");
-            target.sendMessage(ChatColor.GREEN + "You have been unfrozen.");
+            send(player, "moderation.freeze.actor-unfrozen",
+                    "&aUnfroze {target}.",
+                    "{target}", target.getName());
+            send(target, "moderation.freeze.target-unfrozen",
+                    "&aYou have been unfrozen.");
         } else {
             freezeListener.freezePlayer(target, player);
-            player.sendMessage(ChatColor.RED + "Froze " + target.getName() + ".");
-            target.sendMessage(ChatColor.RED + "You have been frozen! Join our Discord for more information." + ChatColor.AQUA + discordLink);
+            String discordLink = plugin.getConfig().getString("discord-link", "discord.gg/example");
+            send(player, "moderation.freeze.actor-frozen",
+                    "&cFroze {target}.",
+                    "{target}", target.getName());
+            send(target, "moderation.freeze.target-frozen",
+                    "&cYou have been frozen! Join our Discord for more information. &b{discord}",
+                    "{discord}", discordLink);
         }
     }
 }
+
+
+
+
+

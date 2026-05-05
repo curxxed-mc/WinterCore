@@ -30,7 +30,11 @@ public class RankCacheService {
         String cached = rankCache.get(uuid);
         if (cached != null) {
             lastRefresh.put(uuid, System.currentTimeMillis());
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+            if (Bukkit.isPrimaryThread()) {
+                callback.accept(cached);
+            } else {
+                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+            }
             return;
         }
 
@@ -80,6 +84,10 @@ public class RankCacheService {
 
     public String getColor(UUID uuid) {
         return colorCache.getOrDefault(uuid, "&f");
+    }
+
+    public String peekColor(UUID uuid) {
+        return colorCache.get(uuid);
     }
 
     public void cleanupExpiredEntries() {

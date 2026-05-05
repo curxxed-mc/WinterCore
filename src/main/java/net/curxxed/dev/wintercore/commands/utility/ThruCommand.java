@@ -12,12 +12,11 @@ import org.bukkit.util.Vector;
 
 @CommandInfo(
         name = "thru",
-            permission = "WinterCore.thru",
-            description = "Teleport through the block you are facing.",
-            usage = "/thru",
-            inGameOnly = true
-    
-    )
+        description = "Teleport through the block you are facing.",
+        usage = "/thru",
+        inGameOnly = true,
+        permission = {"wintercore.thru", "WinterCore.thru"}
+)
 public class ThruCommand extends BaseCommand {
 
     public ThruCommand(WinterCore plugin) {

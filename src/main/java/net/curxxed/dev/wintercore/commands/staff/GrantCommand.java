@@ -5,7 +5,6 @@ import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.menus.RankMenu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -13,11 +12,11 @@ import java.util.UUID;
 
 @CommandInfo(
         name = "grant",
-        permission = "wintercore.commands.grant",
         description = "Open the rank selection GUI for target player.",
         aliases = {"setrank"},
         usage = "/grant <player>",
-        inGameOnly = true
+        inGameOnly = true,
+        permission = {"wintercore.commands.grant"}
 )
 public class GrantCommand extends BaseCommand {
 
@@ -33,7 +32,7 @@ public class GrantCommand extends BaseCommand {
         Player sender = commandArgs.getPlayer();
 
         if (commandArgs.length() < 1) {
-            sender.sendMessage(CC.translate("&cUsage: /grant <player>"));
+            sendUsage(sender);
             return;
         }
 

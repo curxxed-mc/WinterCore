@@ -15,21 +15,31 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
+import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @CommandInfo(
         name = "servermanager",
         aliases = {"sm"},
-        permission = "wintercore.servermanager",
         description = "Manage servers via Redis.",
         usage = "/sm <list|info|join|runcmd>",
-        async = true
+        async = true,
+        permission = {"wintercore.servermanager"}
 )
 public class ServerManagerCommand extends BaseCommand {
+
+    private static final List<String> SUBCOMMANDS = Arrays.asList("list", "listservers", "info", "join", "runcmd", "execute");
+    private static final long SERVER_CACHE_TTL_MILLIS = 5_000L;
+    private final AtomicBoolean serverCacheRefreshing = new AtomicBoolean(false);
+    private volatile List<String> cachedServers = Collections.emptyList();
+    private volatile long serverCacheExpiresAt = 0L;
 
     public ServerManagerCommand(WinterCore plugin) {
         super(plugin);
@@ -86,6 +96,23 @@ public class ServerManagerCommand extends BaseCommand {
             default:
                 reply(sender, "&eUsage: " + commandInfo.usage());
         }
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandArguments args) {
+        if (args.length() <= 1) {
+            return completeCurrentArg(args, SUBCOMMANDS);
+        }
+
+        String subCommand = args.getOptionalString(0).orElse("").toLowerCase(Locale.ENGLISH);
+        if (args.length() == 2) {
+            if ("info".equals(subCommand) || "join".equals(subCommand)
+                    || "runcmd".equals(subCommand) || "execute".equals(subCommand)) {
+                return completeCurrentArg(args, getCachedServerSuggestions());
+            }
+        }
+
+        return Collections.emptyList();
     }
 
     private void listServers(CommandSender sender) {
@@ -211,6 +238,44 @@ public class ServerManagerCommand extends BaseCommand {
         } while (!ScanParams.SCAN_POINTER_START.equals(cursor));
 
         return null;
+    }
+
+    private List<String> getCachedServerSuggestions() {
+        if (System.currentTimeMillis() > serverCacheExpiresAt) {
+            refreshServerCacheAsync();
+        }
+        return cachedServers;
+    }
+
+    private void refreshServerCacheAsync() {
+        if (!serverCacheRefreshing.compareAndSet(false, true)) {
+            return;
+        }
+
+        runAsync(() -> {
+            try (Jedis jedis = plugin.getRedisPool().getResource()) {
+                List<String> discovered = new ArrayList<>();
+                String cursor = ScanParams.SCAN_POINTER_START;
+                ScanParams params = new ScanParams().match("server:*:heartbeat").count(100);
+                do {
+                    ScanResult<String> result = jedis.scan(cursor, params);
+                    for (String key : result.getResult()) {
+                        String[] parts = key.split(":");
+                        if (parts.length >= 3) {
+                            discovered.add(parts[1]);
+                        }
+                    }
+                    cursor = result.getCursor();
+                } while (!ScanParams.SCAN_POINTER_START.equals(cursor));
+
+                Set<String> unique = new LinkedHashSet<>(discovered);
+                cachedServers = new ArrayList<>(unique);
+                serverCacheExpiresAt = System.currentTimeMillis() + SERVER_CACHE_TTL_MILLIS;
+            } catch (Exception ignored) {
+            } finally {
+                serverCacheRefreshing.set(false);
+            }
+        });
     }
 
     private void reply(CommandSender sender, String message) {

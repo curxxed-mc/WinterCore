@@ -11,9 +11,9 @@ import org.bukkit.plugin.PluginDescriptionFile;
 @CommandInfo(
         name = "about",
         aliases = {"wintercore", "ver", "version"},
-        permission = "wintercore.command.about",
         description = "Displays information about the WinterCore plugin.",
-        usage = "/about"
+        usage = "/about",
+        permission = {"wintercore.command.about"}
 )
 public class AboutCommand extends BaseCommand {
 

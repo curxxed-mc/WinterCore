@@ -2,7 +2,8 @@ package net.curxxed.dev.wintercore.player;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.ChatColor;
+import net.curxxed.dev.wintercore.utils.CC;
+
 import java.util.UUID;
 
 @Getter @Setter
@@ -20,11 +21,16 @@ public class WinterCorePlayer {
         this.name = name;
     }
 
-    public ChatColor getMessageColor() {
+    public String getMessageColor() {
         try {
-            return ChatColor.getByChar(chatColorCode.replace("&", "").charAt(0));
+            String raw = chatColorCode == null ? "" : chatColorCode.trim();
+            if (raw.isEmpty()) {
+                return CC.WHITE;
+            }
+            String normalized = raw.startsWith("&") || raw.startsWith(String.valueOf('\u00A7')) ? raw : "&" + raw;
+            return normalized.startsWith(String.valueOf('\u00A7')) ? normalized : CC.translate(normalized);
         } catch (Exception e) {
-            return ChatColor.WHITE;
+            return CC.WHITE;
         }
     }
 }

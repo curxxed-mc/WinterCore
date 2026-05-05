@@ -1,20 +1,20 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
         name = "jtp",
-            description = "Jump to another player.",
-            usage = "/jtp <player>",
-            inGameOnly = true
-    
-    )
+        description = "Jump to another player.",
+        usage = "/jtp <player>",
+        inGameOnly = true,
+        permission = {"wintercore.jtp", "WinterCore.jtp"}
+)
 public class JumpToPlayer extends BaseCommand {
 
     public JumpToPlayer(WinterCore plugin) {
@@ -27,17 +27,21 @@ public class JumpToPlayer extends BaseCommand {
         String[] args = commandArgs.getArgs();
 
         if (args.length != 1) {
-            p.sendMessage(ChatColor.RED + "Usage: /jtp <player>");
+            p.sendMessage(CC.RED + "Usage: /jtp <player>");
             return;
         }
 
         Player target = Bukkit.getPlayer(args[0]);
         if (target == null) {
-            p.sendMessage(ChatColor.RED + "Player not found.");
+            p.sendMessage(CC.RED + "Player not found.");
             return;
         }
 
         p.teleport(target.getLocation());
-        p.sendMessage(ChatColor.GREEN + "Jumped to " + target.getName() + ".");
+        p.sendMessage(CC.GREEN + "Jumped to " + target.getName() + ".");
     }
 }
+
+
+
+

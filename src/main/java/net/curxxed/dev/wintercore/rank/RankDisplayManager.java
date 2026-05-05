@@ -7,7 +7,6 @@ import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
@@ -103,10 +102,14 @@ public class RankDisplayManager {
             visibleName = plugin.getNameTagColorManager().getVisibleName(player);
         }
 
-        String coloredName = CC.translate(color) + visibleName + ChatColor.RESET;
+        String coloredName = CC.translate(color) + visibleName + CC.RESET;
 
         Bukkit.getScheduler().runTask(plugin, () -> {
             player.setDisplayName(coloredName);
         });
     }
 }
+
+
+
+

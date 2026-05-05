@@ -8,12 +8,18 @@ import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
 @CommandInfo(
         name = "2fa",
         description = "Manage your two-factor authentication setup.",
         usage = "/2fa <setup|disable> [code]",
-        permission = "wintercore.staff.2fa",
-        inGameOnly = true
+        inGameOnly = true,
+        async = true,
+        permission = {"wintercore.staff.2fa"}
 )
 public class TwoFACommand extends BaseCommand {
 
@@ -26,6 +32,19 @@ public class TwoFACommand extends BaseCommand {
 
     @Override
     public void execute(CommandArguments args) {
+        runSync(() -> executeOnMainThread(args));
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandArguments args) {
+        if (args.length() == 1) {
+            return completeCurrentArg(args, Arrays.asList("setup", "disable"));
+        }
+
+        return Collections.emptyList();
+    }
+
+    private void executeOnMainThread(CommandArguments args) {
         Player player = args.getPlayer();
 
         if (args.length() == 0) {
@@ -33,7 +52,7 @@ public class TwoFACommand extends BaseCommand {
             return;
         }
 
-        String mode = args.getArgs()[0].toLowerCase();
+        String mode = args.getArgs()[0].toLowerCase(Locale.ENGLISH);
         if ("setup".equals(mode)) {
             handleSetup(player);
             return;
@@ -47,33 +66,44 @@ public class TwoFACommand extends BaseCommand {
     }
 
     private void handleSetup(Player player) {
-        authManager.hasSecretConfiguredAsync(player.getUniqueId(), configured -> {
+        authManager.hasSecretConfiguredAsync(player.getUniqueId(), configured -> runSync(() -> {
+            if (!player.isOnline()) {
+                return;
+            }
+
             if (configured) {
                 player.sendMessage(CC.translate("&c2FA is already configured on your account."));
                 player.sendMessage(CC.translate("&7Run &e/2fa disable <code> &7to reset it first."));
                 return;
             }
 
-            AuthManager.SetupResult result = authManager.generateAndSaveSecret(player);
+            runAsync(() -> {
+                AuthManager.SetupResult result = authManager.generateAndSaveSecret(player);
+                runSync(() -> {
+                    player.sendMessage("");
+                    player.sendMessage(CC.translate("&6&l2FA Setup"));
+                    player.sendMessage(CC.translate("&7Scan the QR code or enter the key manually into a TOTP app."));
+                    player.sendMessage("");
+                    player.sendMessage(CC.translate("&eSecret Key: &f" + result.secret));
+                    player.sendMessage("");
+                    player.sendMessage(CC.translate("&bOTP URL (paste into a QR generator):"));
+                    player.sendMessage(CC.translate("&f" + result.otpUrl));
+                    player.sendMessage("");
+                    player.sendMessage(CC.translate("&cSave your secret key in a safe place."));
+                    player.sendMessage("");
 
-            player.sendMessage("");
-            player.sendMessage(CC.translate("&6&l2FA Setup"));
-            player.sendMessage(CC.translate("&7Scan the QR code or enter the key manually into a TOTP app."));
-            player.sendMessage("");
-            player.sendMessage(CC.translate("&eSecret Key: &f" + result.secret));
-            player.sendMessage("");
-            player.sendMessage(CC.translate("&bOTP URL (paste into a QR generator):"));
-            player.sendMessage(CC.translate("&f" + result.otpUrl));
-            player.sendMessage("");
-            player.sendMessage(CC.translate("&cSave your secret key in a safe place."));
-            player.sendMessage("");
-
-            authManager.completeSetup(player);
-        });
+                    authManager.completeSetup(player);
+                });
+            });
+        }));
     }
 
     private void handleDisable(Player player, CommandArguments args) {
-        authManager.hasSecretConfiguredAsync(player.getUniqueId(), configured -> {
+        authManager.hasSecretConfiguredAsync(player.getUniqueId(), configured -> runSync(() -> {
+            if (!player.isOnline()) {
+                return;
+            }
+
             if (!configured) {
                 player.sendMessage(CC.translate("&c2FA is not configured on your account."));
                 return;
@@ -92,15 +122,19 @@ public class TwoFACommand extends BaseCommand {
                 return;
             }
 
-            authManager.authenticateAsync(player, code, success -> {
+            authManager.authenticateAsync(player, code, success -> runSync(() -> {
+                if (!player.isOnline()) {
+                    return;
+                }
+
                 if (success) {
                     authManager.disableAuth(player);
                     player.sendMessage(CC.translate("&a2FA has been disabled on your account."));
                 } else {
                     player.sendMessage(CC.translate("&cInvalid code. 2FA was not disabled."));
                 }
-            });
-        });
+            }));
+        }));
     }
 
     private void sendUsage(Player player) {
