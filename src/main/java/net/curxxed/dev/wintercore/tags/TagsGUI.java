@@ -3,12 +3,12 @@ package net.curxxed.dev.wintercore.tags;
 import net.curxxed.dev.wintercore.menu.Button;
 import net.curxxed.dev.wintercore.menu.Menu;
 import net.curxxed.dev.wintercore.menu.MenuManager;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,22 +27,24 @@ public class TagsGUI extends Menu {
     private static final int SLOT_CLEAR = 50;
     private static final int SLOT_NEXT = 53;
 
+    private final WinterCore plugin;
     private final TagsManager tagsManager;
     private final Map<UUID, Integer> pageByPlayer = new ConcurrentHashMap<>();
     private final Map<UUID, String> selectedTagByPlayer = new ConcurrentHashMap<>();
 
-    public TagsGUI(TagsManager tagsManager) {
+    public TagsGUI(WinterCore plugin, TagsManager tagsManager) {
+        this.plugin = plugin;
         this.tagsManager = tagsManager;
     }
 
     @Override
     public String getTitle() {
-        return CC.translate("&8Select a Tag");
+        return plugin.getMenuConfig().getString("tags-menu.title", "&8Select a Tag");
     }
 
     @Override
     public int getSize() {
-        return SIZE;
+        return plugin.getMenuConfig().getSize("tags-menu");
     }
 
     public void openTagsGUI(Player player) {
@@ -67,13 +69,13 @@ public class TagsGUI extends Menu {
         UUID uuid = player.getUniqueId();
         List<Tag> tags = tagsManager.getTagsSorted();
 
-        int totalPages = Math.max(1, (int) Math.ceil(tags.size() / (double) PAGE_SIZE));
+        int totalPages = Math.max(1, (int) Math.ceil(tags.size() / (double) pageSize()));
         int currentPage = Math.max(0, Math.min(pageByPlayer.getOrDefault(uuid, 0), totalPages - 1));
         pageByPlayer.put(uuid, currentPage);
 
         Map<Integer, Button> buttons = new HashMap<>();
-        int start = currentPage * PAGE_SIZE;
-        int end = Math.min(start + PAGE_SIZE, tags.size());
+        int start = currentPage * pageSize();
+        int end = Math.min(start + pageSize(), tags.size());
         String selectedId = selectedTagByPlayer.get(uuid);
 
         for (int index = start; index < end; index++) {
@@ -89,8 +91,10 @@ public class TagsGUI extends Menu {
         }
 
         if (currentPage > 0) {
-            buttons.put(SLOT_PREVIOUS, new Button(
-                    buildControlItem(Material.ARROW, "&aPrevious Page", "&7Go to page " + currentPage + "."),
+            buttons.put(controlSlot("previous", SLOT_PREVIOUS), new Button(
+                    buildControlItem("tags-menu.controls.previous", Material.ARROW,
+                            "{page}", String.valueOf(currentPage),
+                            "{total_pages}", String.valueOf(totalPages)),
                     event -> {
                         pageByPlayer.put(uuid, currentPage - 1);
                         refresh(player);
@@ -98,10 +102,10 @@ public class TagsGUI extends Menu {
             ));
         }
 
-        buttons.put(SLOT_INFO, new Button(buildInfoItem(currentPage, totalPages, selectedId, tags)));
+        buttons.put(controlSlot("info", SLOT_INFO), new Button(buildInfoItem(currentPage, totalPages, selectedId, tags)));
 
-        buttons.put(SLOT_CLEAR, new Button(
-                buildControlItem(Material.BARRIER, "&cClear Tag", "&7Remove your active tag."),
+        buttons.put(controlSlot("clear", SLOT_CLEAR), new Button(
+                buildControlItem("tags-menu.controls.clear", Material.BARRIER),
                 event -> {
                     tagsManager.setPlayerTag(uuid, null);
                     selectedTagByPlayer.remove(uuid);
@@ -111,8 +115,10 @@ public class TagsGUI extends Menu {
         ));
 
         if (currentPage < totalPages - 1) {
-            buttons.put(SLOT_NEXT, new Button(
-                    buildControlItem(Material.ARROW, "&aNext Page", "&7Go to page " + (currentPage + 2) + "."),
+            buttons.put(controlSlot("next", SLOT_NEXT), new Button(
+                    buildControlItem("tags-menu.controls.next", Material.ARROW,
+                            "{page}", String.valueOf(currentPage + 2),
+                            "{total_pages}", String.valueOf(totalPages)),
                     event -> {
                         pageByPlayer.put(uuid, currentPage + 1);
                         refresh(player);
@@ -153,25 +159,20 @@ public class TagsGUI extends Menu {
     }
 
     private ItemStack buildTagItem(Tag tag, boolean selected) {
-        ItemStack item = new ItemStack(Material.NAME_TAG);
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) {
-            return item;
-        }
-
         String colorCode = TagsManager.colorNameToCode(tag.getColor());
-        meta.setDisplayName(CC.translate(colorCode + tag.getName()));
-
-        List<String> lore = new ArrayList<>();
-        if (!tag.getPrefix().isEmpty()) {
-            lore.add(CC.translate("&7Prefix: " + colorCode + tag.getPrefix()));
-        }
-        lore.add(CC.translate("&7Weight: &f" + tag.getWeight()));
-        lore.add(CC.translate(selected ? "&aCurrently selected" : "&eClick to select this tag"));
-        meta.setLore(lore);
-
-        item.setItemMeta(meta);
-        return item;
+        String selectedStatus = selected
+                ? plugin.getMenuConfig().getString("tags-menu.selected-status", "&aCurrently selected")
+                : plugin.getMenuConfig().getString("tags-menu.unselected-status", "&eClick to select this tag");
+        return plugin.getMenuConfig().buildItem(
+                "tags-menu.tag-item",
+                Material.NAME_TAG,
+                "{tag_id}", tag.getId(),
+                "{tag_name}", tag.getName(),
+                "{tag_prefix}", tag.getPrefix(),
+                "{tag_weight}", String.valueOf(tag.getWeight()),
+                "{color}", colorCode,
+                "{selected_status}", selectedStatus
+        );
     }
 
     private ItemStack buildInfoItem(int currentPage, int totalPages, String selectedId, List<Tag> tags) {
@@ -184,24 +185,21 @@ public class TagsGUI extends Menu {
                 }
             }
         }
-        return buildControlItem(
-                Material.BOOK,
-                "&bPage " + (currentPage + 1) + "/" + totalPages,
-                "&7Current tag: &f" + selectedName
-        );
+        return buildControlItem("tags-menu.controls.info", Material.BOOK,
+                "{page}", String.valueOf(currentPage + 1),
+                "{total_pages}", String.valueOf(totalPages),
+                "{selected_tag}", selectedName);
     }
 
-    private ItemStack buildControlItem(Material material, String name, String loreLine) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) {
-            return item;
-        }
-        meta.setDisplayName(CC.translate(name));
-        List<String> lore = new ArrayList<>();
-        lore.add(CC.translate(loreLine));
-        meta.setLore(lore);
-        item.setItemMeta(meta);
-        return item;
+    private ItemStack buildControlItem(String path, Material material, String... placeholders) {
+        return plugin.getMenuConfig().buildItem(path, material, placeholders);
+    }
+
+    private int pageSize() {
+        return Math.max(1, plugin.getMenuConfig().getInt("tags-menu.page-size", PAGE_SIZE));
+    }
+
+    private int controlSlot(String key, int fallback) {
+        return plugin.getMenuConfig().getSlot("tags-menu.controls." + key, fallback);
     }
 }

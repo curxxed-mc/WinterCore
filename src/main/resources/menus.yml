@@ -29,6 +29,27 @@ history-menu:
 
 history-category:
   size: 54
+  titles:
+    warnings: "&6{player}'s Warnings"
+    mutes: "&6{player}'s Mutes"
+    bans: "&6{player}'s Bans"
+    grants: "&6{player}'s Grants"
+  previous-button:
+    slot: 46
+    material: ARROW
+    name: "&aPrevious Page"
+    lore:
+      - "&7Go to page {page}."
+  next-button:
+    slot: 52
+    material: ARROW
+    name: "&aNext Page"
+    lore:
+      - "&7Go to page {page}."
+  page-info:
+    slot: 50
+    material: PAPER
+    name: "&ePage {page} of {total_pages}"
   back-button:
     slot: 49
     material: ARROW
@@ -47,3 +68,337 @@ history-category:
   grant-item:
     material: NAME_TAG
     name: "&aGrant"
+
+chat-color-menu:
+  title: "&8Chat Colors"
+  size: 36
+  filler:
+    enabled: true
+    material: STAINED_GLASS_PANE
+    data: 15
+    name: " "
+  colors:
+    dark-blue:
+      enabled: true
+      slot: 10
+      material: INK_SACK
+      data: 4
+      color-code: "&1"
+      display-name: "Dark Blue"
+      permission: ""
+      name: "&1Dark Blue"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    dark-green:
+      enabled: true
+      slot: 11
+      material: INK_SACK
+      data: 2
+      color-code: "&2"
+      display-name: "Dark Green"
+      permission: ""
+      name: "&2Dark Green"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    dark-aqua:
+      enabled: true
+      slot: 12
+      material: INK_SACK
+      data: 6
+      color-code: "&3"
+      display-name: "Dark Aqua"
+      permission: ""
+      name: "&3Dark Aqua"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    dark-red:
+      enabled: true
+      slot: 13
+      material: INK_SACK
+      data: 1
+      color-code: "&4"
+      display-name: "Dark Red"
+      permission: ""
+      name: "&4Dark Red"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    purple:
+      enabled: true
+      slot: 14
+      material: INK_SACK
+      data: 5
+      color-code: "&5"
+      display-name: "Purple"
+      permission: ""
+      name: "&5Purple"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    gold:
+      enabled: true
+      slot: 15
+      material: INK_SACK
+      data: 14
+      color-code: "&6"
+      display-name: "Gold"
+      permission: ""
+      name: "&6Gold"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    gray:
+      enabled: true
+      slot: 16
+      material: INK_SACK
+      data: 8
+      color-code: "&7"
+      display-name: "Gray"
+      permission: ""
+      name: "&7Gray"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    blue:
+      enabled: true
+      slot: 19
+      material: INK_SACK
+      data: 11
+      color-code: "&9"
+      display-name: "Blue"
+      permission: ""
+      name: "&9Blue"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    green:
+      enabled: true
+      slot: 20
+      material: INK_SACK
+      data: 10
+      color-code: "&a"
+      display-name: "Green"
+      permission: ""
+      name: "&aGreen"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    aqua:
+      enabled: true
+      slot: 21
+      material: INK_SACK
+      data: 6
+      color-code: "&b"
+      display-name: "Aqua"
+      permission: ""
+      name: "&bAqua"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    red:
+      enabled: true
+      slot: 22
+      material: INK_SACK
+      data: 1
+      color-code: "&c"
+      display-name: "Red"
+      permission: ""
+      name: "&cRed"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    pink:
+      enabled: true
+      slot: 23
+      material: INK_SACK
+      data: 9
+      color-code: "&d"
+      display-name: "Pink"
+      permission: ""
+      name: "&dPink"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    yellow:
+      enabled: true
+      slot: 24
+      material: INK_SACK
+      data: 11
+      color-code: "&e"
+      display-name: "Yellow"
+      permission: ""
+      name: "&eYellow"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+    white:
+      enabled: true
+      slot: 25
+      material: INK_SACK
+      data: 15
+      color-code: "&f"
+      display-name: "White"
+      permission: ""
+      name: "&fWhite"
+      lore:
+        - "&7Preview: &f{player}&7: {color}Hello there."
+        - "&eClick to use this chat color."
+
+tags-menu:
+  title: "&8Select a Tag"
+  size: 54
+  page-size: 45
+  selected-status: "&aCurrently selected"
+  unselected-status: "&eClick to select this tag"
+  tag-item:
+    material: NAME_TAG
+    name: "{color}{tag_name}"
+    lore:
+      - "&7Prefix: {color}{tag_prefix}"
+      - "&7Weight: &f{tag_weight}"
+      - "{selected_status}"
+  controls:
+    previous:
+      slot: 45
+      material: ARROW
+      name: "&aPrevious Page"
+      lore:
+        - "&7Go to page {page}."
+    info:
+      slot: 49
+      material: BOOK
+      name: "&bPage {page}/{total_pages}"
+      lore:
+        - "&7Current tag: &f{selected_tag}"
+    clear:
+      slot: 50
+      material: BARRIER
+      name: "&cClear Tag"
+      lore:
+        - "&7Remove your active tag."
+    next:
+      slot: 53
+      material: ARROW
+      name: "&aNext Page"
+      lore:
+        - "&7Go to page {page}."
+
+staff-list-menu:
+  title: "&bOnline Staff"
+  size: 54
+  staff-item:
+    material: SKULL_ITEM
+    data: 3
+    name: "&b{player}"
+    lore:
+      - "&7Server: &e{server}"
+      - "&7Rank: {rank_color}{rank}"
+  empty-item:
+    enabled: true
+    slot: 22
+    material: BARRIER
+    name: "&cNo staff online"
+    lore:
+      - "&7No online staff were found across live servers."
+
+rank-menu:
+  title: "&8Set rank for {target}"
+  duration-title: "&8Set duration for {target}"
+  size: 54
+  rank-item:
+    name: "{rank_color}{rank}"
+    lore:
+      - "&7&m------------------------"
+      - "&6Preview:"
+      - "{preview}"
+      - "&7&m------------------------"
+      - "&aClick to grant this rank to &b{target}&a."
+  cancel-button:
+    slot: 53
+    material: BARRIER
+    name: "&cCancel"
+    message: "&cRank selection cancelled."
+  duration:
+    size: 27
+    adjustments:
+      add-hour:
+        slot: 0
+        material: WATCH
+        name: "&a+1 Hour"
+      add-day:
+        slot: 1
+        material: WATCH
+        name: "&a+1 Day"
+      add-week:
+        slot: 2
+        material: WATCH
+        name: "&a+1 Week"
+      add-month:
+        slot: 3
+        material: WATCH
+        name: "&a+1 Month"
+      remove-hour:
+        slot: 5
+        material: WATCH
+        name: "&c-1 Hour"
+      remove-day:
+        slot: 6
+        material: WATCH
+        name: "&c-1 Day"
+      remove-week:
+        slot: 7
+        material: WATCH
+        name: "&c-1 Week"
+      remove-month:
+        slot: 8
+        material: WATCH
+        name: "&c-1 Month"
+    permanent-button:
+      slot: 13
+      material: BEDROCK
+      name: "&6Permanent"
+    current-duration:
+      slot: 22
+      material: PAPER
+      name: "&bCurrent Duration: {duration}"
+    continue-button:
+      slot: 26
+      material: WOOL
+      data: 5
+      name: "&aContinue"
+    cancel-button:
+      slot: 18
+      material: BARRIER
+      name: "&cCancel"
+      message: "&cRank grant cancelled."
+  messages:
+    reason-prompt: "&ePlease type the reason for granting this rank in chat. Type &ccancel &eto abort."
+    cancelled: "&cRank grant cancelled."
+    granted: "&aGranted rank &e{rank} &ato &b{target}&a."
+
+disguise-menu:
+  title: "&8Select disguise rank"
+  size: 36
+  rank-item:
+    name: "{rank_color}{rank}"
+    lore:
+      - "&7&m------------------------"
+      - "&6Prefix: &f{clean_rank_color}{rank_prefix}"
+      - "&7&m------------------------"
+      - "&aClick to disguise as &b{target}&a."
+  cancel-button:
+    slot: 35
+    material: BARRIER
+    name: "&cCancel"
+  messages:
+    success: "&aDisguise applied as &e{target} &7with rank &b{rank}&a!"
+    error: "&cFailed to apply disguise. Try again later."
+    no-rank-found: "&cSelected rank is invalid or not found."
+    global-player-found: "&cA player with that name is already online."
+    same-name: "&cYou cannot disguise as yourself."
+    not-online: "&cYou must be online to disguise."
+    unknown: "&cUnknown error occurred."
+

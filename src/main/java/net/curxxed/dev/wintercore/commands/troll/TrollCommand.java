@@ -1,18 +1,19 @@
 package net.curxxed.dev.wintercore.commands.troll;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,10 +22,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @CommandInfo(
         name = "troll",
-        permission = "wintercore.troll",
         description = "Troll a player with various effects.",
         usage = "/troll <player> <demo|win|boatspam|daynight>",
-        inGameOnly = true
+        inGameOnly = true,
+        permission = {"wintercore.troll"}
 )
 public class TrollCommand extends BaseCommand {
 
@@ -41,13 +42,13 @@ public class TrollCommand extends BaseCommand {
         Player player = commandArgs.getPlayer();
 
         if (commandArgs.length() < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /troll <player> <" + String.join("|", SUBCOMMANDS) + ">");
+            player.sendMessage(CC.RED + "Usage: /troll <player> <" + String.join("|", SUBCOMMANDS) + ">");
             return;
         }
 
         Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null || !target.isOnline()) {
-            player.sendMessage(ChatColor.RED + "Player not found or offline.");
+            player.sendMessage(CC.RED + "Player not found or offline.");
             return;
         }
 
@@ -66,11 +67,11 @@ public class TrollCommand extends BaseCommand {
                 toggleDayNightLoop(player, target);
                 return;
             default:
-                player.sendMessage(ChatColor.RED + "Unknown troll type. Use: " + String.join(", ", SUBCOMMANDS));
+                player.sendMessage(CC.RED + "Unknown troll type. Use: " + String.join(", ", SUBCOMMANDS));
                 return;
         }
 
-        player.sendMessage(ChatColor.GREEN + "Trolled " + target.getName() + " with " + sub + "!");
+        player.sendMessage(CC.GREEN + "Trolled " + target.getName() + " with " + sub + "!");
     }
 
     private void sendGameStateChange(Player target, int reason, float value) {
@@ -133,7 +134,7 @@ public class TrollCommand extends BaseCommand {
         if (dayNightTasks.containsKey(uuid)) {
             dayNightTasks.get(uuid).cancel();
             dayNightTasks.remove(uuid);
-            sender.sendMessage(ChatColor.GREEN + "Stopped day/night loop for " + target.getName() + ".");
+            sender.sendMessage(CC.GREEN + "Stopped day/night loop for " + target.getName() + ".");
             return;
         }
 
@@ -155,8 +156,8 @@ public class TrollCommand extends BaseCommand {
         task.runTaskTimer(plugin, 0L, 2L);
         dayNightTasks.put(uuid, task);
 
-        sender.sendMessage(ChatColor.GREEN + "Started day/night loop for " + target.getName() + ".");
-        target.sendMessage(ChatColor.RED + "Something feels off about time...");
+        sender.sendMessage(CC.GREEN + "Started day/night loop for " + target.getName() + ".");
+        target.sendMessage(CC.RED + "Something feels off about time...");
     }
 
     private void sendTimeUpdate(Player target, long timeOfDay) {
@@ -170,4 +171,22 @@ public class TrollCommand extends BaseCommand {
             plugin.getLogger().warning("Failed to send time packet to " + target.getName() + ": " + e.getMessage());
         }
     }
+
+    @Override
+    public List<String> onTabComplete(CommandArguments args) {
+        if (args.length() == 1) {
+            return completeOnlinePlayers(args);
+        }
+
+        if (args.length() == 2) {
+            return completeCurrentArg(args, SUBCOMMANDS);
+        }
+
+        return Collections.emptyList();
+    }
 }
+
+
+
+
+

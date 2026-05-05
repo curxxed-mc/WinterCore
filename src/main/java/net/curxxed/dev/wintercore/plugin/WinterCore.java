@@ -3,6 +3,7 @@ package net.curxxed.dev.wintercore.plugin;
 import lombok.Getter;
 import net.curxxed.dev.wintercore.annotation.ToBeRevamped;
 import net.curxxed.dev.wintercore.auth.AuthModule;
+import net.curxxed.dev.wintercore.chat.ChatFilterService;
 import net.curxxed.dev.wintercore.chat.StaffChatService;
 import net.curxxed.dev.wintercore.client.ClientBrand;
 import net.curxxed.dev.wintercore.client.ClientBrandCommand;
@@ -29,6 +30,7 @@ import net.curxxed.dev.wintercore.disguise.commands.UnDisguiseCommand;
 import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.chat.ChatListener;
+import net.curxxed.dev.wintercore.chat.MessagingService;
 import net.curxxed.dev.wintercore.listeners.ConnectionListener;
 import net.curxxed.dev.wintercore.listeners.FreezeListener;
 import net.curxxed.dev.wintercore.player.PlayerService;
@@ -47,6 +49,7 @@ import net.curxxed.dev.wintercore.tags.TagsGUI;
 import net.curxxed.dev.wintercore.tags.TagsManager;
 import net.curxxed.dev.wintercore.utils.BanList;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.MessageConfig;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -89,6 +92,7 @@ public final class WinterCore extends JavaPlugin {
     private DisguiseRegistry disguiseRegistry;
     private DisguiseEventListener disguiseEventListener;
     private PlayerService playerService;
+    private MessagingService messagingService;
     private ChatListener chatListener;
     private FreezeListener freezeListener;
     private StaffModeManager staffModeManager;
@@ -99,6 +103,8 @@ public final class WinterCore extends JavaPlugin {
     private PermissionConfigManager permissionConfigManager;
     private NameTagColorManager nameTagColorManager;
     private StaffChatService staffChatService;
+    private ChatFilterService chatFilterService;
+    private MessageConfig messageConfig;
     private NetworkRedisService NRS;
     private BanList banList;
 
@@ -111,6 +117,8 @@ public final class WinterCore extends JavaPlugin {
         loadRanksFile();
 
         instance = this;
+        this.messageConfig = new MessageConfig(this);
+        this.chatFilterService = new ChatFilterService(this);
 
         this.databaseManager = DatabaseManager.init(this);
 
@@ -133,7 +141,7 @@ public final class WinterCore extends JavaPlugin {
         this.disguiseRegistry = new DisguiseRegistry(this.redisManager, getLogger());
         this.disguiseHandler = new DefaultDisguiseHandler(this, this.disguiseRegistry);
         this.tagsManager = new TagsManager(this);
-        this.tagsGUI = new TagsGUI(tagsManager);
+        this.tagsGUI = new TagsGUI(this, tagsManager);
         this.menuConfig = new MenuConfig(this);
         this.disguiseEventListener = new DisguiseEventListener(this, (DefaultDisguiseHandler) disguiseHandler);
         this.commandHandler = new CommandHandler(this);
@@ -187,6 +195,11 @@ public final class WinterCore extends JavaPlugin {
 
         if (redisPool != null) {
             try (Jedis jedis = redisPool.getResource()) {
+                for (Player online : Bukkit.getOnlinePlayers()) {
+                    if (NRS != null) {
+                        NRS.clearOnlinePresence(online.getUniqueId(), online.getName());
+                    }
+                }
                 jedis.del("server:" + getConfig().getString("server-name", "unknown") + ":heartbeat");
                 jedis.del("server:" + getConfig().getString("server-name", "unknown") + ":info");
             } catch (Exception e) {
@@ -270,6 +283,7 @@ public final class WinterCore extends JavaPlugin {
         PluginManager pm = getServer().getPluginManager();
 
         this.playerService = new PlayerService(this);
+        this.messagingService = new MessagingService(this, playerService);
         this.staffChatService = new StaffChatService(this);
         this.chatListener = new ChatListener(this, tagsManager, playerService, staffChatService);
         this.freezeListener = new FreezeListener(playerService);

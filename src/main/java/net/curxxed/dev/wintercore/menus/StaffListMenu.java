@@ -32,12 +32,12 @@ public class StaffListMenu extends Menu {
 
     @Override
     public String getTitle() {
-        return CC.translate("&bOnline Staff");
+        return plugin.getMenuConfig().getString("staff-list-menu.title", "&bOnline Staff");
     }
 
     @Override
     public int getSize() {
-        return 54;
+        return plugin.getMenuConfig().getSize("staff-list-menu");
     }
 
     @Override
@@ -45,6 +45,10 @@ public class StaffListMenu extends Menu {
         Map<Integer, Button> buttons = new HashMap<>();
         for (int i = 0; i < skulls.size() && i < getSize(); i++) {
             buttons.put(i, new Button(skulls.get(i)));
+        }
+        if (skulls.isEmpty() && plugin.getMenuConfig().getBoolean("staff-list-menu.empty-item.enabled", true)) {
+            buttons.put(plugin.getMenuConfig().getSlot("staff-list-menu.empty-item", 22),
+                    new Button(plugin.getMenuConfig().buildItem("staff-list-menu.empty-item", Material.BARRIER)));
         }
         return buttons;
     }
@@ -105,15 +109,18 @@ public class StaffListMenu extends Menu {
                         if (color == null) color = "&f";
                         String coloredRank = CC.translate(color) + resolvedRank;
 
-                        ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
-                        SkullMeta meta = (SkullMeta) skull.getItemMeta();
-                        if (meta != null) {
+                        ItemStack skull = plugin.getMenuConfig().buildItem(
+                                "staff-list-menu.staff-item",
+                                Material.SKULL_ITEM,
+                                "{player}", se.playerName,
+                                "{server}", se.server,
+                                "{rank}", resolvedRank,
+                                "{rank_color}", color,
+                                "{colored_rank}", coloredRank
+                        );
+                        if (skull.getItemMeta() instanceof SkullMeta) {
+                            SkullMeta meta = (SkullMeta) skull.getItemMeta();
                             meta.setOwner(se.playerName);
-                            meta.setDisplayName(CC.translate("&b" + se.playerName));
-                            meta.setLore(Arrays.asList(
-                                    CC.translate("&7Server: &e" + se.server),
-                                    CC.translate("&7Rank: ") + coloredRank
-                            ));
                             skull.setItemMeta(meta);
                         }
 

@@ -6,20 +6,18 @@ import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
 @CommandInfo(
         name = "warning",
-        permission = "WinterCore.warning",
         description = "Warn a player.",
         aliases = {"warn"},
         usage = "/warn <player> <reason>",
-        inGameOnly = false
-    
-    )
+        inGameOnly = false,
+        permission = {"wintercore.warning", "WinterCore.warning"}
+)
 public class WarningCommand extends BaseCommand {
     private final WinterCore plugin;
     private final ModerationService moderationService;
@@ -34,7 +32,7 @@ public class WarningCommand extends BaseCommand {
     public void execute(CommandArguments commandArgs) {
         String[] args = commandArgs.getArgs();
         if (args.length < 2) {
-            commandArgs.getSender().sendMessage(ChatColor.RED + "Usage: /warn <player> <reason>");
+            sendUsage(commandArgs.getSender());
             return;
         }
         String playerName = args[0];
@@ -42,11 +40,24 @@ public class WarningCommand extends BaseCommand {
         String issuer = commandArgs.getSender().getName();
         UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
         String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
+        if (displayName == null || displayName.trim().isEmpty()) {
+            displayName = playerName;
+        }
         moderationService.addWarning(displayName, reason, issuer);
-        commandArgs.getSender().sendMessage(ChatColor.GREEN + "You have warned " + displayName + " for: " + reason);
+        send(commandArgs.getSender(), "moderation.warning.actor-success",
+                "&aYou have warned {target} for: {reason}",
+                "{target}", displayName,
+                "{reason}", reason);
         Player target = Bukkit.getPlayer(targetUUID);
         if (target != null) {
-            target.sendMessage(ChatColor.RED + "You have been warned for: " + reason);
+            send(target, "moderation.warning.target-success",
+                    "&cYou have been warned for: {reason}",
+                    "{reason}", reason);
         }
     }
 }
+
+
+
+
+

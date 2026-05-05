@@ -220,6 +220,12 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
             case PERMISSIONS:
                 target = new File(plugin.getDataFolder(), "permissions.yml");
                 break;
+            case MESSAGES:
+                target = new File(plugin.getDataFolder(), "messages.yml");
+                break;
+            case CHAT_FILTER:
+                target = new File(plugin.getDataFolder(), "chat-filter.yml");
+                break;
             default:
                 plugin.getLogger().warning("[Sync] Unsupported config type received: " + type);
                 return;
@@ -246,6 +252,12 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                 case PERMISSIONS:
                     plugin.getPermissionConfigManager().load();
                     refreshDisplaysForOnlinePlayers();
+                    break;
+                case MESSAGES:
+                    plugin.getMessageConfig().load();
+                    break;
+                case CHAT_FILTER:
+                    plugin.getChatFilterService().load();
                     break;
                 default:
                     break;

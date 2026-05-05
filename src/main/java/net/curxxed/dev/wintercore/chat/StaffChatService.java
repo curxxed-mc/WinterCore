@@ -4,7 +4,6 @@ import net.curxxed.dev.wintercore.database.redis.packet.packets.ChatBroadcastPac
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -57,11 +56,11 @@ public final class StaffChatService {
                 String formatted = CC.translate(prefix)
                         + CC.translate("&8[&7" + sourceServer + "&8] ")
                         + identity
-                        + ChatColor.RESET
+                        + CC.RESET
                         + ": "
                         + CC.translate(color)
                         + message
-                        + ChatColor.RESET;
+                        + CC.RESET;
 
                 plugin.getRedisManager().publishAndHandleLocally(new ChatBroadcastPacket(
                         sourceServer,
@@ -119,3 +118,7 @@ public final class StaffChatService {
         return player.getName();
     }
 }
+
+
+
+

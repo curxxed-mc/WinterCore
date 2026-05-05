@@ -12,7 +12,9 @@ import org.bukkit.entity.Player;
         name = "auth",
         description = "Authenticate with your 2FA code after joining.",
         usage = "/auth <6-digit code>",
-        inGameOnly = true
+        inGameOnly = true,
+        async = true,
+        permission = {}
 )
 public class AuthCommand extends BaseCommand {
 
@@ -25,6 +27,10 @@ public class AuthCommand extends BaseCommand {
 
     @Override
     public void execute(CommandArguments args) {
+        runSync(() -> executeOnMainThread(args));
+    }
+
+    private void executeOnMainThread(CommandArguments args) {
         final Player player = args.getPlayer();
 
         if (!player.hasPermission(AuthManager.STAFF_PERMISSION)) {
@@ -45,7 +51,11 @@ public class AuthCommand extends BaseCommand {
             return;
         }
 
-        authManager.hasSecretConfiguredAsync(player.getUniqueId(), hasSecret -> {
+        authManager.hasSecretConfiguredAsync(player.getUniqueId(), hasSecret -> runSync(() -> {
+            if (!player.isOnline()) {
+                return;
+            }
+
             if (!hasSecret) {
                 player.sendMessage(CC.translate("&cYou have not set up 2FA yet. Use &e/2fa setup &cto begin."));
                 return;
@@ -56,7 +66,11 @@ public class AuthCommand extends BaseCommand {
                 return;
             }
 
-            authManager.authenticateAsync(player, code, success -> {
+            authManager.authenticateAsync(player, code, success -> runSync(() -> {
+                if (!player.isOnline()) {
+                    return;
+                }
+
                 if (success) {
                     player.sendMessage("");
                     player.sendMessage(CC.translate("&a&lAuthenticated successfully."));
@@ -65,7 +79,7 @@ public class AuthCommand extends BaseCommand {
                 } else {
                     player.sendMessage(CC.translate("&cInvalid code. Please check your authenticator app and try again."));
                 }
-            });
-        });
+            }));
+        }));
     }
 }

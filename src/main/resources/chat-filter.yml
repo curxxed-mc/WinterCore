@@ -1,0 +1,52 @@
+enabled: true
+
+permissions:
+  bypass: "wintercore.chatfilter.bypass"
+  staff-alert: "wintercore.staff"
+
+actions:
+  cancel-message: true
+  notify-staff: true
+  log-to-console: true
+
+algorithm:
+  normalize-leetspeak: true
+  collapse-repeated-letters: true
+  strip-symbols: true
+  min-fuzzy-length: 5
+  max-edit-distance: 1
+
+messages:
+  blocked-sender: "&cYour message was blocked by the chat filter. &7Category: &f{category}"
+  staff-alert: "&8[&cFilter&8] &f{player} &7triggered &f{category}&7 in &f{channel}&7 using &f{detector}&7: &f{message}"
+
+categories:
+  hackusation:
+    enabled: true
+    label: "Hackusation"
+    sensitivity: 1
+    triggers:
+      - "hacker"
+      - "hacks"
+      - "cheater"
+      - "cheating"
+      - "killaura"
+      - "reach"
+      - "aimbot"
+      - "bhop"
+      - "xray"
+      - "autoclicker"
+    phrases:
+      - "you hack"
+      - "nice hacks"
+      - "stop cheating"
+      - "turn off your cheats"
+  slurs:
+    enabled: true
+    label: "Slur"
+    sensitivity: 1
+    triggers:
+      # Add server-specific slurs here. The filter will also catch spaced,
+      # symbol-split, leetspeak, repeated-letter, and near-miss variants.
+      - "example-slur"
+    phrases: []

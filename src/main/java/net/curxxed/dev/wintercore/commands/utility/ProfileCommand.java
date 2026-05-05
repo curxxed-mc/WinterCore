@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
@@ -10,7 +11,6 @@ import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,11 +27,12 @@ import java.util.*;
 
 @CommandInfo(
         name = "profile",
-            description = "View your or another player's profile.",
-            usage = "/profile [player]",
-            inGameOnly = true
-    
-    )
+        description = "View your or another player's profile.",
+        usage = "/profile [player]",
+        inGameOnly = true,
+        async = true,
+        permission = {}
+)
 public class ProfileCommand extends BaseCommand implements Listener {
 
     private final WinterCore plugin;
@@ -48,53 +49,58 @@ public class ProfileCommand extends BaseCommand implements Listener {
 
     @Override
     public void execute(CommandArguments commandArgs) {
-        Player player = commandArgs.getPlayer();
-        String[] args = commandArgs.getArgs();
+        runSync(() -> resolveAndOpenProfile(commandArgs));
+    }
 
-        Player target = player;
-        if (args.length > 0) {
-            Player found = Bukkit.getPlayer(args[0]);
-            if (found != null) {
-                target = found;
-            } else {
-                player.sendMessage(ChatColor.RED + "Player not found.");
+    private void resolveAndOpenProfile(CommandArguments commandArgs) {
+        Player viewer = commandArgs.getPlayer();
+        Player target = viewer;
+        if (commandArgs.length() > 0) {
+            Player found = Bukkit.getPlayer(commandArgs.getArgs()[0]);
+            if (found == null) {
+                viewer.sendMessage(CC.RED + "Player not found.");
                 return;
             }
+            target = found;
         }
 
         Player finalTarget = target;
+        runAsync(() -> openProfileInventory(viewer, finalTarget));
+    }
 
-        rankManager.getRank(finalTarget, rank ->
-                rankManager.getRankPrefix(finalTarget, prefix ->
+    private void openProfileInventory(Player viewer, Player target) {
+        Map<String, String> socials = redis.getAllSocialLinks(target.getUniqueId());
+
+        rankManager.getRank(target, rank ->
+                rankManager.getRankPrefix(target, prefix ->
                         rankManager.getColorPreference(rank, color ->
-                                Bukkit.getScheduler().runTask(plugin, () -> {
+                                runSync(() -> {
                                     Inventory inv = Bukkit.createInventory(null, 54,
-                                            ChatColor.DARK_GRAY + (finalTarget.equals(player) ? "Your Profile" : finalTarget.getName() + "'s Profile"));
-                                    String coloredName = ChatColor.translateAlternateColorCodes('&', color) + finalTarget.getName();
+                                            CC.DARK_GRAY + (target.equals(viewer) ? "Your Profile" : target.getName() + "'s Profile"));
+                                    String coloredName = CC.translateAlternateColorCodes('&', color) + target.getName();
 
-                                    // Player Skull
                                     ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
                                     SkullMeta meta = (SkullMeta) skull.getItemMeta();
-                                    meta.setOwner(finalTarget.getName());
+                                    meta.setOwner(target.getName());
                                     meta.setDisplayName(coloredName);
                                     meta.setLore(Arrays.asList(
-                                            ChatColor.GRAY + "Rank: " + ChatColor.translateAlternateColorCodes('&', color) + rank,
-                                            ChatColor.GRAY + "Game Mode: " + ChatColor.AQUA + finalTarget.getGameMode(),
-                                            ChatColor.GRAY + "Frozen: " + (FreezeListener.getInstance().isPlayerFrozen(finalTarget) ? ChatColor.GREEN + "Yes" : ChatColor.RED + "No"),
-                                            ChatColor.GRAY + "Vanished: " + (VanishCommand.vanishedPlayers.contains(finalTarget.getUniqueId()) ? ChatColor.GREEN + "Yes" : ChatColor.RED + "No"),
-                                            ChatColor.GRAY + "Staff: " + (finalTarget.hasPermission("WinterCore.staff") || finalTarget.hasPermission("WinterCore.Admin")
-                                                    || finalTarget.isOp() || finalTarget.hasPermission("WinterCore.Manager") ? ChatColor.GREEN + "Yes" : ChatColor.RED + "No")
+                                            CC.GRAY + "Rank: " + CC.translateAlternateColorCodes('&', color) + rank,
+                                            CC.GRAY + "Game Mode: " + CC.AQUA + target.getGameMode(),
+                                            CC.GRAY + "Frozen: " + (FreezeListener.getInstance().isPlayerFrozen(target) ? CC.GREEN + "Yes" : CC.RED + "No"),
+                                            CC.GRAY + "Vanished: " + (VanishCommand.vanishedPlayers.contains(target.getUniqueId()) ? CC.GREEN + "Yes" : CC.RED + "No"),
+                                            CC.GRAY + "Staff: " + (target.hasPermission("WinterCore.staff") || target.hasPermission("WinterCore.Admin")
+                                                    || target.isOp() || target.hasPermission("WinterCore.Manager") ? CC.GREEN + "Yes" : CC.RED + "No")
                                     ));
                                     skull.setItemMeta(meta);
                                     inv.setItem(13, skull);
 
-                                    boolean isSelf = finalTarget.getUniqueId().equals(player.getUniqueId());
+                                    boolean isSelf = target.getUniqueId().equals(viewer.getUniqueId());
 
-                                    inv.setItem(29, createCustomHead("Discord", "Discord", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNzg3M2MxMmJmZmI1MjUxYTBiODhkNWFlNzVjNzI0N2NiMzlhNzVmZjFhODFjYmU0YzhhMzliMzExZGRlZGEifX19", redis.getSocialLink(finalTarget.getUniqueId(), "Discord"), isSelf));
-                                    inv.setItem(31, createCustomHead("YouTube", "YouTube", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZDJmNmMwN2EzMjZkZWY5ODRlNzJmNzcyZWQ2NDU0NDlmNWVjOTZjNmNhMjU2NDk5YjVkMmI4NGE4ZGNlIn19fQ==", redis.getSocialLink(finalTarget.getUniqueId(), "YouTube"), isSelf));
-                                    inv.setItem(33, createCustomHead("Twitter", "Twitter", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTFiN2EwYzIxMGU2Y2RmNWEzNWZkODE5N2U2ZTI0YTAzODMxNWJiZTNiZGNkMWJjYzM2MzBiZjI2ZjU5ZWM1YyJ9fX0==", redis.getSocialLink(finalTarget.getUniqueId(), "Twitter"), isSelf));
+                                    inv.setItem(29, createCustomHead("Discord", "Discord", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNzg3M2MxMmJmZmI1MjUxYTBiODhkNWFlNzVjNzI0N2NiMzlhNzVmZjFhODFjYmU0YzhhMzliMzExZGRlZGEifX19", socials.get("discord"), isSelf));
+                                    inv.setItem(31, createCustomHead("YouTube", "YouTube", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZDJmNmMwN2EzMjZkZWY5ODRlNzJmNzcyZWQ2NDU0NDlmNWVjOTZjNmNhMjU2NDk5YjVkMmI4NGE4ZGNlIn19fQ==", socials.get("youtube"), isSelf));
+                                    inv.setItem(33, createCustomHead("Twitter", "Twitter", "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTFiN2EwYzIxMGU2Y2RmNWEzNWZkODE5N2U2ZTI0YTAzODMxNWJiZTNiZGNkMWJjYzM2MzBiZjI2ZjU5ZWM1YyJ9fX0==", socials.get("twitter"), isSelf));
 
-                                    player.openInventory(inv);
+                                    viewer.openInventory(inv);
                                 })
                         )
                 )
@@ -108,7 +114,7 @@ public class ProfileCommand extends BaseCommand implements Listener {
         Player p = (Player) e.getWhoClicked();
         UUID uuid = p.getUniqueId();
 
-        String title = ChatColor.stripColor(e.getView().getTitle());
+        String title = CC.stripColor(e.getView().getTitle());
         if (!title.endsWith("Profile")) return;
 
         int slot = e.getRawSlot();
@@ -141,9 +147,9 @@ public class ProfileCommand extends BaseCommand implements Listener {
                         return;
                 }
                 if (link != null && !link.isEmpty()) {
-                    p.sendMessage(ChatColor.YELLOW + "Click this to open the link: " + ChatColor.UNDERLINE + link);
+                    p.sendMessage(CC.YELLOW + "Click this to open the link: " + CC.UNDERLINE + link);
                 } else {
-                    p.sendMessage(ChatColor.RED + "No link set.");
+                    p.sendMessage(CC.RED + "No link set.");
                 }
             }
         } else {
@@ -165,9 +171,9 @@ public class ProfileCommand extends BaseCommand implements Listener {
                         return;
                 }
                 if (link != null && !link.isEmpty()) {
-                    p.sendMessage(ChatColor.YELLOW + "Click this to open the link: " + ChatColor.UNDERLINE + link);
+                    p.sendMessage(CC.YELLOW + "Click this to open the link: " + CC.UNDERLINE + link);
                 } else {
-                    p.sendMessage(ChatColor.RED + "No link set.");
+                    p.sendMessage(CC.RED + "No link set.");
                 }
             }
         }
@@ -203,13 +209,13 @@ public class ProfileCommand extends BaseCommand implements Listener {
             e.printStackTrace();
         }
 
-        meta.setDisplayName(ChatColor.AQUA + name);
+        meta.setDisplayName(CC.AQUA + name);
 
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.GRAY + (value != null ? value : "Not set"));
+        lore.add(CC.GRAY + (value != null ? value : "Not set"));
         if (isSelf) {
-            lore.add(ChatColor.YELLOW + "Right-click to edit");
-            lore.add(ChatColor.GREEN + "Left-click to open");
+            lore.add(CC.YELLOW + "Right-click to edit");
+            lore.add(CC.GREEN + "Left-click to open");
         }
         meta.setLore(lore);
 
@@ -217,3 +223,8 @@ public class ProfileCommand extends BaseCommand implements Listener {
         return head;
     }
 }
+
+
+
+
+

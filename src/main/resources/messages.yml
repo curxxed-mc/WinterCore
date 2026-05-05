@@ -1,0 +1,96 @@
+general:
+  no-permission: "&cYou do not have permission to do that."
+  in-game-only-command: "&cThis command can only be executed by players."
+  usage: "&cUsage: {usage}"
+  player-not-found: "&cPlayer not found."
+  player-data-loading: "&cYour data is still loading... Please wait a moment."
+  internal-error: "&cAn internal error occurred. Please contact an administrator."
+
+chat:
+  muted: "&cYou are muted and cannot send messages."
+  private:
+    player-only: "&cOnly players can send private messages."
+    target-not-online: "&cThat player is not online."
+    self: "&cYou cannot send a message to yourself."
+    empty: "&cMessage cannot be empty."
+    data-loading: "&cPlayer data is still loading..."
+    to: "&e(To {recipient}) &f{message}"
+    from: "&e(From {sender}) &f{message}"
+    no-reply-target: "&cYou have no one to reply to."
+
+chat-color:
+  selected: "&aChat message color set to: {color_name}"
+  no-permission: "&cYou do not have permission to use {color_name}."
+
+moderation:
+  clear-chat:
+    success: "&aChat has been cleared."
+  kick:
+    player-only: "&cOnly players can use this command."
+    default-reason: "No reason provided"
+    target-kick-message: "&cYou have been kicked for: {reason}"
+    actor-success: "&aPlayer {target} has been kicked for: {reason}"
+  ban:
+    reason-required: "&cYou must provide a reason for the ban."
+    already-banned: "&cThis player is already banned."
+    actor-success-temporary: "&aBanned &f{target}&a until &f{until}&a."
+    actor-success-permanent: "&aBanned &f{target}&a permanently."
+    announcement:
+      public: "&8[&cBan&8] &f{target} &7was banned by &f{issuer}&7. &8(&f{duration}&8) &7Reason: &f{reason}"
+      silent: "&8[&cSilent Ban&8] &f{target} &7was banned by &f{issuer}&7. &8(&f{duration}&8) &7Reason: &f{reason}"
+    kick:
+      - "&8[&cBan Notice&8]"
+      - "&7You have been banned from the network."
+      - "&7By: &f{issuer}"
+      - "&7Duration: &f{duration}"
+      - "&7Reason: &f{reason}"
+    join-restriction:
+      - "&8[&cBan Notice&8]"
+      - "&7You are currently banned."
+      - "&7Duration: &f{duration}"
+      - "&7Reason: &f{reason}"
+      - "&7You may move, but every other action is blocked."
+    restriction-reminder: "&cYou are banned and may only move. &7Duration: &f{duration} &8| &7Reason: &f{reason}"
+  mute:
+    reason-required: "&cYou must provide a reason for the mute."
+    already-muted: "&cPlayer {target} is already muted."
+    actor-success-temporary: "&aYou have muted {target} until {until}."
+    actor-success-permanent: "&aYou have muted {target} permanently."
+    target-notice-temporary: "&cYou have been muted for: {reason} until {until}."
+    target-notice-permanent: "&cYou have been muted for: {reason} permanently."
+  unban:
+    not-banned: "&cPlayer {target} is not banned."
+    actor-success: "&aPlayer {target} has been unbanned."
+    target-success: "&aYou have been unbanned."
+  unmute:
+    not-muted: "&cPlayer {target} is not muted."
+    actor-success: "&aYou have unmuted {target}."
+    target-success: "&aYou have been unmuted."
+  warning:
+    actor-success: "&aYou have warned {target} for: {reason}"
+    target-success: "&cYou have been warned for: {reason}"
+  freeze:
+    actor-frozen: "&cFroze {target}."
+    actor-unfrozen: "&aUnfroze {target}."
+    target-frozen: "&cYou have been frozen! Join our Discord for more information. &b{discord}"
+    target-unfrozen: "&aYou have been unfrozen."
+  report:
+    player-not-found: "&cPlayer not found or not online."
+    self-report: "&cYou cannot report yourself!"
+    submitted: "&aYou have reported &f{target}&a for: &f{reason}"
+    staff-alert: "&8[&cReport&8] &f{reporter} &7reported &f{reported} &7for &f{reason} &8[&7{server}&8]"
+
+history:
+  player-only: "&cOnly players can open the history menu."
+
+staff-chat:
+  usage: "&cUsage: /{label} <message>"
+
+staff-list:
+  unavailable: "&cThe staff list is currently unavailable. Please try again later."
+
+sudo:
+  chat-success: "&aForced {target} to send a chat message."
+  command-success: "&aForced {target} to execute: /{command}"
+  invalid-mode: "&cInvalid mode. Use command or chat."
+

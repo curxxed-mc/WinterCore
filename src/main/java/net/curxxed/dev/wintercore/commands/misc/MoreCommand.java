@@ -4,17 +4,17 @@ import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.ChatColor;
+import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 @CommandInfo(
         name = "more",
-        permission = "WinterCore.more",
         description = "Get a stack of the item in your hand.",
         usage = "/more",
-        inGameOnly = true
+        inGameOnly = true,
+        permission = {"wintercore.more", "WinterCore.more"}
 )
 public class MoreCommand extends BaseCommand {
 
@@ -26,21 +26,20 @@ public class MoreCommand extends BaseCommand {
     public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         if (player == null) {
-            commandArgs.getSender().sendMessage(ChatColor.RED + "Only players can use this command.");
-            return;
-        }
-        if (!player.hasPermission("WinterCore.more")) {
-            player.sendMessage(ChatColor.RED + "You don't have permission to use this command!");
+            commandArgs.getSender().sendMessage(CC.RED + "Only players can use this command.");
             return;
         }
         ItemStack itemInHand = player.getItemInHand();
         if (itemInHand == null || itemInHand.getType() == Material.AIR) {
-            player.sendMessage(ChatColor.RED + "You are not holding any item.");
+            player.sendMessage(CC.RED + "You are not holding any item.");
             return;
         }
         ItemStack newItemStack = itemInHand.clone();
         newItemStack.setAmount(64);
         player.getInventory().addItem(newItemStack);
-        player.sendMessage(ChatColor.GREEN + "You have received a stack of " + itemInHand.getType().name() + "!");
+        player.sendMessage(CC.GREEN + "You have received a stack of " + itemInHand.getType().name() + "!");
     }
 }
+
+
+

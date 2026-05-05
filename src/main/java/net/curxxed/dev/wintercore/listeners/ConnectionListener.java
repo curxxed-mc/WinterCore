@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -42,6 +43,21 @@ public class ConnectionListener implements Listener {
         this.identityService = plugin.getDatabaseManager().getIdentityService();
         this.disguiseEventListener = disguiseEventListener;
         this.networkRedisService = networkRedisService;
+
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::refreshOnlinePresence, 40L, 100L);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onAsyncPreLogin(AsyncPlayerPreLoginEvent event) {
+        UUID uuid = event.getUniqueId();
+        try {
+            String rank = plugin.getDatabaseManager().getProfileRepository().getRank(uuid);
+            if (rank == null || rank.trim().isEmpty()) {
+                rank = "Default";
+            }
+            plugin.getDatabaseManager().getRankCache().put(uuid, rank);
+        } catch (Exception ignored) {
+        }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -61,18 +77,19 @@ public class ConnectionListener implements Listener {
         event.setJoinMessage(null);
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
+        String serverName = plugin.getConfig().getString("server-name", "unknown");
 
         ClientBrandCommand.silenced.add(uuid);
         joinTimes.put(uuid, System.currentTimeMillis());
+        networkRedisService.setOnlinePresence(uuid, player.getName(), serverName);
 
         refreshDisplayForAll(player);
         applyNametag(player);
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            applyNametag(player);
             broadcastStaffJoin(player);
             warnMissingPlaceholderAPI(player);
-        }, 20L);
+        }, 5L);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -84,8 +101,16 @@ public class ConnectionListener implements Listener {
         lastSeenTimes.put(uuid, System.currentTimeMillis());
         lastServers.put(uuid, plugin.getConfig().getString("server-name", "unknown"));
         joinTimes.remove(uuid);
+        networkRedisService.clearOnlinePresence(uuid, player.getName());
 
         broadcastStaffQuit(player);
+    }
+
+    private void refreshOnlinePresence() {
+        String serverName = plugin.getConfig().getString("server-name", "unknown");
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            networkRedisService.setOnlinePresence(online.getUniqueId(), online.getName(), serverName);
+        }
     }
 
     private void refreshDisplayForAll(Player joined) {

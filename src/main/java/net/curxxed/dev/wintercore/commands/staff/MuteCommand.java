@@ -5,22 +5,26 @@ import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.DurationParser;
+import net.curxxed.dev.wintercore.utils.ModerationMessages;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @CommandInfo(
         name = "mute",
-        permission = "WinterCore.mute",
         description = "Mute a player.",
         usage = "/mute <player> <reason> [duration]",
-        inGameOnly = false
-    
-    )
+        inGameOnly = false,
+        async = true,
+        permission = {"wintercore.mute", "WinterCore.mute"}
+)
 public class MuteCommand extends BaseCommand {
     private final WinterCore plugin;
     private final ModerationService moderationService;
@@ -34,57 +38,98 @@ public class MuteCommand extends BaseCommand {
     @Override
 
     public void execute(CommandArguments commandArgs) {
-        if (!commandArgs.getSender().hasPermission("WinterCore.mute")) {
-            commandArgs.getSender().sendMessage(CC.translate("&cYou do not have permission to mute players."));
-            return;
-        }
-        String[] args = commandArgs.getArgs();
-        if (args.length < 2) {
-            commandArgs.getSender().sendMessage(CC.translate("&cUsage: /mute <player> <reason> [duration]"));
-            return;
-        }
-        String playerName = args[0];
-        String durationString = "permanent";
-        String reason;
-        if (args[args.length - 1].matches("^[0-9]+[smhd]$")) {
-            durationString = args[args.length - 1];
-            reason = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length - 1));
-        } else {
-            reason = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
-        }
-        UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
-        String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        Duration duration = parseDuration(durationString);
-        moderationService.isPlayerMuted(targetUUID, isMuted -> {
-            if (isMuted) {
-                commandArgs.getSender().sendMessage(CC.translate("&cPlayer " + displayName + " is already muted."));
-                return;
-            }
-            Instant expiration = duration != null ? Instant.now().plus(duration) : null;
-            moderationService.mutePlayer(targetUUID, reason, commandArgs.getSender().getName(), expiration);
-            commandArgs.getSender().sendMessage(CC.translate("&aYou have muted " + displayName + (expiration != null ? " until " + expiration : " permanently") + "."));
-            Player target = Bukkit.getPlayer(targetUUID);
-            if (target != null) {
-                target.sendMessage(CC.translate("&cYou have been muted for: " + reason + (expiration != null ? " until " + expiration : " permanently")));
-            }
-        });
+        runSync(() -> executeOnMainThread(commandArgs));
     }
 
-    private Duration parseDuration(String durationString) {
-        try {
-            if (durationString.endsWith("h")) {
-                return Duration.ofHours(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
-            } else if (durationString.endsWith("m")) {
-                return Duration.ofMinutes(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
-            } else if (durationString.endsWith("d")) {
-                return Duration.ofDays(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
-            } else if (durationString.endsWith("s")) {
-                return Duration.ofSeconds(Long.parseLong(durationString.substring(0, durationString.length() - 1)));
-            } else {
-                return null;
-            }
-        } catch (NumberFormatException e) {
-            return null;
+    @Override
+    public List<String> onTabComplete(CommandArguments args) {
+        if (args.length() == 0 || args.length() == 1) {
+            return completeOnlinePlayers(args);
         }
+
+        if (args.length() >= 3) {
+            String current = args.getOptionalString(args.length() - 1).orElse("");
+            if (current.isEmpty() || current.matches("(?i)^\\d*[smhdw]?$")) {
+                return completeCurrentArg(args, Arrays.asList("10m", "30m", "1h", "6h", "1d", "7d", "1w", "30d"));
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
+    private void executeOnMainThread(CommandArguments commandArgs) {
+        String[] args = commandArgs.getArgs();
+        if (args.length < 2) {
+            sendUsage(commandArgs.getSender());
+            return;
+        }
+
+        String playerName = args[0];
+        String reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length)).trim();
+        if (reason.isEmpty()) {
+            send(commandArgs.getSender(), "moderation.mute.reason-required",
+                    "&cYou must provide a reason for the mute.");
+            return;
+        }
+
+        UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
+        String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
+        if (displayName == null || displayName.trim().isEmpty()) {
+            displayName = playerName;
+        }
+
+        Duration duration = null;
+        if (args.length >= 3) {
+            Duration parsed = DurationParser.parse(args[args.length - 1]);
+            if (parsed != null) {
+                duration = parsed;
+                reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length - 1)).trim();
+                if (reason.isEmpty()) {
+                    send(commandArgs.getSender(), "moderation.mute.reason-required",
+                            "&cYou must provide a reason for the mute.");
+                    return;
+                }
+            }
+        }
+
+        final String finalDisplayName = displayName;
+        final String finalReason = reason;
+        final Duration finalDuration = duration;
+        moderationService.isPlayerMuted(targetUUID, isMuted -> runSync(() -> {
+            if (isMuted) {
+                send(commandArgs.getSender(), "moderation.mute.already-muted",
+                        "&cPlayer {target} is already muted.",
+                        "{target}", finalDisplayName);
+                return;
+            }
+
+            Instant expiration = finalDuration != null ? Instant.now().plus(finalDuration) : null;
+            moderationService.mutePlayer(targetUUID, finalReason, commandArgs.getSender().getName(), expiration);
+
+            if (expiration != null) {
+                send(commandArgs.getSender(), "moderation.mute.actor-success-temporary",
+                        "&aYou have muted {target} until {until}.",
+                        "{target}", finalDisplayName,
+                        "{until}", ModerationMessages.formatTimestamp(expiration.toEpochMilli()));
+            } else {
+                send(commandArgs.getSender(), "moderation.mute.actor-success-permanent",
+                        "&aYou have muted {target} permanently.",
+                        "{target}", finalDisplayName);
+            }
+
+            Player target = Bukkit.getPlayer(targetUUID);
+            if (target != null) {
+                if (expiration != null) {
+                    send(target, "moderation.mute.target-notice-temporary",
+                            "&cYou have been muted for: {reason} until {until}.",
+                            "{reason}", finalReason,
+                            "{until}", ModerationMessages.formatTimestamp(expiration.toEpochMilli()));
+                } else {
+                    send(target, "moderation.mute.target-notice-permanent",
+                            "&cYou have been muted for: {reason} permanently.",
+                            "{reason}", finalReason);
+                }
+            }
+        }));
     }
 }

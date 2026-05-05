@@ -8,7 +8,6 @@ import net.curxxed.dev.wintercore.tags.Tag;
 import net.curxxed.dev.wintercore.tags.TagsManager;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -44,6 +43,14 @@ public class ChatListener implements Listener {
             return;
         }
 
+        ChatFilterService.MessageChannel channel = isStaffChannel(message)
+                ? ChatFilterService.MessageChannel.STAFF_CHAT
+                : ChatFilterService.MessageChannel.PUBLIC_CHAT;
+        if (plugin.getChatFilterService() != null
+                && plugin.getChatFilterService().checkAndNotify(player, message, channel)) {
+            return;
+        }
+
         if (message.startsWith("!")) {
             String content = message.substring(1).trim();
             if (!content.isEmpty()) service.sendStaffMessage(player, content);
@@ -63,11 +70,16 @@ public class ChatListener implements Listener {
         sendPublicChat(player, message);
     }
 
+    private boolean isStaffChannel(String message) {
+        return message.startsWith("!") || message.startsWith("@") || message.startsWith("#");
+    }
+
     private void sendPublicChat(Player player, String message) {
         WinterCorePlayer data = playerService.getPlayerData(player.getUniqueId());
 
         if (data == null) {
-            player.sendMessage(CC.translate("&cYour data is still loading... Please wait a moment."));
+            player.sendMessage(plugin.getMessageConfig().get("general.player-data-loading",
+                    "&cYour data is still loading... Please wait a moment."));
             return;
         }
 
@@ -84,14 +96,14 @@ public class ChatListener implements Listener {
         if (tagId != null && !tagId.isEmpty()) {
             Tag tag = tagsManager.getTag(tagId);
             if (tag != null) {
-                tagSuffix = " " + CC.translate(TagsManager.colorNameToCode(tag.getColor())) + tag.getPrefix() + ChatColor.RESET;
+                tagSuffix = " " + CC.translate(TagsManager.colorNameToCode(tag.getColor())) + tag.getPrefix() + CC.RESET;
             }
         }
 
-        ChatColor messageColor = data.getMessageColor();
+        String messageColor = data.getMessageColor();
         String formattedPrefix = prefix.isEmpty() ? "" : prefix + " ";
-        String formattedName = formattedPrefix + CC.translate(nameColor) + player.getName() + ChatColor.RESET + tagSuffix;
-        String formattedMessage = formattedName + ChatColor.WHITE + ": " + messageColor + message;
+        String formattedName = formattedPrefix + CC.translate(nameColor) + player.getName() + CC.RESET + tagSuffix;
+        String formattedMessage = formattedName + CC.WHITE + ": " + messageColor + message;
         Bukkit.getConsoleSender().sendMessage(formattedMessage);
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.sendMessage(formattedMessage);

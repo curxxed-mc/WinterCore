@@ -16,19 +16,23 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
 @CommandInfo(
         name = "reloadconfig",
-        permission = "wintercore.reloadconfig",
-        description = "Reload local config files, optionally syncing to the network.",
-        usage = "/reloadconfig [all|config|ranks|tags|menus|permissions] [sync]",
-        inGameOnly = false
+        description = "Reloadconfig files, optionally syncing to the network.",
+        usage = "/reloadconfig [all|ranks|tags|menus|permissions|messages|chatfilter] [sync]",
+        inGameOnly = false,
+        permission = {"wintercore.reloadconfig"}
 )
 public class ReloadConfig extends BaseCommand {
 
     private final WinterCore plugin;
+    private static final List<String> TARGET_TOKENS = Arrays.asList("all", "ranks", "tags", "menus", "permissions", "messages", "chatfilter", "chat-filter");
+    private static final List<String> SYNC_TOKENS = Arrays.asList("sync", "--sync", "network");
 
     public ReloadConfig(WinterCore pl) {
        super(pl);
@@ -49,7 +53,7 @@ public class ReloadConfig extends BaseCommand {
 
             ConfigTarget parsed = ConfigTarget.fromToken(arg);
             if (parsed == null) {
-                sendUsage(commandArgs.getSender());
+                sendReloadUsage(commandArgs.getSender());
                 return;
             }
             target = parsed;
@@ -73,14 +77,35 @@ public class ReloadConfig extends BaseCommand {
         }
     }
 
+    @Override
+    public List<String> onTabComplete(CommandArguments args) {
+        if (args.length() == 0) {
+            return completeCurrentArg(args, TARGET_TOKENS);
+        }
+
+        if (args.length() == 1) {
+            List<String> firstArgOptions = new ArrayList<>(TARGET_TOKENS);
+            firstArgOptions.addAll(SYNC_TOKENS);
+            return completeCurrentArg(args, firstArgOptions);
+        }
+
+        if (args.length() == 2) {
+            String first = args.getOptionalString(0).orElse("").toLowerCase(Locale.ENGLISH);
+            if (isSyncToken(first)) {
+                return completeCurrentArg(args, TARGET_TOKENS);
+            }
+            if (ConfigTarget.fromToken(first) != null) {
+                return completeCurrentArg(args, SYNC_TOKENS);
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
     private List<String> reloadLocal(ConfigTarget target) {
         List<String> reloaded = new ArrayList<>();
         for (ConfigTarget part : expandTarget(target)) {
             switch (part) {
-                case CONFIG:
-                    plugin.reloadConfig();
-                    reloaded.add("config.yml");
-                    break;
                 case RANKS:
                     plugin.getRankManager().reloadRanksConfig();
                     refreshPlayerDisplays();
@@ -99,6 +124,14 @@ public class ReloadConfig extends BaseCommand {
                     plugin.getPermissionConfigManager().load();
                     refreshPlayerDisplays();
                     reloaded.add("permissions.yml");
+                    break;
+                case MESSAGES:
+                    plugin.getMessageConfig().load();
+                    reloaded.add("messages.yml");
+                    break;
+                case CHAT_FILTER:
+                    plugin.getChatFilterService().load();
+                    reloaded.add("chat-filter.yml");
                     break;
                 default:
                     break;
@@ -134,11 +167,12 @@ public class ReloadConfig extends BaseCommand {
     private List<ConfigTarget> expandTarget(ConfigTarget target) {
         List<ConfigTarget> targets = new ArrayList<>();
         if (target == ConfigTarget.ALL) {
-            targets.add(ConfigTarget.CONFIG);
             targets.add(ConfigTarget.RANKS);
             targets.add(ConfigTarget.TAGS);
             targets.add(ConfigTarget.MENUS);
             targets.add(ConfigTarget.PERMISSIONS);
+            targets.add(ConfigTarget.MESSAGES);
+            targets.add(ConfigTarget.CHAT_FILTER);
             return targets;
         }
         targets.add(target);
@@ -166,7 +200,7 @@ public class ReloadConfig extends BaseCommand {
         }
     }
 
-    private void sendUsage(CommandSender sender) {
+    private void sendReloadUsage(CommandSender sender) {
         sender.sendMessage(CC.translate("&eUsage: " + commandInfo.usage()));
         sender.sendMessage(CC.translate("&7Examples:"));
         sender.sendMessage(CC.translate("&7- /reloadconfig"));
@@ -174,13 +208,18 @@ public class ReloadConfig extends BaseCommand {
         sender.sendMessage(CC.translate("&7- /reloadconfig all sync"));
     }
 
+    private boolean isSyncToken(String token) {
+        return "sync".equals(token) || "--sync".equals(token) || "network".equals(token);
+    }
+
     private enum ConfigTarget {
         ALL(null, null),
-        CONFIG("config.yml", ConfigSyncPacket.ConfigType.CONFIG),
         RANKS("ranks.yml", ConfigSyncPacket.ConfigType.RANKS),
         TAGS("tags.yml", ConfigSyncPacket.ConfigType.TAGS),
         MENUS("menus.yml", ConfigSyncPacket.ConfigType.MENUS),
-        PERMISSIONS("permissions.yml", ConfigSyncPacket.ConfigType.PERMISSIONS);
+        PERMISSIONS("permissions.yml", ConfigSyncPacket.ConfigType.PERMISSIONS),
+        MESSAGES("messages.yml", ConfigSyncPacket.ConfigType.MESSAGES),
+        CHAT_FILTER("chat-filter.yml", ConfigSyncPacket.ConfigType.CHAT_FILTER);
 
         private final String fileName;
         private final ConfigSyncPacket.ConfigType packetType;
@@ -192,11 +231,12 @@ public class ReloadConfig extends BaseCommand {
 
         private static ConfigTarget fromToken(String token) {
             if ("all".equals(token)) return ALL;
-            if ("config".equals(token) || "cfg".equals(token)) return CONFIG;
             if ("ranks".equals(token)) return RANKS;
             if ("tags".equals(token)) return TAGS;
             if ("menus".equals(token) || "menu".equals(token)) return MENUS;
             if ("permissions".equals(token) || "perms".equals(token)) return PERMISSIONS;
+            if ("messages".equals(token) || "message".equals(token)) return MESSAGES;
+            if ("chatfilter".equals(token) || "chat-filter".equals(token) || "filter".equals(token)) return CHAT_FILTER;
             return null;
         }
     }
