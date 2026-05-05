@@ -3,9 +3,8 @@ package net.curxxed.dev.wintercore.commands.misc;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.player.PlayerService;
+import net.curxxed.dev.wintercore.chat.MessagingService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
 import java.util.stream.Collectors;
@@ -13,19 +12,18 @@ import java.util.stream.Collectors;
 @CommandInfo(
         name = "message",
         aliases = {"msg", "tell", "whisper", "w", "m"},
-        permission = "wintercore.command.message",
         description = "Sends a private message to another player.",
         usage = "/message <player> <message>",
-        inGameOnly = true // This command can only be executed by a player
+        inGameOnly = true,
+        permission = {"wintercore.command.message"}
 )
 public class MessageCommand extends BaseCommand {
 
-    private final PlayerService playerService;
+    private final MessagingService messagingService;
 
     public MessageCommand(WinterCore plugin) {
         super(plugin);
-        // Get the singleton instance of PlayerService from the main plugin class
-        this.playerService = plugin.getPlayerService();
+        this.messagingService = plugin.getMessagingService();
     }
 
     @Override
@@ -34,7 +32,7 @@ public class MessageCommand extends BaseCommand {
 
         // Ensure the command has enough arguments (player and message)
         if (args.length() < 2) {
-            sender.sendMessage(CC.translate("&cUsage: " + commandInfo.usage()));
+            sendUsage(sender);
             return;
         }
 
@@ -43,13 +41,15 @@ public class MessageCommand extends BaseCommand {
 
         // Check if the target player is online
         if (target == null) {
-            sender.sendMessage(CC.translate("&cThat player is not online."));
+            send(sender, "chat.private.target-not-online",
+                    "&cThat player is not online.");
             return;
         }
 
         // Prevent a player from messaging themselves
         if (sender.equals(target)) {
-            sender.sendMessage(CC.translate("&cYou cannot send a message to yourself."));
+            send(sender, "chat.private.self",
+                    "&cYou cannot send a message to yourself.");
             return;
         }
 
@@ -58,14 +58,12 @@ public class MessageCommand extends BaseCommand {
                 .skip(1) // Skip the player name argument
                 .collect(Collectors.joining(" "));
 
-        // Delegate the actual message sending to the PlayerService
-        // This keeps the command class clean and respects your existing logic for /reply
-        if (this.playerService != null) {
-            this.playerService.sendPrivateMessage(sender, target, message);
+        if (this.messagingService != null) {
+            this.messagingService.sendPrivateMessage(sender, target, message);
         } else {
-            // This is a safeguard in case the listener isn't initialized correctly
-            sender.sendMessage(CC.translate("&cAn internal error occurred. Please contact an administrator."));
-            plugin.getLogger().severe("MessageCommand could not execute because PlayerService was not found!");
+            send(sender, "general.internal-error",
+                    "&cAn internal error occurred. Please contact an administrator.");
+            plugin.getLogger().severe("MessageCommand could not execute because MessagingService was not found!");
         }
     }
 }

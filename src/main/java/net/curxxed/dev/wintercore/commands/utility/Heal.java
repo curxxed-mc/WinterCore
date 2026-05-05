@@ -1,21 +1,20 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
         name = "heal",
-            permission = "WinterCore.heal",
-            description = "Heal yourself or another player.",
-            usage = "/heal [player]",
-            inGameOnly = false
-    
-    )
+        description = "Heal yourself or another player.",
+        usage = "/heal [player]",
+        inGameOnly = false,
+        permission = {"wintercore.heal", "WinterCore.heal"}
+)
 public class Heal extends BaseCommand {
 
     public Heal(WinterCore plugin) {
@@ -30,20 +29,24 @@ public class Heal extends BaseCommand {
         if (commandArgs.length() > 0) {
             target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
             if (target == null || !target.isOnline()) {
-                commandArgs.getSender().sendMessage(ChatColor.RED + "Player not found!");
+                commandArgs.getSender().sendMessage(CC.RED + "Player not found!");
                 return;
             }
         } else if (commandArgs.isPlayer()) {
             target = senderPlayer;
         } else {
-            commandArgs.getSender().sendMessage(ChatColor.RED + "Only players can use this command on themselves!");
+            commandArgs.getSender().sendMessage(CC.RED + "Only players can use this command on themselves!");
             return;
         }
 
         target.setHealth(20);
-        target.sendMessage(ChatColor.GREEN + "Your health has been restored!");
+        target.sendMessage(CC.GREEN + "Your health has been restored!");
         if (!target.equals(commandArgs.getSender())) {
-            commandArgs.getSender().sendMessage(ChatColor.GREEN + "You have healed " + target.getName() + "!");
+            commandArgs.getSender().sendMessage(CC.GREEN + "You have healed " + target.getName() + "!");
         }
     }
 }
+
+
+
+

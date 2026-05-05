@@ -11,16 +11,25 @@ import org.bukkit.GameMode;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
 @CommandInfo(
         name = "gamemode",
         aliases = {"gm", "gmc", "gm1", "gms", "gm0", "gma", "gm2", "gmsp", "gm3"},
-        permission = "wintercore.command.gamemode",
         usage = "/gamemode <mode> [player]",
-        description = "Changes your or another player's gamemode."
+        description = "Changes your or another player's gamemode.",
+        permission = {"wintercore.command.gamemode"}
 )
 public class GameModeCommand extends BaseCommand {
 
     private final StaffModeManager staffModeManager;
+    private static final List<String> MODE_TOKENS = Arrays.asList(
+            "creative", "survival", "adventure", "spectator",
+            "c", "s", "a", "sp", "1", "0", "2", "3"
+    );
 
     public GameModeCommand(WinterCore plugin, StaffModeManager staffModeManager) {
         super(plugin);
@@ -105,6 +114,30 @@ public class GameModeCommand extends BaseCommand {
         }
     }
 
+    @Override
+    public List<String> onTabComplete(CommandArguments args) {
+        GameMode forcedMode = modeFromAlias(args.getLabel());
+        if (forcedMode != null) {
+            if (args.length() == 1) {
+                return completeOnlinePlayers(args);
+            }
+            return Collections.emptyList();
+        }
+
+        if (args.length() == 1) {
+            return completeCurrentArg(args, MODE_TOKENS);
+        }
+
+        if (args.length() == 2) {
+            String first = args.getOptionalString(0).orElse("");
+            if (parseGameMode(first) != null) {
+                return completeOnlinePlayers(args);
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
     private GameMode parseGameMode(String input) {
         switch (input.toLowerCase()) {
             case "creative": case "c": case "1":
@@ -114,6 +147,25 @@ public class GameModeCommand extends BaseCommand {
             case "adventure": case "a": case "2":
                 return GameMode.ADVENTURE;
             case "spectator": case "sp": case "3":
+                return GameMode.SPECTATOR;
+            default:
+                return null;
+        }
+    }
+
+    private GameMode modeFromAlias(String label) {
+        switch (label.toLowerCase(Locale.ENGLISH)) {
+            case "gmc":
+            case "gm1":
+                return GameMode.CREATIVE;
+            case "gms":
+            case "gm0":
+                return GameMode.SURVIVAL;
+            case "gma":
+            case "gm2":
+                return GameMode.ADVENTURE;
+            case "gmsp":
+            case "gm3":
                 return GameMode.SPECTATOR;
             default:
                 return null;

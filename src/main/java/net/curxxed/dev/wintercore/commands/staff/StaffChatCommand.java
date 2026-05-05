@@ -5,7 +5,6 @@ import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
@@ -13,7 +12,8 @@ import org.bukkit.entity.Player;
         aliases = {"sc", "ac", "mc"},
         description = "Send a message to a staff channel.",
         usage = "/sc|ac|mc <message>",
-        inGameOnly = true
+        inGameOnly = true,
+        permission = {}
 )
 public class StaffChatCommand extends BaseCommand {
 
@@ -29,7 +29,8 @@ public class StaffChatCommand extends BaseCommand {
         Player player = args.getPlayer();
 
         if (args.length() == 0) {
-            player.sendMessage(CC.translate("&cUsage: /" + args.getLabel() + " <message>"));
+            send(player, "staff-chat.usage", "&cUsage: /{label} <message>",
+                    "{label}", args.getLabel());
             return;
         }
 

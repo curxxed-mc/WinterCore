@@ -1,68 +1,123 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Method;
+import java.util.*;
 
 @CommandInfo(
         name = "enchant",
-        permission = "WinterCore.enchant",
         description = "Enchant the item in your hand.",
         usage = "/enchant <enchantment> [level]",
-        inGameOnly = true
+        inGameOnly = true,
+        permission = {"wintercore.enchant", "WinterCore.enchant"}
 )
 public class EnchantCommand extends BaseCommand {
 
     private static final Map<String, Enchantment> ENCHANTMENT_MAP = new HashMap<>();
+    private static final Set<String> TAB_NAMES = new TreeSet<>();
 
     static {
-        addEnchant("sharpness",           Enchantment.DAMAGE_ALL);
-        addEnchant("efficiency",          Enchantment.DIG_SPEED);
-        addEnchant("fortune",             Enchantment.LOOT_BONUS_BLOCKS);
-        addEnchant("unbreaking",          Enchantment.DURABILITY);
-        addEnchant("power",               Enchantment.ARROW_DAMAGE);
-        addEnchant("infinity",            Enchantment.ARROW_INFINITE);
-        addEnchant("flame",               Enchantment.ARROW_FIRE);
-        addEnchant("punch",               Enchantment.ARROW_KNOCKBACK);
-        addEnchant("protection",          Enchantment.PROTECTION_ENVIRONMENTAL);
-        addEnchant("feather_falling",     Enchantment.PROTECTION_FALL);
-        addEnchant("fire_aspect",         Enchantment.FIRE_ASPECT);
-        addEnchant("looting",             Enchantment.LOOT_BONUS_MOBS);
-        addEnchant("silk_touch",          Enchantment.SILK_TOUCH);
-        addEnchant("knockback",           Enchantment.KNOCKBACK);
-        addEnchant("respiration",         Enchantment.OXYGEN);
-        addEnchant("aqua_affinity",       Enchantment.WATER_WORKER);
-        addEnchant("bane_of_arthropods",  Enchantment.DAMAGE_ARTHROPODS);
-        addEnchant("smite",               Enchantment.DAMAGE_UNDEAD);
-        addEnchant("luck",                Enchantment.LUCK);
-        addEnchant("lure",                Enchantment.LURE);
-        addEnchantByName("depth_strider",    "DEPTH_STRIDER");
-        addEnchantByName("thorns",           "THORNS");
-        addEnchantByName("frost_walker",     "FROST_WALKER");
-        addEnchantByName("mending",          "MENDING");
-        addEnchantByName("binding_curse",    "BINDING_CURSE");
-        addEnchantByName("vanishing_curse",  "VANISHING_CURSE");
+        // Runtime discovery: works on whatever version the server is running.
+        for (Enchantment enchantment : Enchantment.values()) {
+            registerEnchantment(enchantment);
+        }
+
+        // Friendly aliases for common names.
+        alias("sharpness", "DAMAGE_ALL");
+        alias("efficiency", "DIG_SPEED");
+        alias("fortune", "LOOT_BONUS_BLOCKS");
+        alias("unbreaking", "DURABILITY");
+        alias("power", "ARROW_DAMAGE");
+        alias("infinity", "ARROW_INFINITE");
+        alias("flame", "ARROW_FIRE");
+        alias("punch", "ARROW_KNOCKBACK");
+        alias("protection", "PROTECTION_ENVIRONMENTAL");
+        alias("feather_falling", "PROTECTION_FALL");
+        alias("fire_aspect", "FIRE_ASPECT");
+        alias("looting", "LOOT_BONUS_MOBS");
+        alias("silk_touch", "SILK_TOUCH");
+        alias("knockback", "KNOCKBACK");
+        alias("respiration", "OXYGEN");
+        alias("aqua_affinity", "WATER_WORKER");
+        alias("bane_of_arthropods", "DAMAGE_ARTHROPODS");
+        alias("smite", "DAMAGE_UNDEAD");
+        alias("luck", "LUCK");
+        alias("lure", "LURE");
+        alias("depth_strider", "DEPTH_STRIDER");
+        alias("thorns", "THORNS");
+        alias("frost_walker", "FROST_WALKER");
+        alias("mending", "MENDING");
+        alias("binding_curse", "BINDING_CURSE");
+        alias("vanishing_curse", "VANISHING_CURSE");
+        alias("sweeping_edge", "SWEEPING_EDGE");
+
+        // Newer enchantments will be picked up automatically by Enchantment.values()
+        // on servers that support them, so no hardcoding is needed here.
     }
 
-    private static void addEnchant(String name, Enchantment enchantment) {
-        if (enchantment != null) {
-            ENCHANTMENT_MAP.put(name, enchantment);
+    private static void registerEnchantment(Enchantment enchantment) {
+        if (enchantment == null) return;
+
+        String legacyName = enchantment.getName();
+        if (legacyName != null && !legacyName.trim().isEmpty()) {
+            register(legacyName, enchantment, false);
+        }
+
+        String key = getNamespacedKey(enchantment);
+        if (key != null && !key.trim().isEmpty()) {
+            String cleanKey = key.replace("minecraft:", "");
+            register(key, enchantment, false);
+            register(cleanKey, enchantment, true);
+        } else if (legacyName != null) {
+            // Older servers: legacy name is the tab-complete friendly name.
+            register(legacyName, enchantment, true);
         }
     }
 
-    private static void addEnchantByName(String alias, String mojangName) {
-        Enchantment enchantment = Enchantment.getByName(mojangName);
+    private static void register(String name, Enchantment enchantment, boolean tabComplete) {
+        String normalized = normalize(name);
+        if (normalized.isEmpty()) return;
+
+        ENCHANTMENT_MAP.put(normalized, enchantment);
+
+        if (tabComplete) {
+            TAB_NAMES.add(name.toLowerCase(Locale.ROOT));
+        }
+    }
+
+    private static void alias(String modernAlias, String existingName) {
+        Enchantment enchantment = ENCHANTMENT_MAP.get(normalize(existingName));
         if (enchantment != null) {
-            ENCHANTMENT_MAP.put(alias, enchantment);
+            register(modernAlias, enchantment, true);
+            TAB_NAMES.remove(existingName.toLowerCase(Locale.ROOT));
+        }
+    }
+
+    private static String normalize(String input) {
+        if (input == null) return "";
+        return input.toLowerCase(Locale.ROOT)
+                .replace("minecraft:", "")
+                .replace("_", "")
+                .replace("-", "")
+                .replace(" ", "");
+    }
+
+    private static String getNamespacedKey(Enchantment enchantment) {
+        try {
+            Method method = Enchantment.class.getMethod("getKey");
+            Object key = method.invoke(enchantment);
+            return key == null ? null : key.toString();
+        } catch (ReflectiveOperationException ignored) {
+            return null;
         }
     }
 
@@ -76,21 +131,19 @@ public class EnchantCommand extends BaseCommand {
         String[] args = commandArgs.getArgs();
 
         if (args.length < 1) {
-            player.sendMessage(ChatColor.RED + "Usage: /enchant <enchantment> [level]");
+            player.sendMessage(CC.RED + "Usage: /enchant <enchantment> [level]");
             return;
         }
 
-        ItemStack itemInHand = player.getInventory().getItemInHand();
+        ItemStack itemInHand = getItemInHandSafe(player);
         if (itemInHand == null || itemInHand.getType() == Material.AIR) {
-            player.sendMessage(ChatColor.RED + "You are not holding any item.");
+            player.sendMessage(CC.RED + "You are not holding any item.");
             return;
         }
 
-        String enchantmentName = args[0].toLowerCase();
-        Enchantment enchantment = ENCHANTMENT_MAP.get(enchantmentName);
-
+        Enchantment enchantment = ENCHANTMENT_MAP.get(normalize(args[0]));
         if (enchantment == null) {
-            player.sendMessage(ChatColor.RED + "Invalid enchantment: " + args[0]);
+            player.sendMessage(CC.RED + "Invalid enchantment: " + args[0]);
             return;
         }
 
@@ -99,15 +152,55 @@ public class EnchantCommand extends BaseCommand {
             try {
                 level = Integer.parseInt(args[1]);
             } catch (NumberFormatException e) {
-                player.sendMessage(ChatColor.RED + "Invalid level: " + args[1]);
+                player.sendMessage(CC.RED + "Invalid level: " + args[1]);
                 return;
             }
         }
 
         itemInHand.addUnsafeEnchantment(enchantment, level);
-        player.sendMessage(ChatColor.GREEN + "You have enchanted the item with " + enchantmentName + " (Level " + level + ").");
+        setItemInHandSafe(player, itemInHand);
+
+        player.sendMessage(CC.GREEN + "You have enchanted the item with " + args[0] + " (Level " + level + ").");
+
         if (level > enchantment.getMaxLevel()) {
-            player.sendMessage(ChatColor.YELLOW + "WARNING: This level exceeds the maximum vanilla cap.");
+            player.sendMessage(CC.YELLOW + "WARNING: This level exceeds the maximum vanilla cap.");
+        }
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandArguments args) {
+        if (args.length() == 1) {
+            return completeCurrentArg(args, new ArrayList<>(TAB_NAMES));
+        }
+
+        if (args.length() == 2) {
+            return completeCurrentArg(args, Arrays.asList("1", "2", "3", "4", "5", "10", "25", "50", "100"));
+        }
+
+        return Collections.emptyList();
+    }
+
+    @SuppressWarnings("deprecation")
+    private ItemStack getItemInHandSafe(Player player) {
+        try {
+            Method method = player.getInventory().getClass().getMethod("getItemInMainHand");
+            return (ItemStack) method.invoke(player.getInventory());
+        } catch (Exception ignored) {
+            return player.getInventory().getItemInHand();
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void setItemInHandSafe(Player player, ItemStack item) {
+        try {
+            Method method = player.getInventory().getClass().getMethod("setItemInMainHand", ItemStack.class);
+            method.invoke(player.getInventory(), item);
+        } catch (Exception ignored) {
+            player.getInventory().setItemInHand(item);
         }
     }
 }
+
+
+
+

@@ -124,13 +124,21 @@ public class RankManager {
     public void getRank(UUID uuid, Consumer<String> callback) {
         String cached = cacheService.peek(uuid);
         if (cached != null && !cached.trim().isEmpty()) {
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+            if (Bukkit.isPrimaryThread()) {
+                callback.accept(cached);
+            } else {
+                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+            }
             return;
         }
 
         String playerDataRank = getPlayerDataRank(uuid);
         if (playerDataRank != null) {
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(playerDataRank));
+            if (Bukkit.isPrimaryThread()) {
+                callback.accept(playerDataRank);
+            } else {
+                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(playerDataRank));
+            }
             return;
         }
 

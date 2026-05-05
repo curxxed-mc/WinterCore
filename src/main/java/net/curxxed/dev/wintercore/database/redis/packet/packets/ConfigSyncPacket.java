@@ -12,7 +12,9 @@ public final class ConfigSyncPacket extends AbstractRedisPacket {
         RANKS,
         TAGS,
         MENUS,
-        PERMISSIONS
+        PERMISSIONS,
+        MESSAGES,
+        CHAT_FILTER
     }
 
     private final ConfigType configType;

@@ -97,12 +97,23 @@ public class HistoryMenu extends Menu {
         }
 
         if (page > 0) {
-            buttons.put(46, new Button(navItem("&aPrevious Page"), e -> { page--; refresh(player); }));
+            buttons.put(menuConfig.getSlot("history-category.previous-button", 46),
+                    new Button(menuConfig.buildItem("history-category.previous-button", Material.ARROW,
+                            "{page}", String.valueOf(page),
+                            "{total_pages}", String.valueOf(totalPages)),
+                            e -> { page--; refresh(player); }));
         }
         if (page < totalPages - 1) {
-            buttons.put(52, new Button(navItem("&aNext Page"), e -> { page++; refresh(player); }));
+            buttons.put(menuConfig.getSlot("history-category.next-button", 52),
+                    new Button(menuConfig.buildItem("history-category.next-button", Material.ARROW,
+                            "{page}", String.valueOf(page + 2),
+                            "{total_pages}", String.valueOf(totalPages)),
+                            e -> { page++; refresh(player); }));
         }
-        buttons.put(49, new Button(navItem("&ePage " + (page + 1) + " of " + totalPages)));
+        buttons.put(menuConfig.getSlot("history-category.page-info", 49),
+                new Button(menuConfig.buildItem("history-category.page-info", Material.PAPER,
+                        "{page}", String.valueOf(page + 1),
+                        "{total_pages}", String.valueOf(totalPages))));
 
         buttons.put(menuConfig.getSlot("history-category.back-button"), new Button(
                 menuConfig.buildItem("history-category.back-button"),
@@ -128,9 +139,8 @@ public class HistoryMenu extends Menu {
                                 "&7Issuer: "  + map.getOrDefault("issuer", "Unknown"),
                                 "&7Date: "    + map.getOrDefault("date",   "Unknown")));
                     }
-                    showCategory(player, items,
-                            menuConfig.getTitle("history-menu", targetName)
-                                    .replace(targetName + "'s History", targetName + "'s Warnings"));
+                    showCategory(player, items, menuConfig.getString("history-category.titles.warnings",
+                            "&6{player}'s Warnings", "{player}", targetName));
                 });
                 break;
             case "mutes":
@@ -142,7 +152,8 @@ public class HistoryMenu extends Menu {
                                 "&7Issuer: "  + map.getOrDefault("issuer",     "Unknown"),
                                 "&7Expires: " + map.getOrDefault("expiration", "Unknown")));
                     }
-                    showCategory(player, items, CC.translate("&6" + targetName + "'s Mutes"));
+                    showCategory(player, items, menuConfig.getString("history-category.titles.mutes",
+                            "&6{player}'s Mutes", "{player}", targetName));
                 });
                 break;
             case "bans":
@@ -155,7 +166,8 @@ public class HistoryMenu extends Menu {
                                 "&7Date: "    + map.getOrDefault("date",       "Unknown"),
                                 "&7Expires: " + map.getOrDefault("expiration", "Permanent")));
                     }
-                    showCategory(player, items, CC.translate("&6" + targetName + "'s Bans"));
+                    showCategory(player, items, menuConfig.getString("history-category.titles.bans",
+                            "&6{player}'s Bans", "{player}", targetName));
                 });
                 break;
             case "grants":
@@ -169,7 +181,8 @@ public class HistoryMenu extends Menu {
                                 "&7Expires: "    + map.getOrDefault("expiration", "Permanent"),
                                 "&7Reason: "     + map.getOrDefault("reason",     "Unknown")));
                     }
-                    showCategory(player, items, CC.translate("&6" + targetName + "'s Grants"));
+                    showCategory(player, items, menuConfig.getString("history-category.titles.grants",
+                            "&6{player}'s Grants", "{player}", targetName));
                 });
                 break;
         }

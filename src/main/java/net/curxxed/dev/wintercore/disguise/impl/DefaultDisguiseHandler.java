@@ -121,8 +121,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             return;
         }
 
-        Player check = Bukkit.getPlayerExact(name);
-        if (check != null && !check.getName().equals(player.getName())) {
+        if (isDisguiseNameTakenOnNetwork(name, player.getUniqueId())) {
             callback.accept(DisguiseCallback.GLOBAL_PLAYER_FOUND);
             return;
         }
@@ -350,8 +349,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             return;
         }
 
-        Player check = Bukkit.getPlayerExact(targetName);
-        if (check != null && !check.getName().equals(player.getName())) {
+        if (isDisguiseNameTakenOnNetwork(targetName, player.getUniqueId())) {
             callback.accept(DisguiseCallback.GLOBAL_PLAYER_FOUND);
             return;
         }
@@ -438,5 +436,20 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         } else {
             Bukkit.getScheduler().runTask(plugin, task);
         }
+    }
+
+    private boolean isDisguiseNameTakenOnNetwork(String requestedName, UUID selfUuid) {
+        if (requestedName == null || requestedName.trim().isEmpty()) {
+            return false;
+        }
+
+        boolean localConflict = Bukkit.getOnlinePlayers().stream()
+                .anyMatch(online -> online.getName().equalsIgnoreCase(requestedName)
+                        && !online.getUniqueId().equals(selfUuid));
+        if (localConflict) {
+            return true;
+        }
+
+        return plugin.getNRS().isNameOnlineElsewhere(requestedName, selfUuid);
     }
 }

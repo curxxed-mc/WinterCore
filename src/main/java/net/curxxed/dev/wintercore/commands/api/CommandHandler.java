@@ -14,13 +14,17 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 public class CommandHandler {
 
     private final WinterCore plugin;
     private final CommandMap commandMap;
     private final List<BaseCommand> registeredCommands = new ArrayList<>();
+    private final Set<String> registeredPermissionNodes = new LinkedHashSet<>();
 
     @SneakyThrows
     public CommandHandler(WinterCore plugin) {
@@ -86,9 +90,30 @@ public class CommandHandler {
 
         commandMap.register(plugin.getDescription().getName(), pluginCommand);
         registeredCommands.add(commandExecutor);
+        collectPermissionNodes(permissions);
     }
 
     public List<BaseCommand> getRegisteredCommands() {
         return Collections.unmodifiableList(registeredCommands);
+    }
+
+    public Set<String> getRegisteredPermissionNodes() {
+        return Collections.unmodifiableSet(registeredPermissionNodes);
+    }
+
+    private void collectPermissionNodes(String[] permissions) {
+        for (String node : permissions) {
+            String normalized = normalizePermissionNode(node);
+            if (!normalized.isEmpty()) {
+                registeredPermissionNodes.add(normalized);
+            }
+        }
+    }
+
+    private String normalizePermissionNode(String node) {
+        if (node == null) {
+            return "";
+        }
+        return node.trim().toLowerCase(Locale.ENGLISH);
     }
 }

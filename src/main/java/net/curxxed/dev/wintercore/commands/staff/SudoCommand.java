@@ -5,19 +5,19 @@ import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @CommandInfo(
         name = "sudo",
-            description = "Forces a player to run a command or chat.",
-            usage = "/sudo <player> <command|chat> <message>",
-            permission = "wintercore.sudo",
-            inGameOnly = false
-    
-    )
+        description = "Forces a player to run a command or chat.",
+        usage = "/sudo <player> <command|chat> <message>",
+        inGameOnly = false,
+        permission = {"wintercore.sudo"}
+)
 public class SudoCommand extends BaseCommand {
 
     public SudoCommand(WinterCore plugin) {
@@ -27,13 +27,14 @@ public class SudoCommand extends BaseCommand {
     @Override
     public void execute(CommandArguments commandArgs) {
         if (commandArgs.length() < 3) {
-            commandArgs.getSender().sendMessage(ChatColor.RED + "Usage: /sudo <player> <command|chat> <message>");
+            sendUsage(commandArgs.getSender());
             return;
         }
 
         Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null) {
-            commandArgs.getSender().sendMessage(ChatColor.RED + "Player not found.");
+            send(commandArgs.getSender(), "general.player-not-found",
+                    "&cPlayer not found.");
             return;
         }
 
@@ -41,7 +42,9 @@ public class SudoCommand extends BaseCommand {
         if (action.equals("chat")) {
             String message = String.join(" ", Arrays.copyOfRange(commandArgs.getArgs(), 2, commandArgs.length()));
             target.chat(message);
-            commandArgs.getSender().sendMessage(ChatColor.GREEN + "Forced " + target.getName() + " to send a chat message.");
+            send(commandArgs.getSender(), "sudo.chat-success",
+                    "&aForced {target} to send a chat message.",
+                    "{target}", target.getName());
             return;
         }
 
@@ -51,10 +54,32 @@ public class SudoCommand extends BaseCommand {
                 commandToExecute = commandToExecute.substring(1);
             }
             target.performCommand(commandToExecute);
-            commandArgs.getSender().sendMessage(ChatColor.GREEN + "Forced " + target.getName() + " to execute: /" + commandToExecute);
+            send(commandArgs.getSender(), "sudo.command-success",
+                    "&aForced {target} to execute: /{command}",
+                    "{target}", target.getName(),
+                    "{command}", commandToExecute);
             return;
         }
 
-        commandArgs.getSender().sendMessage(ChatColor.RED + "Invalid mode. Use command or chat.");
+        send(commandArgs.getSender(), "sudo.invalid-mode",
+                "&cInvalid mode. Use command or chat.");
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandArguments args) {
+        if (args.length() == 0 || args.length() == 1) {
+            return completeOnlinePlayers(args);
+        }
+
+        if (args.length() == 2) {
+            return completeCurrentArg(args, Arrays.asList("command", "chat"));
+        }
+
+        return Collections.emptyList();
     }
 }
+
+
+
+
+

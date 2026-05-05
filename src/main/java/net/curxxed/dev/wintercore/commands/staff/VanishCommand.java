@@ -1,12 +1,12 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.VanishPacket;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.ItemStack;
@@ -18,12 +18,12 @@ import java.util.function.Consumer;
 
 @CommandInfo(
         name = "vanish",
-            permission = "WinterCore.vanish",
-            description = "Toggle vanish mode.",
-            usage = "/vanish",
-            inGameOnly = true
-    
-    )
+        description = "Toggle vanish mode.",
+        usage = "/vanish",
+        inGameOnly = true,
+        async = true,
+        permission = {"wintercore.vanish", "WinterCore.vanish"}
+)
 public class VanishCommand extends BaseCommand {
 
     private final WinterCore plugin;
@@ -42,7 +42,7 @@ public class VanishCommand extends BaseCommand {
             ItemStack dye = player.getInventory().getItem(8);
             if (dye != null && dye.getItemMeta() != null) {
                 ItemMeta meta = dye.getItemMeta();
-                meta.setDisplayName(vanished ? ChatColor.GRAY + "Unvanish" : ChatColor.GREEN + "Vanish");
+                meta.setDisplayName(vanished ? CC.GRAY + "Unvanish" : CC.GREEN + "Vanish");
                 dye.setItemMeta(meta);
                 player.getInventory().setItem(8, dye);
             }
@@ -53,31 +53,33 @@ public class VanishCommand extends BaseCommand {
         UUID playerId = player.getUniqueId();
 
         plugin.getRankManager().getRank(player, rank -> plugin.getRankManager().getColorPreference(rank, rankColor -> {
-            String playerRankColor = ChatColor.translateAlternateColorCodes('&', rankColor);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                String playerRankColor = CC.translateAlternateColorCodes('&', rankColor);
 
-            boolean nowVanished;
+                boolean nowVanished;
 
-            if (vanishedPlayers.contains(playerId)) {
-                vanishedPlayers.remove(playerId);
-                Bukkit.getOnlinePlayers().forEach(p -> p.showPlayer(player));
-                player.sendMessage(ChatColor.AQUA + "You are no longer vanished!");
-                plugin.getRankManager().refreshPlayerDisplay(player);
-                plugin.getRedisManager().publish(new VanishPacket(plugin.getConfig().getString("server-name", "Unknown"), System.currentTimeMillis(), player.getUniqueId(), player.getName(), false));
-                sendStaffNotificationStatic(player, playerRankColor, false, plugin);
-                nowVanished = false;
-            } else {
-                vanishedPlayers.add(playerId);
-                Bukkit.getOnlinePlayers().stream()
-                        .filter(p -> !(p.hasPermission("wintercore.staff") || p.hasPermission("wintercore.admin") || p.hasPermission("wintercore.Manager")))
-                        .forEach(p -> p.hidePlayer(player));
-                player.sendMessage(ChatColor.AQUA + "You are now vanished!");
-                plugin.getRankManager().refreshPlayerDisplay(player);
-                plugin.getRedisManager().publish(new VanishPacket(plugin.getConfig().getString("server-name", "Unknown"), System.currentTimeMillis(), player.getUniqueId(), player.getName(), true));
-                sendStaffNotificationStatic(player, playerRankColor, true, plugin);
-                nowVanished = true;
-            }
+                if (vanishedPlayers.contains(playerId)) {
+                    vanishedPlayers.remove(playerId);
+                    Bukkit.getOnlinePlayers().forEach(p -> p.showPlayer(player));
+                    player.sendMessage(CC.AQUA + "You are no longer vanished!");
+                    plugin.getRankManager().refreshPlayerDisplay(player);
+                    plugin.getRedisManager().publish(new VanishPacket(plugin.getConfig().getString("server-name", "Unknown"), System.currentTimeMillis(), player.getUniqueId(), player.getName(), false));
+                    sendStaffNotificationStatic(player, playerRankColor, false, plugin);
+                    nowVanished = false;
+                } else {
+                    vanishedPlayers.add(playerId);
+                    Bukkit.getOnlinePlayers().stream()
+                            .filter(p -> !(p.hasPermission("wintercore.staff") || p.hasPermission("wintercore.admin") || p.hasPermission("wintercore.Manager")))
+                            .forEach(p -> p.hidePlayer(player));
+                    player.sendMessage(CC.AQUA + "You are now vanished!");
+                    plugin.getRankManager().refreshPlayerDisplay(player);
+                    plugin.getRedisManager().publish(new VanishPacket(plugin.getConfig().getString("server-name", "Unknown"), System.currentTimeMillis(), player.getUniqueId(), player.getName(), true));
+                    sendStaffNotificationStatic(player, playerRankColor, true, plugin);
+                    nowVanished = true;
+                }
 
-            callback.accept(nowVanished);
+                callback.accept(nowVanished);
+            });
         }));
     }
 
@@ -86,7 +88,7 @@ public class VanishCommand extends BaseCommand {
                 ? plugin.getConfig().getString("StaffVanishMessages.vanish", "&9[S] %player% &bhas vanished!")
                 : plugin.getConfig().getString("StaffVanishMessages.unvanish", "&9[S] %player% &bhas reappeared!");
 
-        String message = ChatColor.translateAlternateColorCodes('&',
+        String message = CC.translateAlternateColorCodes('&',
                 messageTemplate.replace("%player%", rankColor + player.getName()));
 
         Bukkit.getOnlinePlayers().stream()
@@ -99,3 +101,8 @@ public class VanishCommand extends BaseCommand {
         return vanishedPlayers.contains(player.getUniqueId());
     }
 }
+
+
+
+
+

@@ -1,22 +1,21 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
+import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.commands.api.BaseCommand;
 import net.curxxed.dev.wintercore.commands.api.CommandInfo;
 import net.curxxed.dev.wintercore.commands.api.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
 @CommandInfo(
         name = "invsee",
-            permission = "wintercore.invsee",
-            description = "View another player's inventory.",
-            usage = "/invsee <player>",
-            inGameOnly = true
-    
-    )
+        description = "View another player's inventory.",
+        usage = "/invsee <player>",
+        inGameOnly = true,
+        permission = {"wintercore.invsee"}
+)
 public class InvSeeCommand extends BaseCommand {
 
     public InvSeeCommand(WinterCore plugin) {
@@ -28,13 +27,13 @@ public class InvSeeCommand extends BaseCommand {
         Player player = commandArgs.getPlayer();
 
         if (commandArgs.length() != 1) {
-            player.sendMessage(ChatColor.RED + "Usage: /invsee <player>");
+            player.sendMessage(CC.RED + "Usage: /invsee <player>");
             return;
         }
 
         Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null || !target.isOnline()) {
-            player.sendMessage(ChatColor.RED + "Player not found or offline.");
+            player.sendMessage(CC.RED + "Player not found or offline.");
             return;
         }
 
@@ -44,6 +43,10 @@ public class InvSeeCommand extends BaseCommand {
     private void openInventory(Player viewer, Player target) {
         Inventory targetInv = target.getInventory();
         viewer.openInventory(targetInv);
-        viewer.sendMessage(ChatColor.GREEN + "You are now viewing " + ChatColor.YELLOW + target.getName() + "'s inventory.");
+        viewer.sendMessage(CC.GREEN + "You are now viewing " + CC.YELLOW + target.getName() + "'s inventory.");
     }
 }
+
+
+
+
