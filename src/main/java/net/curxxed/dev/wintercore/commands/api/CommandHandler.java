@@ -77,8 +77,7 @@ public class CommandHandler {
         pluginCommand.setAliases(Arrays.asList(info.aliases()));
         pluginCommand.setDescription(info.description());
         pluginCommand.setUsage(info.usage());
-        
-        // Let BaseCommand handle multi-node checks; Bukkit permission field only supports a single node.
+
         String[] permissions = info.permission();
         if (permissions.length == 1) {
             pluginCommand.setPermission(permissions[0]);
