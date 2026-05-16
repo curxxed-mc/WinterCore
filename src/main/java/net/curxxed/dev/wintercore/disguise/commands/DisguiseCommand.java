@@ -1,11 +1,10 @@
 package net.curxxed.dev.wintercore.disguise.commands;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
@@ -30,12 +29,12 @@ public class DisguiseCommand extends BaseCommand {
         String[] args = commandArgs.getArgs();
 
         if (WinterCore.getInstance().getDisguiseDataMap().containsKey(player.getUniqueId())) {
-            player.sendMessage(CC.translate("&cYou are already disguised! Use /undisguise first."));
+            send(player, "disguise.already-disguised", "&cYou are already disguised! Use /undisguise first.");
             return;
         }
 
         if (args.length != 1) {
-            player.sendMessage(CC.translate("&cUsage: /disguise <name>"));
+            sendUsage(player);
             return;
         }
 

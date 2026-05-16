@@ -3,12 +3,11 @@ package net.curxxed.dev.wintercore.disguise;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback;
+import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.events.disguise.PlayerDisguiseEvent;
 import net.curxxed.dev.wintercore.events.disguise.PlayerUnDisguiseEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -191,10 +190,7 @@ public class DisguiseEventListener implements Listener {
             // Do not run packet-heavy undisguise here; forcing it right before kick can leave ghost entities.
             forceClearDisguiseState(disguisedPlayer);
             if (disguisedPlayer.isOnline()) {
-                disguisedPlayer.kickPlayer(CC.translate(
-                        "&cYour disguise was removed because &e" + conflictingName
-                                + "&c is currently online on the network."
-                ));
+                disguisedPlayer.kickPlayer(plugin.getMessageConfig().get("disguise.conflict-removed", "&cYour disguise was removed because &e{target}&c is currently online on the network.", "{target}", conflictingName));
             }
         } finally {
             conflictEnforcement.remove(disguisedUuid);
@@ -205,10 +201,7 @@ public class DisguiseEventListener implements Listener {
         Bukkit.getScheduler().runTask(plugin, () -> {
             forceClearDisguiseState(player);
             if (player.isOnline()) {
-                player.kickPlayer(CC.translate(
-                        "&cYour saved disguise as &e" + conflictingName
-                                + "&c is invalid because that player is now online on the network."
-                ));
+                player.kickPlayer(plugin.getMessageConfig().get("disguise.conflict-saved", "&cYour saved disguise as &e{target}&c is invalid because that player is now online on the network.", "{target}", conflictingName));
             }
         });
     }

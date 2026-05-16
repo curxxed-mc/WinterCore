@@ -19,31 +19,34 @@ public final class StaffChatService {
     public void sendStaffMessage(Player player, String message) {
         if (message.isEmpty()) return;
         if (!player.hasPermission("wintercore.staff") && !player.hasPermission("wintercore.admin") && !player.hasPermission("wintercore.manager")) {
-            player.sendMessage(CC.translate("&cYou do not have permission to use staff chat."));
+            player.sendMessage(message("staff-chat.no-permission.staff", "&cYou do not have permission to use staff chat."));
             return;
         }
-        buildAndPublish(player, message, "&9[SC] ", "&9", ChatBroadcastPacket.ChatType.STAFF);
+        buildAndPublish(player, message, "staff-chat.format.staff",
+                "&9[SC] &8[&7{server}&8] {identity}&r: &9{message}&r", ChatBroadcastPacket.ChatType.STAFF);
     }
 
     public void sendAdminMessage(Player player, String message) {
         if (message.isEmpty()) return;
         if (!player.hasPermission("wintercore.admin") && !player.hasPermission("wintercore.manager")) {
-            player.sendMessage(CC.translate("&cYou do not have permission to use admin chat."));
+            player.sendMessage(message("staff-chat.no-permission.admin", "&cYou do not have permission to use admin chat."));
             return;
         }
-        buildAndPublish(player, message, "&c[AC] ", "&c", ChatBroadcastPacket.ChatType.ADMIN);
+        buildAndPublish(player, message, "staff-chat.format.admin",
+                "&c[AC] &8[&7{server}&8] {identity}&r: &c{message}&r", ChatBroadcastPacket.ChatType.ADMIN);
     }
 
     public void sendManagerMessage(Player player, String message) {
         if (message.isEmpty()) return;
         if (!player.hasPermission("wintercore.manager")) {
-            player.sendMessage(CC.translate("&cYou do not have permission to use manager chat."));
+            player.sendMessage(message("staff-chat.no-permission.manager", "&cYou do not have permission to use manager chat."));
             return;
         }
-        buildAndPublish(player, message, "&4[MC] ", "&4", ChatBroadcastPacket.ChatType.MANAGER);
+        buildAndPublish(player, message, "staff-chat.format.manager",
+                "&4[MC] &8[&7{server}&8] {identity}&r: &4{message}&r", ChatBroadcastPacket.ChatType.MANAGER);
     }
 
-    private void buildAndPublish(Player player, String message, String prefix, String color, ChatBroadcastPacket.ChatType type) {
+    private void buildAndPublish(Player player, String chatMessage, String path, String fallback, ChatBroadcastPacket.ChatType type) {
         final String sourceServer = plugin.getConfig().getString("server-name", "Unknown");
         final String realName = resolveRealName(player);
 
@@ -53,14 +56,10 @@ public final class StaffChatService {
             plugin.getRankManager().getColorPreference(rank, nameColor -> {
                 String identity = formatIdentity(translatedRankPrefix, nameColor, realName);
 
-                String formatted = CC.translate(prefix)
-                        + CC.translate("&8[&7" + sourceServer + "&8] ")
-                        + identity
-                        + CC.RESET
-                        + ": "
-                        + CC.translate(color)
-                        + message
-                        + CC.RESET;
+                String formatted = message(path, fallback,
+                        "{server}", sourceServer,
+                        "{identity}", identity,
+                        "{message}", chatMessage);
 
                 plugin.getRedisManager().publishAndHandleLocally(new ChatBroadcastPacket(
                         sourceServer,
@@ -117,8 +116,11 @@ public final class StaffChatService {
 
         return player.getName();
     }
-}
 
+    private String message(String path, String fallback, String... placeholders) {
+        return plugin.getMessageConfig().get(path, fallback, placeholders);
+    }
+}
 
 
 

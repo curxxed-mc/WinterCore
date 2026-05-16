@@ -1,7 +1,6 @@
 package net.curxxed.dev.wintercore.database.redis;
 
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -32,13 +31,16 @@ public final class SocialInput implements Listener {
 
         if (awaiting.containsKey(uuid)) {
             SocialPrompt current = awaiting.get(uuid);
-            player.sendMessage(CC.translate("&cYou already have an active input pending. Please type your "
-                    + current.platform + " info first."));
+            player.sendMessage(message("social-input.pending",
+                    "&cYou already have an active input pending. Please type your {platform} info first.",
+                    "{platform}", current.platform));
             return false;
         }
 
         awaiting.put(uuid, new SocialPrompt(platform, socials));
-        player.sendMessage(CC.translate("&eType your &b" + platform + " &einfo in chat:"));
+        player.sendMessage(message("social-input.prompt",
+                "&eType your &b{platform} &einfo in chat:",
+                "{platform}", platform));
         return true;
     }
 
@@ -59,12 +61,17 @@ public final class SocialInput implements Listener {
         Validator validator = VALIDATORS.get(prompt.platform);
 
         if (validator == null || !validator.validate(input)) {
-            Bukkit.getScheduler().runTask(plugin, () -> player.sendMessage(CC.translate("&cInvalid " + prompt.platform + " link.")));
+            Bukkit.getScheduler().runTask(plugin, () -> player.sendMessage(message("social-input.invalid",
+                    "&cInvalid {platform} link.",
+                    "{platform}", prompt.platform)));
             return;
         }
         prompt.socials.setSocialLink(uuid, prompt.platform, input);
 
-        Bukkit.getScheduler().runTask(plugin, () -> player.sendMessage(CC.translate("&aUpdated your " + prompt.platform + " link to: &f" + input)));
+        Bukkit.getScheduler().runTask(plugin, () -> player.sendMessage(message("social-input.updated",
+                "&aUpdated your {platform} link to: &f{input}",
+                "{platform}", prompt.platform,
+                "{input}", input)));
     }
 
     private void registerValidators() {
@@ -91,6 +98,10 @@ public final class SocialInput implements Listener {
                 .replace("https://", "")
                 .replace("http://", "")
                 .replaceAll("/+$", ""); // remove trailing slashes
+    }
+
+    private String message(String path, String fallback, String... placeholders) {
+        return plugin.getMessageConfig().get(path, fallback, placeholders);
     }
 
     private static final class SocialPrompt {

@@ -1,10 +1,10 @@
 package net.curxxed.dev.wintercore.menu;
 
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,13 +66,14 @@ public class ButtonBuilder {
     }
 
     public Button build() {
-        ItemStack item = new ItemStack(material, amount, data);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            if (name != null) meta.setDisplayName(name);
-            if (!lore.isEmpty()) meta.setLore(lore);
-            item.setItemMeta(meta);
+        ItemBuilder itemBuilder = new ItemBuilder(material, amount, (byte) data);
+        if (name != null) {
+            itemBuilder.setName(name);
         }
+        if (!lore.isEmpty()) {
+            itemBuilder.setLore(lore);
+        }
+        ItemStack item = itemBuilder.toItemStack();
         return new Button(item, action);
     }
 }

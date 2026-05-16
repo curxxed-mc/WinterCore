@@ -1,7 +1,7 @@
 name: WinterCore
-version: '0.9'
+version: '0.94c'
 main: net.curxxed.dev.wintercore.plugin.WinterCore
-authors: [ curxxed ]
+author: curxxed
 softdepend:
   - PlaceholderAPI
   - ViaVersion

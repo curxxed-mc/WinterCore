@@ -1,9 +1,8 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -131,19 +130,20 @@ public class EnchantCommand extends BaseCommand {
         String[] args = commandArgs.getArgs();
 
         if (args.length < 1) {
-            player.sendMessage(CC.RED + "Usage: /enchant <enchantment> [level]");
+            sendUsage(player);
             return;
         }
 
         ItemStack itemInHand = getItemInHandSafe(player);
         if (itemInHand == null || itemInHand.getType() == Material.AIR) {
-            player.sendMessage(CC.RED + "You are not holding any item.");
+            send(player, "enchant.no-item", "&cYou are not holding any item.");
             return;
         }
 
         Enchantment enchantment = ENCHANTMENT_MAP.get(normalize(args[0]));
         if (enchantment == null) {
-            player.sendMessage(CC.RED + "Invalid enchantment: " + args[0]);
+            send(player, "enchant.invalid-enchantment", "&cInvalid enchantment: {enchantment}",
+                    "{enchantment}", args[0]);
             return;
         }
 
@@ -152,7 +152,8 @@ public class EnchantCommand extends BaseCommand {
             try {
                 level = Integer.parseInt(args[1]);
             } catch (NumberFormatException e) {
-                player.sendMessage(CC.RED + "Invalid level: " + args[1]);
+                send(player, "enchant.invalid-level", "&cInvalid level: {level}",
+                        "{level}", args[1]);
                 return;
             }
         }
@@ -160,10 +161,12 @@ public class EnchantCommand extends BaseCommand {
         itemInHand.addUnsafeEnchantment(enchantment, level);
         setItemInHandSafe(player, itemInHand);
 
-        player.sendMessage(CC.GREEN + "You have enchanted the item with " + args[0] + " (Level " + level + ").");
+        send(player, "enchant.success", "&aYou have enchanted the item with {enchantment} (Level {level}).",
+                "{enchantment}", args[0],
+                "{level}", String.valueOf(level));
 
         if (level > enchantment.getMaxLevel()) {
-            player.sendMessage(CC.YELLOW + "WARNING: This level exceeds the maximum vanilla cap.");
+            send(player, "enchant.unsafe-level-warning", "&eWARNING: This level exceeds the maximum vanilla cap.");
         }
     }
 
@@ -200,7 +203,3 @@ public class EnchantCommand extends BaseCommand {
         }
     }
 }
-
-
-
-

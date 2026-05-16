@@ -82,7 +82,6 @@ public class ChatListener implements Listener {
                     "&cYour data is still loading... Please wait a moment."));
             return;
         }
-
         String effectiveRank = rankManager.getDisguiseRankSync(player);
         if (effectiveRank == null) {
             effectiveRank = data.getRank();
@@ -96,14 +95,18 @@ public class ChatListener implements Listener {
         if (tagId != null && !tagId.isEmpty()) {
             Tag tag = tagsManager.getTag(tagId);
             if (tag != null) {
-                tagSuffix = " " + CC.translate(TagsManager.colorNameToCode(tag.getColor())) + tag.getPrefix() + CC.RESET;
+                tagSuffix = " " + CC.translate(TagsManager.colorNameToCode(tag.getColor())) + tag.getPrefix() + CC.translate("&r");
             }
         }
 
         String messageColor = data.getMessageColor();
         String formattedPrefix = prefix.isEmpty() ? "" : prefix + " ";
-        String formattedName = formattedPrefix + CC.translate(nameColor) + player.getName() + CC.RESET + tagSuffix;
-        String formattedMessage = formattedName + CC.WHITE + ": " + messageColor + message;
+        String formattedName = formattedPrefix + CC.translate(nameColor) + player.getName() + CC.translate("&r") + tagSuffix;
+        String formattedMessage = plugin.getMessageConfig().get("chat.public-format",
+                "{name}&f: {message_color}{message}",
+                "{name}", formattedName,
+                "{message_color}", messageColor,
+                "{message}", message);
         Bukkit.getConsoleSender().sendMessage(formattedMessage);
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.sendMessage(formattedMessage);

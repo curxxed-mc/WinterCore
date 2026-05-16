@@ -1,6 +1,7 @@
-package net.curxxed.dev.wintercore.utils;
+package net.curxxed.dev.wintercore.config;
 
 import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.CC;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -68,15 +69,15 @@ public final class ModerationMessages {
 
     public static String formatDuration(Long expiresAt) {
         if (expiresAt == null) {
-            return "Permanent";
+            return message("duration.permanent", "Permanent");
         }
 
         long remaining = expiresAt - System.currentTimeMillis();
         if (remaining <= 0L) {
-            return "Expired";
+            return message("duration.expired", "Expired");
         }
 
-        return "Until " + formatTimestamp(expiresAt);
+        return message("duration.until", "Until {time}", "{time}", formatTimestamp(expiresAt));
     }
 
     public static String formatTimestamp(long epochMillis) {
@@ -86,7 +87,7 @@ public final class ModerationMessages {
 
     private static String safe(String value) {
         if (value == null || value.trim().isEmpty()) {
-            return "Unknown";
+            return message("general.unknown", "Unknown");
         }
         return value;
     }

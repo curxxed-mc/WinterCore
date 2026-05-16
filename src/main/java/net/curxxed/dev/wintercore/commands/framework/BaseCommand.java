@@ -1,4 +1,4 @@
-package net.curxxed.dev.wintercore.commands.api;
+package net.curxxed.dev.wintercore.commands.framework;
 
 import lombok.Getter;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
@@ -111,6 +111,28 @@ public abstract class BaseCommand implements TabExecutor {
 
     protected void send(CommandSender sender, String path, String fallback, String... placeholders) {
         sender.sendMessage(msg(path, fallback, placeholders));
+    }
+
+    protected List<String> msgList(String path, List<String> fallback, String... placeholders) {
+        if (plugin != null && plugin.getMessageConfig() != null) {
+            return plugin.getMessageConfig().getList(path, fallback, placeholders);
+        }
+
+        return fallback.stream()
+                .map(line -> {
+                    String output = line;
+                    for (int i = 0; i + 1 < placeholders.length; i += 2) {
+                        output = output.replace(placeholders[i], placeholders[i + 1] == null ? "" : placeholders[i + 1]);
+                    }
+                    return CC.translate(output);
+                })
+                .collect(Collectors.toList());
+    }
+
+    protected void sendList(CommandSender sender, String path, List<String> fallback, String... placeholders) {
+        for (String line : msgList(path, fallback, placeholders)) {
+            sender.sendMessage(line);
+        }
     }
 
     protected void sendUsage(CommandSender sender) {

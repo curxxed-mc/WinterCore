@@ -1,9 +1,8 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -29,24 +28,21 @@ public class Heal extends BaseCommand {
         if (commandArgs.length() > 0) {
             target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
             if (target == null || !target.isOnline()) {
-                commandArgs.getSender().sendMessage(CC.RED + "Player not found!");
+                send(commandArgs.getSender(), "general.player-not-found", "&cPlayer not found!");
                 return;
             }
         } else if (commandArgs.isPlayer()) {
             target = senderPlayer;
         } else {
-            commandArgs.getSender().sendMessage(CC.RED + "Only players can use this command on themselves!");
+            send(commandArgs.getSender(), "heal.self-player-only", "&cOnly players can use this command on themselves!");
             return;
         }
 
         target.setHealth(20);
-        target.sendMessage(CC.GREEN + "Your health has been restored!");
+        send(target, "heal.target-success", "&aYour health has been restored!");
         if (!target.equals(commandArgs.getSender())) {
-            commandArgs.getSender().sendMessage(CC.GREEN + "You have healed " + target.getName() + "!");
+            send(commandArgs.getSender(), "heal.actor-success", "&aYou have healed {target}!",
+                    "{target}", target.getName());
         }
     }
 }
-
-
-
-

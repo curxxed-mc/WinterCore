@@ -1,14 +1,14 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.VanishPacket;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashSet;
@@ -40,11 +40,12 @@ public class VanishCommand extends BaseCommand {
 
         toggleVanish(player, plugin, (vanished) -> {
             ItemStack dye = player.getInventory().getItem(8);
-            if (dye != null && dye.getItemMeta() != null) {
-                ItemMeta meta = dye.getItemMeta();
-                meta.setDisplayName(vanished ? CC.GRAY + "Unvanish" : CC.GREEN + "Vanish");
-                dye.setItemMeta(meta);
-                player.getInventory().setItem(8, dye);
+            if (dye != null) {
+                ItemBuilder builder = new ItemBuilder(dye);
+                builder.setName(message(plugin,
+                        vanished ? "vanish.item.unvanish" : "vanish.item.vanish",
+                        vanished ? "&7Un-Vanish" : "&aVanish"));
+                player.getInventory().setItem(8, builder.toItemStack());
             }
         });
     }
@@ -61,7 +62,7 @@ public class VanishCommand extends BaseCommand {
                 if (vanishedPlayers.contains(playerId)) {
                     vanishedPlayers.remove(playerId);
                     Bukkit.getOnlinePlayers().forEach(p -> p.showPlayer(player));
-                    player.sendMessage(CC.AQUA + "You are no longer vanished!");
+                    player.sendMessage(message(plugin, "vanish.disabled", "&bYou are no longer vanished!"));
                     plugin.getRankManager().refreshPlayerDisplay(player);
                     plugin.getRedisManager().publish(new VanishPacket(plugin.getConfig().getString("server-name", "Unknown"), System.currentTimeMillis(), player.getUniqueId(), player.getName(), false));
                     sendStaffNotificationStatic(player, playerRankColor, false, plugin);
@@ -71,7 +72,7 @@ public class VanishCommand extends BaseCommand {
                     Bukkit.getOnlinePlayers().stream()
                             .filter(p -> !(p.hasPermission("wintercore.staff") || p.hasPermission("wintercore.admin") || p.hasPermission("wintercore.Manager")))
                             .forEach(p -> p.hidePlayer(player));
-                    player.sendMessage(CC.AQUA + "You are now vanished!");
+                    player.sendMessage(message(plugin, "vanish.enabled", "&bYou are now vanished!"));
                     plugin.getRankManager().refreshPlayerDisplay(player);
                     plugin.getRedisManager().publish(new VanishPacket(plugin.getConfig().getString("server-name", "Unknown"), System.currentTimeMillis(), player.getUniqueId(), player.getName(), true));
                     sendStaffNotificationStatic(player, playerRankColor, true, plugin);
@@ -84,12 +85,10 @@ public class VanishCommand extends BaseCommand {
     }
 
     private static void sendStaffNotificationStatic(Player player, String rankColor, boolean vanished, WinterCore plugin) {
-        String messageTemplate = vanished
-                ? plugin.getConfig().getString("StaffVanishMessages.vanish", "&9[S] %player% &bhas vanished!")
-                : plugin.getConfig().getString("StaffVanishMessages.unvanish", "&9[S] %player% &bhas reappeared!");
-
-        String message = CC.translateAlternateColorCodes('&',
-                messageTemplate.replace("%player%", rankColor + player.getName()));
+        String message = message(plugin,
+                vanished ? "vanish.staff-enabled" : "vanish.staff-disabled",
+                vanished ? "&9[S] {player} &bhas vanished!" : "&9[S] {player} &bhas reappeared!",
+                "{player}", rankColor + player.getName());
 
         Bukkit.getOnlinePlayers().stream()
                 .filter(p -> p.hasPermission("WinterCore.staff") || p.hasPermission("WinterCore.admin") || p.hasPermission("WinterCore.Manager"))
@@ -100,9 +99,16 @@ public class VanishCommand extends BaseCommand {
     public static boolean isVanished(Player player) {
         return vanishedPlayers.contains(player.getUniqueId());
     }
+
+    private static String message(WinterCore plugin, String path, String fallback, String... placeholders) {
+        if (plugin != null && plugin.getMessageConfig() != null) {
+            return plugin.getMessageConfig().get(path, fallback, placeholders);
+        }
+
+        String output = fallback;
+        for (int i = 0; i + 1 < placeholders.length; i += 2) {
+            output = output.replace(placeholders[i], placeholders[i + 1] == null ? "" : placeholders[i + 1]);
+        }
+        return CC.translate(output);
+    }
 }
-
-
-
-
-

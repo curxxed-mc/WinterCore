@@ -35,7 +35,7 @@ public class SkinFetcher {
             @Override
             public void onResponse(@NonNull Call call,@NonNull Response response) throws IOException {
                 try (Response r = response) {
-                    if (!r.isSuccessful() || r.body() == null) {
+                    if (!r.isSuccessful()) {
                         callback.accept(null, new Exception("Player not found: " + playerName));
                         return;
                     }
@@ -65,7 +65,7 @@ public class SkinFetcher {
             @Override
             public void onResponse(@NonNull Call call,@NonNull Response response) throws IOException {
                 try (Response r = response) {
-                    if (!r.isSuccessful() || r.body() == null) {
+                    if (!r.isSuccessful()) {
                         callback.accept(null, new Exception("Could not fetch skin data for: " + playerName));
                         return;
                     }

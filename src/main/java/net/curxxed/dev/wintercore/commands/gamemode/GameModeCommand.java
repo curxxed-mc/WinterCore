@@ -1,11 +1,10 @@
 package net.curxxed.dev.wintercore.commands.gamemode;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.staff.StaffModeManager;
-import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.GameMode;
 import org.bukkit.command.CommandSender;
@@ -59,7 +58,7 @@ public class GameModeCommand extends BaseCommand {
                     break;
                 case "gmsp": case "gm3":
                     if (Utilities.IS_1_7) {
-                        sender.sendMessage(CC.translate("&cSpectator mode is not available in Minecraft 1.7.10."));
+                        send(sender, "gamemode.spectator-unavailable", "&cSpectator mode is not available in Minecraft 1.7.10.");
                         return;
                 }
                     targetGameMode = GameMode.SPECTATOR;
@@ -68,7 +67,7 @@ public class GameModeCommand extends BaseCommand {
         }
 
         if (targetGameMode == null) {
-            sender.sendMessage(CC.translate("&cInvalid gamemode specified. Use creative, survival, adventure, or spectator."));
+            send(sender, "gamemode.invalid", "&cInvalid gamemode specified. Use creative, survival, adventure, or spectator.");
             return;
         }
         Player targetPlayer;
@@ -82,23 +81,23 @@ public class GameModeCommand extends BaseCommand {
             if (sender instanceof Player) {
                 targetPlayer = (Player) sender;
             } else {
-                sender.sendMessage(CC.translate("&cConsole must specify a player."));
+                send(sender, "gamemode.console-needs-player", "&cConsole must specify a player.");
                 return;
             }
         }
 
         if (!sender.hasPermission("wintercore.command.gamemode." + targetGameMode.name().toLowerCase())) {
-            sender.sendMessage(CC.translate("&cYou do not have permission to set this gamemode."));
+            send(sender, "gamemode.no-mode-permission", "&cYou do not have permission to set this gamemode.");
             return;
         }
 
         if (sender != targetPlayer && !sender.hasPermission("wintercore.command.gamemode.others")) {
-            sender.sendMessage(CC.translate("&cYou do not have permission to change other players' gamemode."));
+            send(sender, "gamemode.no-others-permission", "&cYou do not have permission to change other players' gamemode.");
             return;
         }
 
         if (staffModeManager != null && staffModeManager.isInStaffMode(targetPlayer)) {
-            sender.sendMessage(CC.translate("&cYou cannot change that player's game mode while they are in staff mode!"));
+            send(sender, "gamemode.target-in-staff-mode", "&cYou cannot change that player's game mode while they are in staff mode!");
             return;
         }
 
@@ -107,10 +106,15 @@ public class GameModeCommand extends BaseCommand {
         String modeName = targetGameMode.name().substring(0, 1).toUpperCase() + targetGameMode.name().substring(1).toLowerCase();
 
         if (sender == targetPlayer) {
-            sender.sendMessage(CC.translate("&bYour gamemode has been set to " + modeName + "."));
+            send(sender, "gamemode.self-success", "&bYour gamemode has been set to {mode}.",
+                    "{mode}", modeName);
         } else {
-            sender.sendMessage(CC.translate("&bSet " + targetPlayer.getName() + "'s gamemode to " + modeName + "."));
-            targetPlayer.sendMessage(CC.translate("&bYour gamemode has been set to " + modeName + " by " + sender.getName() + "."));
+            send(sender, "gamemode.actor-success", "&bSet {target}'s gamemode to {mode}.",
+                    "{target}", targetPlayer.getName(),
+                    "{mode}", modeName);
+            send(targetPlayer, "gamemode.target-success", "&bYour gamemode has been set to {mode} by {sender}.",
+                    "{mode}", modeName,
+                    "{sender}", sender.getName());
         }
     }
 

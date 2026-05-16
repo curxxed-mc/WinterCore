@@ -6,11 +6,11 @@ import net.curxxed.dev.wintercore.menu.Menu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -108,21 +108,19 @@ public class StaffListMenu extends Menu {
                     rankManager.getColorPreference(resolvedRank, color -> {
                         if (color == null) color = "&f";
                         String coloredRank = CC.translate(color) + resolvedRank;
-
                         ItemStack skull = plugin.getMenuConfig().buildItem(
                                 "staff-list-menu.staff-item",
                                 Material.SKULL_ITEM,
+                                (short) 3,
                                 "{player}", se.playerName,
                                 "{server}", se.server,
                                 "{rank}", resolvedRank,
                                 "{rank_color}", color,
                                 "{colored_rank}", coloredRank
                         );
-                        if (skull.getItemMeta() instanceof SkullMeta) {
-                            SkullMeta meta = (SkullMeta) skull.getItemMeta();
-                            meta.setOwner(se.playerName);
-                            skull.setItemMeta(meta);
-                        }
+                        skull = new ItemBuilder(skull)
+                                .setSkullOwner(se.playerName)
+                                .toItemStack();
 
                         loaded.add(skull);
 

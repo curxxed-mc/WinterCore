@@ -1,9 +1,8 @@
 package net.curxxed.dev.wintercore.commands.misc;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -29,31 +28,27 @@ public class SpeedCommand extends BaseCommand {
     public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
         String[] args = commandArgs.getArgs();
-        if (player == null && args.length < 2) {
-            commandArgs.getSender().sendMessage(CC.RED + "Only players can use this command.");
-            return;
-        }
         Player target = player;
         if (args.length == 2) {
             target = Bukkit.getPlayer(args[1]);
             if (target == null) {
-                player.sendMessage(CC.RED + "Player not found.");
+                send(player, "speed.player-not-found", "&cPlayer not found.");
                 return;
             }
         }
         if (args.length == 0 || args[0].equalsIgnoreCase("reset")) {
             target.setWalkSpeed(0.2f);
             target.setFlySpeed(0.1f);
-            target.sendMessage(CC.GREEN + "Your speed has been reset.");
+            send(target, "speed.reset-success", "&aYour speed has been reset.");
             if (target != player) {
-                player.sendMessage(CC.GREEN + "You reset " + target.getName() + "'s speed.");
+                send(player, "speed.reset-other", "&aYou reset {target}'s speed.", "{target}", target.getName());
             }
             return;
         }
         try {
             int speed = Integer.parseInt(args[0]);
             if (speed < 1 || speed > 10) {
-                player.sendMessage(CC.RED + "Speed must be between 1 and 10.");
+                send(player, "speed.invalid-range", "&cSpeed must be between 1 and 10.");
                 return;
             }
             float speedValue = speed / 10.0f;
@@ -62,12 +57,12 @@ public class SpeedCommand extends BaseCommand {
             } else {
                 target.setWalkSpeed(speedValue);
             }
-            target.sendMessage(CC.GREEN + "Your speed has been set to " + speed + ".");
+            send(target, "speed.set-success", "&aYour speed has been set to {speed}.", "{speed}", String.valueOf(speed));
             if (target != player) {
-                player.sendMessage(CC.GREEN + "You set " + target.getName() + "'s speed to " + speed + ".");
+                send(player, "speed.set-other", "&aYou set {target}'s speed to {speed}.", "{target}", target.getName(), "{speed}", String.valueOf(speed));
             }
         } catch (NumberFormatException e) {
-            player.sendMessage(CC.RED + "Invalid speed value.");
+            send(player, "speed.invalid-value", "&cInvalid speed value.");
         }
     }
 
@@ -84,8 +79,3 @@ public class SpeedCommand extends BaseCommand {
         return Collections.emptyList();
     }
 }
-
-
-
-
-

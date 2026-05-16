@@ -1,23 +1,23 @@
-package net.curxxed.dev.wintercore.tags;
+package net.curxxed.dev.wintercore.menus;
 
 import net.curxxed.dev.wintercore.menu.Button;
 import net.curxxed.dev.wintercore.menu.Menu;
 import net.curxxed.dev.wintercore.menu.MenuManager;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.tags.Tag;
+import net.curxxed.dev.wintercore.tags.TagsManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TagsGUI extends Menu {
+public class TagsMenu extends Menu {
 
     private static final int SIZE = 54;
     private static final int PAGE_SIZE = 45;
@@ -32,7 +32,7 @@ public class TagsGUI extends Menu {
     private final Map<UUID, Integer> pageByPlayer = new ConcurrentHashMap<>();
     private final Map<UUID, String> selectedTagByPlayer = new ConcurrentHashMap<>();
 
-    public TagsGUI(WinterCore plugin, TagsManager tagsManager) {
+    public TagsMenu(WinterCore plugin, TagsManager tagsManager) {
         this.plugin = plugin;
         this.tagsManager = tagsManager;
     }
@@ -86,7 +86,9 @@ public class TagsGUI extends Menu {
                 tagsManager.setPlayerTag(uuid, tag.getId());
                 selectedTagByPlayer.put(uuid, tag.getId());
                 event.getWhoClicked().closeInventory();
-                player.sendMessage(CC.translate("&aSelected tag: " + TagsManager.colorNameToCode(tag.getColor()) + tag.getName()));
+                player.sendMessage(plugin.getMessageConfig().get("tags.selected",
+                        "&aSelected tag: {tag}",
+                        "{tag}", TagsManager.colorNameToCode(tag.getColor()) + tag.getName()));
             }));
         }
 
@@ -110,7 +112,7 @@ public class TagsGUI extends Menu {
                     tagsManager.setPlayerTag(uuid, null);
                     selectedTagByPlayer.remove(uuid);
                     event.getWhoClicked().closeInventory();
-                    player.sendMessage(CC.translate("&aTag cleared."));
+                    player.sendMessage(plugin.getMessageConfig().get("tags.cleared", "&aTag cleared."));
                 }
         ));
 
@@ -136,14 +138,17 @@ public class TagsGUI extends Menu {
         selectedTagByPlayer.remove(uuid);
     }
 
-    public void refresh() {
+    /**
+     * Refreshes the GUI for all players currently viewing it and syncs their
+     * selected-tag state. Optionally notifies a specific staff member who
+     * triggered the reload — avoids spamming the reload message to every viewer.
+     *
+     * @param notifyStaff the staff player who ran /tags reload, or null for silent refresh
+     */
+    public void refresh(Player notifyStaff) {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!MenuManager.getInstance().hasOpenMenu(player)) {
-                continue;
-            }
-            if (MenuManager.getInstance().getOpenMenu(player) != this) {
-                continue;
-            }
+            if (!MenuManager.getInstance().hasOpenMenu(player)) continue;
+            if (MenuManager.getInstance().getOpenMenu(player) != this) continue;
 
             UUID uuid = player.getUniqueId();
             tagsManager.getPlayerTag(uuid, selectedTag -> {
@@ -153,9 +158,17 @@ public class TagsGUI extends Menu {
                     selectedTagByPlayer.remove(uuid);
                 }
                 refresh(player);
-                player.sendMessage(CC.translate("&eTags were reloaded. Your menu has been refreshed."));
             });
         }
+
+        if (notifyStaff != null && notifyStaff.isOnline()) {
+            notifyStaff.sendMessage(plugin.getMessageConfig().get("tags.reloaded",
+                    "&eTags were reloaded. Open menus have been refreshed."));
+        }
+    }
+
+    public void refresh() {
+        refresh(null);
     }
 
     private ItemStack buildTagItem(Tag tag, boolean selected) {
