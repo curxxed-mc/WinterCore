@@ -6,7 +6,6 @@ import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.database.service.ProfileService;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -112,8 +111,14 @@ public class PlayerService implements Listener {
     }
 
     public void broadcastFreeze(Player target, Player staff, boolean isFrozen) {
-        String status = isFrozen ? "&c has been frozen by " : "&a has been unfrozen by ";
-        String alert = CC.translate("&9[S] " + target.getDisplayName() + status + staff.getDisplayName() + ".");
+        String alert = plugin.getMessageConfig().get(isFrozen
+                        ? "moderation.freeze.staff-alert-frozen"
+                        : "moderation.freeze.staff-alert-unfrozen",
+                isFrozen
+                        ? "&9[S] {target}&c has been frozen by {staff}."
+                        : "&9[S] {target}&a has been unfrozen by {staff}.",
+                "{target}", target.getDisplayName(),
+                "{staff}", staff.getDisplayName());
 
         Bukkit.getOnlinePlayers().stream()
                 .filter(p -> p.hasPermission("wintercore.staff"))

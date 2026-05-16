@@ -5,10 +5,12 @@ import net.curxxed.dev.wintercore.annotation.ForRemoval;
 import net.curxxed.dev.wintercore.events.WinterCoreEvents;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 @Getter
 @Deprecated
+@ApiStatus.ScheduledForRemoval
 @ForRemoval("Replaced by Packet-based synchronization")
 public class RankTagSyncEvent extends WinterCoreEvents {
 

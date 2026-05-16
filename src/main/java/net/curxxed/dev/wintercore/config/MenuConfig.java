@@ -1,7 +1,8 @@
-package net.curxxed.dev.wintercore.menus;
+package net.curxxed.dev.wintercore.config;
 
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -16,6 +17,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+//TODO: fix this shit idk why but the names aren't applied in Grant, Tags, Disguise and Staff List don't have the items inside
+//named correctly
 public class MenuConfig {
 
     private final WinterCore plugin;
@@ -80,7 +83,7 @@ public class MenuConfig {
     }
 
     public ItemStack buildItem(String path, String... placeholders) {
-        return buildItem(path, Material.PAPER, placeholders);
+        return buildItem(path, Material.PAPER, (short) 0, placeholders);
     }
 
     public ItemStack buildItem(String path, Material fallbackMaterial, String... placeholders) {
@@ -89,27 +92,30 @@ public class MenuConfig {
 
     public ItemStack buildItem(String path, Material fallbackMaterial, short fallbackData, String... placeholders) {
         ConfigurationSection section = config.getConfigurationSection(path);
-        if (section == null) return new ItemStack(fallbackMaterial, 1, fallbackData);
+        if (section == null) {
+            plugin.getLogger().warning("[MenuConfig] Missing config section '" + path
+                    + "' in menus.yml — returning fallback item. Check your menus.yml.");
+            return new ItemBuilder(fallbackMaterial, 1, (byte) fallbackData).toItemStack();
+        }
 
         Material mat = parseMaterial(section.getString("material", fallbackMaterial.name()), fallbackMaterial);
         int amount = Math.max(1, Math.min(64, section.getInt("amount", 1)));
         short data = (short) section.getInt("data", fallbackData);
-        ItemStack item = new ItemStack(mat, amount, data);
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
+        ItemBuilder itemBuilder = new ItemBuilder(mat, amount, (byte) data);
+        ItemMeta meta = itemBuilder.toItemStack().getItemMeta();
+        if (meta == null) return itemBuilder.toItemStack();
 
         String name = section.getString("name", "");
         if (!name.isEmpty()) {
-            meta.setDisplayName(CC.translate(applyPlaceholders(name, placeholders)));
+            itemBuilder.setName(applyPlaceholders(name, placeholders));
         }
 
         List<String> lore = section.getStringList("lore").stream()
-                .map(line -> CC.translate(applyPlaceholders(line, placeholders)))
+                .map(line -> applyPlaceholders(line, placeholders))
                 .collect(Collectors.toList());
-        if (!lore.isEmpty()) meta.setLore(lore);
+        if (!lore.isEmpty()) itemBuilder.setLore(lore);
 
-        item.setItemMeta(meta);
-        return item;
+        return itemBuilder.toItemStack();
     }
 
     public int getSlot(String path) {

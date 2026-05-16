@@ -1,12 +1,11 @@
 package net.curxxed.dev.wintercore.commands.misc;
 
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.ConfigSyncPacket;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -60,20 +59,21 @@ public class ReloadConfig extends BaseCommand {
         }
 
         List<String> localReloaded = reloadLocal(target);
-        commandArgs.getSender().sendMessage(CC.translate(
-                "&aReloaded locally: &f" + String.join("&7, &f", localReloaded)
-        ));
+        send(commandArgs.getSender(), "reload-config.local-success",
+                "&aReloaded locally: &f{files}",
+                "{files}", String.join("&7, &f", localReloaded));
 
         if (!sync) {
-            commandArgs.getSender().sendMessage(CC.translate("&7Tip: add &esync&7 to broadcast the changes over Redis."));
+            send(commandArgs.getSender(), "reload-config.sync-tip",
+                    "&7Tip: add &esync&7 to broadcast the changes over Redis.");
             return;
         }
 
         List<String> pushed = pushToNetwork(target, commandArgs.getSender());
         if (!pushed.isEmpty()) {
-            commandArgs.getSender().sendMessage(CC.translate(
-                    "&bBroadcasted over Redis: &f" + String.join("&7, &f", pushed)
-            ));
+            send(commandArgs.getSender(), "reload-config.network-success",
+                    "&bBroadcasted over Redis: &f{files}",
+                    "{files}", String.join("&7, &f", pushed));
         }
     }
 
@@ -113,7 +113,7 @@ public class ReloadConfig extends BaseCommand {
                     break;
                 case TAGS:
                     plugin.getTagsManager().loadTags();
-                    plugin.getTagsGUI().refresh();
+                    plugin.getTagsMenu().refresh();
                     reloaded.add("tags.yml");
                     break;
                 case MENUS:
@@ -148,7 +148,9 @@ public class ReloadConfig extends BaseCommand {
             File file = new File(plugin.getDataFolder(), part.fileName);
             String yaml = readYaml(file);
             if (yaml == null) {
-                sender.sendMessage(CC.translate("&cFailed to read &f" + part.fileName + "&c for network sync."));
+                send(sender, "reload-config.read-failed",
+                        "&cFailed to read &f{file}&c for network sync.",
+                        "{file}", part.fileName);
                 continue;
             }
 
@@ -201,11 +203,13 @@ public class ReloadConfig extends BaseCommand {
     }
 
     private void sendReloadUsage(CommandSender sender) {
-        sender.sendMessage(CC.translate("&eUsage: " + commandInfo.usage()));
-        sender.sendMessage(CC.translate("&7Examples:"));
-        sender.sendMessage(CC.translate("&7- /reloadconfig"));
-        sender.sendMessage(CC.translate("&7- /reloadconfig permissions"));
-        sender.sendMessage(CC.translate("&7- /reloadconfig all sync"));
+        sendList(sender, "reload-config.usage", Arrays.asList(
+                "&eUsage: {usage}",
+                "&7Examples:",
+                "&7- /reloadconfig",
+                "&7- /reloadconfig permissions",
+                "&7- /reloadconfig all sync"
+        ), "{usage}", commandInfo.usage());
     }
 
     private boolean isSyncToken(String token) {

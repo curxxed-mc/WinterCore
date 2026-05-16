@@ -2,11 +2,10 @@ package net.curxxed.dev.wintercore.commands.staff;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -20,6 +19,7 @@ import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +46,7 @@ public class WhoIsDisguisedCommand extends BaseCommand {
     @Override
     public void execute(CommandArguments args) {
         if (!args.isPlayer()) {
-            runSync(() -> args.getSender().sendMessage(CC.translate("&cThis command is for players only.")));
+            runSync(() -> send(args.getSender(), "general.in-game-only-command", "&cThis command is for players only."));
             return;
         }
 
@@ -86,15 +86,26 @@ public class WhoIsDisguisedCommand extends BaseCommand {
                             ? "unknown"
                             : snapshot.serverName;
 
-                    TextComponent message = new TextComponent(CC.translate(
-                            " &7* &f" + snapshot.disguiseName + " &7-> &c" + realName + " &7[" + shownServer + "]"
-                    ));
-                    ComponentBuilder hoverText = new ComponentBuilder(CC.translate("&eInformation:\n"))
-                            .append(CC.translate("&7Real Name: &f" + realName + "\n"))
-                            .append(CC.translate("&7Real Rank: " + realRankColor + realRank + "\n"))
-                            .append(CC.translate("&7Disguised Name: &f" + snapshot.disguiseName + "\n"))
-                            .append(CC.translate("&7Disguised Rank: " + snapshot.disguiseColor + snapshot.disguiseRank + "\n"))
-                            .append(CC.translate("&7Server: &b" + shownServer));
+                    TextComponent message = new TextComponent(msg("whoisdisguised.line",
+                            " &7* &f{disguise} &7-> &c{real} &7[{server}]",
+                            "{disguise}", snapshot.disguiseName,
+                            "{real}", realName,
+                            "{server}", shownServer));
+                    String hoverMessage = String.join("\n", msgList("whoisdisguised.hover", Arrays.asList(
+                            "&eInformation:",
+                            "&7Real Name: &f{real}",
+                            "&7Real Rank: {real_rank_color}{real_rank}",
+                            "&7Disguised Name: &f{disguise}",
+                            "&7Disguised Rank: {disguise_rank_color}{disguise_rank}",
+                            "&7Server: &b{server}"
+                    ), "{real}", realName,
+                            "{real_rank}", realRank,
+                            "{real_rank_color}", realRankColor,
+                            "{disguise}", snapshot.disguiseName,
+                            "{disguise_rank}", snapshot.disguiseRank,
+                            "{disguise_rank_color}", snapshot.disguiseColor,
+                            "{server}", shownServer));
+                    ComponentBuilder hoverText = new ComponentBuilder(hoverMessage);
                     message.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hoverText.create()));
                     lines.add(message);
                 }
@@ -104,7 +115,7 @@ public class WhoIsDisguisedCommand extends BaseCommand {
             runSync(() -> {
                 Player sender = Bukkit.getPlayer(senderId);
                 if (sender != null && sender.isOnline()) {
-                    sender.sendMessage(CC.translate("&cFailed to retrieve data from Redis."));
+                    send(sender, "whoisdisguised.redis-failed", "&cFailed to retrieve data from Redis.");
                 }
             });
             return;
@@ -119,19 +130,21 @@ public class WhoIsDisguisedCommand extends BaseCommand {
             return;
         }
 
-        sender.sendMessage(CC.translate("&6&m----------------------------------------"));
-        sender.sendMessage(CC.translate("&e&lNetwork Disguised Players"));
-        sender.sendMessage("");
+        sendList(sender, "whoisdisguised.header", Arrays.asList(
+                "&6&m----------------------------------------",
+                "&e&lNetwork Disguised Players",
+                ""
+        ));
 
         if (lines.isEmpty()) {
-            sender.sendMessage(CC.translate("&cThere are no disguised players online."));
+            send(sender, "whoisdisguised.none", "&cThere are no disguised players online.");
         } else {
             for (TextComponent line : lines) {
                 sender.spigot().sendMessage(line);
             }
         }
 
-        sender.sendMessage(CC.translate("&6&m----------------------------------------"));
+        send(sender, "whoisdisguised.footer", "&6&m----------------------------------------");
     }
 
     private DisguiseSnapshot parseSnapshot(String key, String disguiseJson) {

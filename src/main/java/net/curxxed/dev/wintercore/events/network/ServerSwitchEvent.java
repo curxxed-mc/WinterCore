@@ -5,9 +5,11 @@ import net.curxxed.dev.wintercore.annotation.ForRemoval;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 @Getter
 @Deprecated
+@ApiStatus.ScheduledForRemoval
 @ForRemoval("Replaced by Packet-based synchronization")
 public class ServerSwitchEvent extends PlayerEvent {
 

@@ -1,10 +1,9 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.permissions.PermissionConfigManager;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.config.PermissionConfigManager;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.entity.Player;
 
@@ -32,13 +31,13 @@ public class ManagePermissionCommand extends BaseCommand {
     @Override
     public void execute(CommandArguments commandArgs) {
         if (commandArgs.length() < 2) {
-            commandArgs.getSender().sendMessage(CC.RED + "Usage: " + commandInfo.usage());
+            sendUsage(commandArgs.getSender());
             return;
         }
 
         Player targetPlayer = plugin.getServer().getPlayer(commandArgs.getArgs()[0]);
         if (targetPlayer == null) {
-            commandArgs.getSender().sendMessage(CC.RED + "Player not found.");
+            send(commandArgs.getSender(), "general.player-not-found", "&cPlayer not found.");
             return;
         }
 
@@ -51,47 +50,64 @@ public class ManagePermissionCommand extends BaseCommand {
             List<String> grants = snapshot.getGrants();
             List<String> denies = snapshot.getDenies();
 
-            commandArgs.getSender().sendMessage(CC.AQUA + "Permission overrides for " + targetPlayer.getName() + ":");
-            commandArgs.getSender().sendMessage(CC.GRAY + "  Grants: " +
-                    (grants.isEmpty() ? CC.DARK_GRAY + "(none)" : CC.GREEN + String.join(", ", grants)));
-            commandArgs.getSender().sendMessage(CC.GRAY + "  Denies: " +
-                    (denies.isEmpty() ? CC.DARK_GRAY + "(none)" : CC.RED + String.join(", ", denies)));
+            send(commandArgs.getSender(), "permission.list.header",
+                    "&bPermission overrides for {target}:",
+                    "{target}", targetPlayer.getName());
+            send(commandArgs.getSender(), "permission.list.grants",
+                    "&7  Grants: {grants}",
+                    "{grants}", grants.isEmpty()
+                            ? msg("permission.list.none", "&8(none)")
+                            : msg("permission.list.grant-color", "&a") + String.join(", ", grants));
+            send(commandArgs.getSender(), "permission.list.denies",
+                    "&7  Denies: {denies}",
+                    "{denies}", denies.isEmpty()
+                            ? msg("permission.list.none", "&8(none)")
+                            : msg("permission.list.deny-color", "&c") + String.join(", ", denies));
             return;
         }
 
         if (commandArgs.length() < 3) {
-            commandArgs.getSender().sendMessage(CC.RED + "Usage: " + commandInfo.usage());
+            sendUsage(commandArgs.getSender());
             return;
         }
 
         String permissionNode = normalizePermission(commandArgs.getArgs()[2]);
         if (permissionNode.isEmpty()) {
-            commandArgs.getSender().sendMessage(CC.RED + "Permission node cannot be empty.");
+            send(commandArgs.getSender(), "permission.empty-node", "&cPermission node cannot be empty.");
             return;
         }
 
         if ("add".equals(action)) {
             manager.setGranted(targetPlayer.getUniqueId(), permissionNode);
             refreshPlayerPermissions(targetPlayer);
-            commandArgs.getSender().sendMessage(CC.GREEN + "Granted " + permissionNode + " to " + targetPlayer.getName() + ".");
+            send(commandArgs.getSender(), "permission.granted",
+                    "&aGranted {permission} to {target}.",
+                    "{permission}", permissionNode,
+                    "{target}", targetPlayer.getName());
             return;
         }
 
         if ("deny".equals(action)) {
             manager.setDenied(targetPlayer.getUniqueId(), permissionNode);
             refreshPlayerPermissions(targetPlayer);
-            commandArgs.getSender().sendMessage(CC.GREEN + "Denied " + permissionNode + " for " + targetPlayer.getName() + ".");
+            send(commandArgs.getSender(), "permission.denied",
+                    "&aDenied {permission} for {target}.",
+                    "{permission}", permissionNode,
+                    "{target}", targetPlayer.getName());
             return;
         }
 
         if ("remove".equals(action)) {
             manager.removeOverride(targetPlayer.getUniqueId(), permissionNode);
             refreshPlayerPermissions(targetPlayer);
-            commandArgs.getSender().sendMessage(CC.GREEN + "Removed override " + permissionNode + " from " + targetPlayer.getName() + ".");
+            send(commandArgs.getSender(), "permission.removed",
+                    "&aRemoved override {permission} from {target}.",
+                    "{permission}", permissionNode,
+                    "{target}", targetPlayer.getName());
             return;
         }
 
-        commandArgs.getSender().sendMessage(CC.RED + "Invalid action. Use add, deny, remove, or list.");
+        send(commandArgs.getSender(), "permission.invalid-action", "&cInvalid action. Use add, deny, remove, or list.");
     }
 
     @Override
@@ -146,8 +162,3 @@ public class ManagePermissionCommand extends BaseCommand {
         return normalized;
     }
 }
-
-
-
-
-

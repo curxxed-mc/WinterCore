@@ -1,6 +1,6 @@
 package net.curxxed.dev.wintercore.listeners;
 
-import net.curxxed.dev.wintercore.client.ClientBrandCommand;
+import net.curxxed.dev.wintercore.commands.staff.ClientBrandCommand;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.ServerSwitchPacket;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.StaffActivityPacket;
 import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
@@ -10,7 +10,6 @@ import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,6 +21,7 @@ import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.Map;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -230,9 +230,13 @@ public class ConnectionListener implements Listener {
     private void warnMissingPlaceholderAPI(Player player) {
         if (!plugin.isPlaceholderAPIEnabled()
                 && (player.hasPermission("wintercore.admin") || player.hasPermission("wintercore.manager"))) {
-            player.sendMessage(CC.translate("&cWarning: PlaceholderAPI is not installed on this server!"));
-            player.sendMessage(CC.translate("&ePlease install PlaceholderAPI to ensure full functionality."));
-            player.sendMessage(CC.translate("&eFor more information, visit: &ahttps://www.spigotmc.org/resources/placeholderapi.6245/"));
+            for (String line : plugin.getMessageConfig().getList("placeholderapi.missing-warning", Arrays.asList(
+                    "&cWarning: PlaceholderAPI is not installed on this server!",
+                    "&ePlease install PlaceholderAPI to ensure full functionality.",
+                    "&eFor more information, visit: &ahttps://www.spigotmc.org/resources/placeholderapi.6245/"
+            ))) {
+                player.sendMessage(line);
+            }
         }
     }
 

@@ -1,5 +1,6 @@
-package net.curxxed.dev.wintercore.permissions;
+package net.curxxed.dev.wintercore.config;
 
+import net.curxxed.dev.wintercore.permissions.WinterCorePermissible;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;

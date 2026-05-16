@@ -1,9 +1,8 @@
 package net.curxxed.dev.wintercore.commands.troll;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
@@ -42,13 +41,14 @@ public class TrollCommand extends BaseCommand {
         Player player = commandArgs.getPlayer();
 
         if (commandArgs.length() < 2) {
-            player.sendMessage(CC.RED + "Usage: /troll <player> <" + String.join("|", SUBCOMMANDS) + ">");
+            send(player, "troll.usage", "&cUsage: /troll <player> <{types}>",
+                    "{types}", String.join("|", SUBCOMMANDS));
             return;
         }
 
         Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null || !target.isOnline()) {
-            player.sendMessage(CC.RED + "Player not found or offline.");
+            send(player, "troll.not-online", "&cPlayer not found or offline.");
             return;
         }
 
@@ -67,11 +67,14 @@ public class TrollCommand extends BaseCommand {
                 toggleDayNightLoop(player, target);
                 return;
             default:
-                player.sendMessage(CC.RED + "Unknown troll type. Use: " + String.join(", ", SUBCOMMANDS));
+                send(player, "troll.unknown-type", "&cUnknown troll type. Use: {types}",
+                        "{types}", String.join(", ", SUBCOMMANDS));
                 return;
         }
 
-        player.sendMessage(CC.GREEN + "Trolled " + target.getName() + " with " + sub + "!");
+        send(player, "troll.success", "&aTrolled {target} with {type}!",
+                "{target}", target.getName(),
+                "{type}", sub);
     }
 
     private void sendGameStateChange(Player target, int reason, float value) {
@@ -134,7 +137,8 @@ public class TrollCommand extends BaseCommand {
         if (dayNightTasks.containsKey(uuid)) {
             dayNightTasks.get(uuid).cancel();
             dayNightTasks.remove(uuid);
-            sender.sendMessage(CC.GREEN + "Stopped day/night loop for " + target.getName() + ".");
+            send(sender, "troll.daynight-stopped", "&aStopped day/night loop for {target}.",
+                    "{target}", target.getName());
             return;
         }
 
@@ -156,8 +160,9 @@ public class TrollCommand extends BaseCommand {
         task.runTaskTimer(plugin, 0L, 2L);
         dayNightTasks.put(uuid, task);
 
-        sender.sendMessage(CC.GREEN + "Started day/night loop for " + target.getName() + ".");
-        target.sendMessage(CC.RED + "Something feels off about time...");
+        send(sender, "troll.daynight-started", "&aStarted day/night loop for {target}.",
+                "{target}", target.getName());
+        send(target, "troll.daynight-target", "&cSomething feels off about time...");
     }
 
     private void sendTimeUpdate(Player target, long timeOfDay) {
@@ -185,6 +190,8 @@ public class TrollCommand extends BaseCommand {
         return Collections.emptyList();
     }
 }
+
+
 
 
 

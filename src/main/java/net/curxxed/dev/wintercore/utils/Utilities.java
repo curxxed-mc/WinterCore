@@ -2,7 +2,6 @@ package net.curxxed.dev.wintercore.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Constructor;
@@ -141,19 +140,6 @@ public class Utilities {
                 "Utilities initialized → Version: " + SERVER_VERSION +
                         " | Mode: " + (IS_LEGACY ? "Legacy (≤1.16)" : "Modern (1.17+)")
         );
-    }
-
-    public static String getInventoryTitle(InventoryClickEvent event) {
-        try {
-            if (IS_LEGACY) {
-                Method getTitle = event.getInventory().getClass().getMethod("getTitle");
-                return (String) getTitle.invoke(event.getInventory());
-            } else {
-                return event.getView().getTitle();
-            }
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     public static Class<?> resolveAuthlibClass(String relative) {

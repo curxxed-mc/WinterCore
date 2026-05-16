@@ -1,12 +1,11 @@
 package net.curxxed.dev.wintercore.disguise.commands;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
@@ -30,11 +29,11 @@ public class UnDisguiseCommand extends BaseCommand {
         Player player = commandArgs.getPlayer();
         disguiseHandler.unDisguise(player, true, result -> {
             if (result == DisguiseCallback.SUCCESS) {
-                player.sendMessage(CC.translate("&aYou are no longer disguised."));
+                send(player, "disguise.undisguised", "&aYou are no longer disguised.");
             } else if (result == DisguiseCallback.NOT_DISGUISED) {
-                player.sendMessage(CC.translate("&cYou are not disguised."));
+                send(player, "disguise.not-disguised", "&cYou are not disguised.");
             } else {
-                player.sendMessage(CC.translate("&cAn error occurred while undisguising."));
+                send(player, "disguise.error", "&cAn error occurred while undisguising.");
             }
         });
     }

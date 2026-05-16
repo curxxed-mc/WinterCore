@@ -1,12 +1,13 @@
 package net.curxxed.dev.wintercore.commands.misc;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.PluginDescriptionFile;
+
+import java.util.Arrays;
 
 @CommandInfo(
         name = "about",
@@ -30,14 +31,19 @@ public class AboutCommand extends BaseCommand {
 
         // Use a fallback description if the plugin.yml is missing one.
         if (description == null || description.isEmpty()) {
-            description = "The core plugin for your server network.";
+            description = msg("about.default-description", "The core plugin for your server network.");
         }
 
-        sender.sendMessage(CC.translate("&7&m----------------------------------------------------"));
-        sender.sendMessage(CC.translate(" &b&l" + desc.getName() + " &fv" + desc.getVersion()));
-        sender.sendMessage(CC.translate("  &7Authors: &f" + String.join(", ", desc.getAuthors())));
-        sender.sendMessage(CC.translate("  &7Description: &f" + description));
-        sender.sendMessage(CC.translate("&7&m----------------------------------------------------"));
+        sendList(sender, "about.info", Arrays.asList(
+                "&7&m----------------------------------------------------",
+                " &b&l{name} &fv{version}",
+                "  &7Author: &f{authors}",
+                "  &7Description: &f{description}",
+                "&7&m----------------------------------------------------"
+        ), "{name}", desc.getName(),
+                "{version}", desc.getVersion(),
+                "{authors}", String.join(", ", desc.getAuthors()),
+                "{description}", description);
     }
 }
 

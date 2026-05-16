@@ -1,10 +1,10 @@
 package net.curxxed.dev.wintercore.menu;
 
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.HashMap;
 import java.util.List;
@@ -61,10 +61,8 @@ public abstract class PaginatedMenu extends Menu {
     }
 
     private ItemStack buildNavItem(Material material, String name) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(name);
-        item.setItemMeta(meta);
-        return item;
+        return new ItemBuilder(material)
+                .setName(name)
+                .toItemStack();
     }
 }

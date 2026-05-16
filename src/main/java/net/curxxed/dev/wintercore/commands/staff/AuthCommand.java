@@ -1,12 +1,13 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
 import net.curxxed.dev.wintercore.auth.AuthManager;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
+
+import java.util.Arrays;
 
 @CommandInfo(
         name = "auth",
@@ -34,12 +35,12 @@ public class AuthCommand extends BaseCommand {
         final Player player = args.getPlayer();
 
         if (!player.hasPermission(AuthManager.STAFF_PERMISSION)) {
-            player.sendMessage(CC.translate("&c2FA is reserved for staff members."));
+            send(player, "auth.no-setup-required", "&c2FA is reserved for staff members.");
             return;
         }
 
         if (args.length() == 0) {
-            player.sendMessage(CC.translate("&cUsage: &e/auth <6-digit code>"));
+            sendUsage(args.getSender());
             return;
         }
 
@@ -47,7 +48,7 @@ public class AuthCommand extends BaseCommand {
         try {
             code = Integer.parseInt(args.getArgs()[0].trim());
         } catch (NumberFormatException e) {
-            player.sendMessage(CC.translate("&cInvalid code. Enter the 6-digit code from your authenticator app."));
+            send(player, "auth.invalid-code", "&cInvalid code. Enter the 6-digit code from your authenticator app.");
             return;
         }
 
@@ -57,12 +58,12 @@ public class AuthCommand extends BaseCommand {
             }
 
             if (!hasSecret) {
-                player.sendMessage(CC.translate("&cYou have not set up 2FA yet. Use &e/2fa setup &cto begin."));
+                send(player, "auth.setup-required", "&c&l2FA Setup Required");
                 return;
             }
 
             if (authManager.isAuthenticated(player)) {
-                player.sendMessage(CC.translate("&aYou are already authenticated."));
+                send(player, "auth.authenticated", "&a&lAuthenticated &8(session resumed)");
                 return;
             }
 
@@ -72,12 +73,14 @@ public class AuthCommand extends BaseCommand {
                 }
 
                 if (success) {
-                    player.sendMessage("");
-                    player.sendMessage(CC.translate("&a&lAuthenticated successfully."));
-                    player.sendMessage(CC.translate("&7Session valid for &e12 hours &7or until your IP changes."));
-                    player.sendMessage("");
+                    sendList(player, "auth.success", Arrays.asList(
+                            "",
+                            "&a&lAuthenticated &8(session resumed)",
+                            "&7Session valid for &e12 hours &7or until your IP changes.",
+                            ""
+                    ));
                 } else {
-                    player.sendMessage(CC.translate("&cInvalid code. Please check your authenticator app and try again."));
+                    send(player, "auth.invalid-code", "&cInvalid code. Enter the 6-digit code from your authenticator app.");
                 }
             }));
         }));

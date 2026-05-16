@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.auth;
 import com.mongodb.client.MongoDatabase;
 import lombok.Getter;
 import net.curxxed.dev.wintercore.auth.repository.AuthRepository;
-import net.curxxed.dev.wintercore.commands.api.CommandHandler;
+import net.curxxed.dev.wintercore.commands.framework.CommandHandler;
 import net.curxxed.dev.wintercore.commands.staff.AuthCommand;
 import net.curxxed.dev.wintercore.commands.staff.TwoFACommand;
 import net.curxxed.dev.wintercore.plugin.WinterCore;

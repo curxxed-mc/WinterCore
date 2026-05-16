@@ -6,6 +6,7 @@ import net.curxxed.dev.wintercore.menu.Button;
 import net.curxxed.dev.wintercore.menu.Menu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -103,10 +104,10 @@ public class RankMenu extends Menu {
 
             ItemStack item;
             if (colorChar == '4') {
-                item = new ItemStack(Material.STAINED_CLAY, 1, (short) 14);
+                item = new ItemBuilder(Material.STAINED_CLAY, 1, (byte) 14).toItemStack();
             } else {
                 org.bukkit.DyeColor dye = dyeColor(colorChar);
-                item = new ItemStack(Material.WOOL, 1, dye.getWoolData());
+                item = new ItemBuilder(Material.WOOL, 1, dye.getWoolData()).toItemStack();
             }
 
             item = plugin.getMenuConfig().buildItem(
@@ -124,7 +125,7 @@ public class RankMenu extends Menu {
 
             buttons.put(slot++, new Button(item, e -> {
                 if (!ranksSection.contains(finalRank)) {
-                    player.sendMessage(CC.translate("&cInvalid rank selected."));
+                    player.sendMessage(plugin.getMessageConfig().get("rank-menu.invalid-rank", "&cInvalid rank selected."));
                     return;
                 }
                 state = new GrantState(targetUUID, finalRank);
@@ -143,7 +144,7 @@ public class RankMenu extends Menu {
         if (colorCode == null || colorCode.isEmpty()) {
             return 'f';
         }
-        String normalized = colorCode.replace("&", "").replace("\u00A7", "").trim();
+        String normalized = colorCode.replace("&", "").replace("§", "").trim();
         return normalized.isEmpty() ? 'f' : Character.toLowerCase(normalized.charAt(0));
     }
 

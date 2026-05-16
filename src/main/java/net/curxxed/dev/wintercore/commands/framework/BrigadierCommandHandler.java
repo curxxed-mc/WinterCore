@@ -1,4 +1,4 @@
-package net.curxxed.dev.wintercore.commands.api;
+package net.curxxed.dev.wintercore.commands.framework;
 
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.command.CommandSender;

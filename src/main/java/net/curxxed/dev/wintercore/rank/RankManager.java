@@ -3,15 +3,16 @@ package net.curxxed.dev.wintercore.rank;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Getter;
+import net.curxxed.dev.wintercore.config.RankConfigManager;
 import net.curxxed.dev.wintercore.database.cache.RankCacheService;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.RankTagSyncPacket;
 import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
 import net.curxxed.dev.wintercore.player.WinterCorePlayer;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -107,8 +108,14 @@ public class RankManager {
                 rank
         ));
 
-        player.sendMessage(CC.translate("&aYour rank has been set to " + rank + " by " + giver.getName() + "."));
-        giver.sendMessage(CC.translate("&aYou have set " + player.getName() + "'s rank to " + rank + "."));
+        player.sendMessage(plugin.getMessageConfig().get("rank.target-set",
+                "&aYour rank has been set to {rank} by {giver}.",
+                "{rank}", rank,
+                "{giver}", giver.getName()));
+        giver.sendMessage(plugin.getMessageConfig().get("rank.actor-set",
+                "&aYou have set {target}'s rank to {rank}.",
+                "{target}", player.getName(),
+                "{rank}", rank));
     }
 
     public void getRank(Player player, Consumer<String> callback) {
@@ -145,7 +152,7 @@ public class RankManager {
         cacheService.get(uuid, callback);
     }
 
-    public String getRankSync(Player player) {
+    public String getRankSync(@NonNull Player player) {
         UUID uuid = player.getUniqueId();
         String cached = cacheService.peek(uuid);
         if (cached != null) {
