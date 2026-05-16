@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.ModerationActionPacket;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;

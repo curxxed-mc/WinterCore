@@ -1,9 +1,8 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -33,16 +32,16 @@ public class ClearEffectsCommand extends BaseCommand {
 
         if (args.length == 1 && args[0].equalsIgnoreCase("@a")) {
             if (!sender.hasPermission("wintercore.cleareffects.all")) {
-                sender.sendMessage(CC.RED + "You do not have permission to clear everyone's effects.");
+                send(sender, "clear-effects.no-all-permission", "&cYou do not have permission to clear everyone's effects.");
                 return;
             }
             for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                 for (PotionEffect effect : onlinePlayer.getActivePotionEffects()) {
                     onlinePlayer.removePotionEffect(effect.getType());
                 }
-                onlinePlayer.sendMessage(CC.GREEN + "All your potion effects have been cleared.");
+                send(onlinePlayer, "clear-effects.target-success", "&aYour potion effects have been cleared.");
             }
-            sender.sendMessage(CC.GREEN + "You cleared all players' potion effects.");
+            send(sender, "clear-effects.all-success", "&aYou cleared all players' potion effects.");
             return;
         }
 
@@ -50,7 +49,7 @@ public class ClearEffectsCommand extends BaseCommand {
         if (args.length == 1) {
             target = Bukkit.getPlayer(args[0]);
             if (target == null) {
-                sender.sendMessage(CC.RED + "Player not found.");
+                send(sender, "general.player-not-found", "&cPlayer not found.");
                 return;
             }
         }
@@ -58,9 +57,10 @@ public class ClearEffectsCommand extends BaseCommand {
         for (PotionEffect effect : target.getActivePotionEffects()) {
             target.removePotionEffect(effect.getType());
         }
-        target.sendMessage(CC.GREEN + "Your potion effects have been cleared.");
+        send(target, "clear-effects.target-success", "&aYour potion effects have been cleared.");
         if (!target.equals(sender)) {
-            sender.sendMessage(CC.GREEN + "You cleared " + target.getName() + "'s potion effects.");
+            send(sender, "clear-effects.actor-success", "&aYou cleared {target}'s potion effects.",
+                    "{target}", target.getName());
         }
     }
 

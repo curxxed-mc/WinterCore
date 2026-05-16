@@ -2,9 +2,9 @@ package net.curxxed.dev.wintercore.commands.bungee;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.RemoteCommandPacket;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
@@ -50,7 +50,7 @@ public class ServerManagerCommand extends BaseCommand {
         CommandSender sender = args.getSender();
 
         if (args.length() == 0) {
-            reply(sender, "&eUsage: " + commandInfo.usage());
+            reply(sender, "server-manager.usage", "&eUsage: {usage}", "{usage}", commandInfo.usage());
             return;
         }
 
@@ -64,7 +64,7 @@ public class ServerManagerCommand extends BaseCommand {
 
             case "info":
                 if (args.length() < 2) {
-                    reply(sender, "&cUsage: /sm info <serverName>");
+                    reply(sender, "server-manager.info-usage", "&cUsage: /sm info <serverName>");
                     return;
                 }
                 fetchInfo(sender, args.getOptionalString(1).orElse(""));
@@ -72,11 +72,11 @@ public class ServerManagerCommand extends BaseCommand {
 
             case "join":
                 if (!(sender instanceof Player)) {
-                    reply(sender, "&cThe 'join' subcommand can only be run by a player.");
+                    reply(sender, "server-manager.join-player-only", "&cThe 'join' subcommand can only be run by a player.");
                     return;
                 }
                 if (args.length() < 2) {
-                    reply(sender, "&cUsage: /sm join <serverName>");
+                    reply(sender, "server-manager.join-usage", "&cUsage: /sm join <serverName>");
                     return;
                 }
                 joinServer((Player) sender, args.getOptionalString(1).orElse(""));
@@ -85,7 +85,7 @@ public class ServerManagerCommand extends BaseCommand {
             case "runcmd":
             case "execute":
                 if (args.length() < 3) {
-                    reply(sender, "&cUsage: /sm runcmd <serverName> <command...>");
+                    reply(sender, "server-manager.runcmd-usage", "&cUsage: /sm runcmd <serverName> <command...>");
                     return;
                 }
                 String server = args.getOptionalString(1).orElse("");
@@ -94,7 +94,7 @@ public class ServerManagerCommand extends BaseCommand {
                 break;
 
             default:
-                reply(sender, "&eUsage: " + commandInfo.usage());
+                reply(sender, "server-manager.usage", "&eUsage: {usage}", "{usage}", commandInfo.usage());
         }
     }
 
@@ -136,19 +136,19 @@ public class ServerManagerCommand extends BaseCommand {
             } while (!ScanParams.SCAN_POINTER_START.equals(cursor));
 
             if (servers.isEmpty()) {
-                reply(sender, "&cNo servers online.");
+                reply(sender, "server-manager.no-servers", "&cNo servers online.");
                 return;
             }
 
             Set<String> uniqueServers = new LinkedHashSet<>(servers);
             List<String> lines = new ArrayList<>();
-            lines.add("&bOnline Servers:");
+            lines.add(message("server-manager.list-header", "&bOnline Servers:"));
             for (String name : uniqueServers) {
-                lines.add("&7 - &a" + name);
+                lines.add(message("server-manager.list-entry", "&7 - &a{server}", "{server}", name));
             }
             replyLines(sender, lines);
         } catch (Exception e) {
-            reply(sender, "&cFailed to list servers.");
+            reply(sender, "server-manager.list-failed", "&cFailed to list servers.");
             plugin.getLogger().warning("Failed to list servers: " + e.getMessage());
         }
     }
@@ -157,33 +157,43 @@ public class ServerManagerCommand extends BaseCommand {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             String resolvedServer = resolveServerName(jedis, server);
             if (resolvedServer == null) {
-                reply(sender, "&cNo online server matched '" + server + "'.");
+                reply(sender, "server-manager.no-match", "&cNo online server matched '{server}'.",
+                        "{server}", server);
                 return;
             }
 
             String key = "server:" + resolvedServer + ":info";
             if (!jedis.exists(key)) {
                 if (!jedis.exists("server:" + resolvedServer + ":heartbeat")) {
-                    reply(sender, "&cNo info found for server '" + resolvedServer + "'.");
+                    reply(sender, "server-manager.no-info", "&cNo info found for server '{server}'.",
+                            "{server}", resolvedServer);
                     return;
                 }
 
                 List<String> pending = new ArrayList<>();
-                pending.add("&bInfo for " + resolvedServer + ":");
-                pending.add(" &7Status: &aOnline");
-                pending.add(" &7Details: &ePending heartbeat data...");
+                pending.addAll(plugin.getMessageConfig().getList("server-manager.info-pending", Arrays.asList(
+                        "&bInfo for {server}:",
+                        " &7Status: &aOnline",
+                        " &7Details: &ePending heartbeat data..."
+                ), "{server}", resolvedServer));
                 replyLines(sender, pending);
                 return;
             }
 
             List<String> lines = new ArrayList<>();
-            lines.add("&bInfo for " + resolvedServer + ":");
-            lines.add(" &7TPS: &a" + jedis.hget(key, "tps"));
-            lines.add(" &7Players: &e" + jedis.hget(key, "players") + "/" + jedis.hget(key, "maxPlayers"));
-            lines.add(" &7Whitelisted: &6" + jedis.hget(key, "whitelisted"));
+            lines.addAll(plugin.getMessageConfig().getList("server-manager.info", Arrays.asList(
+                    "&bInfo for {server}:",
+                    " &7TPS: &a{tps}",
+                    " &7Players: &e{players}/{max_players}",
+                    " &7Whitelisted: &6{whitelisted}"
+            ), "{server}", resolvedServer,
+                    "{tps}", String.valueOf(jedis.hget(key, "tps")),
+                    "{players}", String.valueOf(jedis.hget(key, "players")),
+                    "{max_players}", String.valueOf(jedis.hget(key, "maxPlayers")),
+                    "{whitelisted}", String.valueOf(jedis.hget(key, "whitelisted"))));
             replyLines(sender, lines);
         } catch (Exception e) {
-            reply(sender, "&cFailed to fetch server info.");
+            reply(sender, "server-manager.info-failed", "&cFailed to fetch server info.");
             plugin.getLogger().warning("Failed to fetch info for " + server + ": " + e.getMessage());
         }
     }
@@ -195,7 +205,8 @@ public class ServerManagerCommand extends BaseCommand {
             plugin.getLogger().warning("Failed to set pending switch for " + player.getName() + ": " + e.getMessage());
         }
 
-        reply(player, "&7Sending you to " + serverName + "...");
+        reply(player, "server-manager.joining", "&7Sending you to {server}...",
+                "{server}", serverName);
 
         Bukkit.getScheduler().runTask(plugin, () -> {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
@@ -210,7 +221,8 @@ public class ServerManagerCommand extends BaseCommand {
         RemoteCommandPacket packet = new RemoteCommandPacket(sourceServer, System.currentTimeMillis(), server, command);
 
         plugin.getRedisManager().publish(packet);
-        reply(sender, "&aSent command to " + server + ".");
+        reply(sender, "server-manager.command-sent", "&aSent command to {server}.",
+                "{server}", server);
     }
 
     private String resolveServerName(Jedis jedis, String input) {
@@ -278,8 +290,8 @@ public class ServerManagerCommand extends BaseCommand {
         });
     }
 
-    private void reply(CommandSender sender, String message) {
-        replyLines(sender, java.util.Collections.singletonList(message));
+    private void reply(CommandSender sender, String path, String fallback, String... placeholders) {
+        replyLines(sender, java.util.Collections.singletonList(message(path, fallback, placeholders)));
     }
 
     private void replyLines(CommandSender sender, List<String> messages) {
@@ -288,5 +300,9 @@ public class ServerManagerCommand extends BaseCommand {
                 sender.sendMessage(CC.translate(message));
             }
         });
+    }
+
+    private String message(String path, String fallback, String... placeholders) {
+        return plugin.getMessageConfig().get(path, fallback, placeholders);
     }
 }

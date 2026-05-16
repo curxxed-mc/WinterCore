@@ -1,4 +1,4 @@
-package net.curxxed.dev.wintercore.commands.api;
+package net.curxxed.dev.wintercore.commands.framework;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

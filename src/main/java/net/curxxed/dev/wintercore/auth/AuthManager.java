@@ -5,13 +5,14 @@ import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
 import net.curxxed.dev.wintercore.auth.repository.AuthRepository;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -60,28 +61,32 @@ public class AuthManager {
 
                 if (!hasSecret) {
                     pendingSetup.add(uuid);
-                    online.sendMessage("");
-                    online.sendMessage(CC.translate("&c&l2FA Setup Required"));
-                    online.sendMessage(CC.translate("&7 2FA is mandatory for staff."));
-                    online.sendMessage(CC.translate("&7 Use &e/2fa setup &7to get started."));
-                    online.sendMessage(CC.translate("&7 You have &e30 seconds&7 or you will be kicked."));
-                    online.sendMessage("");
-                    scheduleKickTimer(online, CC.translate("&c&lSetup Timeout\n\n&72FA setup is mandatory for staff.\n&7Please reconnect and run /2fa setup."));
+                    sendList(online, "auth.setup-prompt", Arrays.asList(
+                            "",
+                            "&c&l2FA Setup Required",
+                            "&7 2FA is mandatory for staff.",
+                            "&7 Use &e/2fa setup &7to get started.",
+                            "&7 You have &e30 seconds&7 or you will be kicked.",
+                            ""
+                    ));
+                    scheduleKickTimer(online, plugin.getMessageConfig().get("auth.setup-timeout", "&c&lSetup Timeout\n\n&72FA setup is mandatory for staff.\n&7Please reconnect and run /2fa setup."));
                     return;
                 }
 
                 if (resumed) {
-                    online.sendMessage(CC.translate("&a&lAuthenticated &8(session resumed)"));
+                    online.sendMessage(plugin.getMessageConfig().get("auth.authenticated", "&a&lAuthenticated &8(session resumed)"));
                     return;
                 }
 
-                scheduleKickTimer(online, CC.translate("&c&lAuthentication Timeout\n\n&7You did not authenticate within 30 seconds.\n&7Please reconnect and enter your 2FA code."));
+                scheduleKickTimer(online, plugin.getMessageConfig().get("auth.auth-timeout", "&c&lAuthentication Timeout\n\n&7You did not authenticate within 30 seconds.\n&7Please reconnect and enter your 2FA code."));
 
-                online.sendMessage("");
-                online.sendMessage(CC.translate("&c&lAuthentication Required"));
-                online.sendMessage(CC.translate("&7 You have &e30 seconds &7to verify your identity."));
-                online.sendMessage(CC.translate("&7 Use &e/auth <6-digit code> &7from your authenticator app."));
-                online.sendMessage("");
+                sendList(online, "auth.auth-prompt", Arrays.asList(
+                        "",
+                        "&c&lAuthentication Required",
+                        "&7 You have &e30 seconds &7to verify your identity.",
+                        "&7 Use &e/auth <6-digit code> &7from your authenticator app.",
+                        ""
+                ));
             });
         });
     }
@@ -140,13 +145,15 @@ public class AuthManager {
         pendingSetup.remove(uuid);
         cancelKickTimer(uuid);
 
-        scheduleKickTimer(player, CC.translate("&c&lAuthentication Timeout\n\n&7You did not authenticate within 30 seconds.\n&7Please reconnect and enter your 2FA code."));
+        scheduleKickTimer(player, plugin.getMessageConfig().get("auth.auth-timeout", "&c&lAuthentication Timeout\n\n&7You did not authenticate within 30 seconds.\n&7Please reconnect and enter your 2FA code."));
 
-        player.sendMessage("");
-        player.sendMessage(CC.translate("&a2FA configured. Now authenticate to continue."));
-        player.sendMessage(CC.translate("&7 Use &e/auth <6-digit code> &7from your authenticator app."));
-        player.sendMessage(CC.translate("&7 You have &e30 seconds&7."));
-        player.sendMessage("");
+        sendList(player, "auth.configured-prompt", Arrays.asList(
+                "",
+                "&a2FA configured. Now authenticate to continue.",
+                "&7 Use &e/auth <6-digit code> &7from your authenticator app.",
+                "&7 You have &e30 seconds&7.",
+                ""
+        ));
     }
 
     public void disableAuth(Player player) {
@@ -254,6 +261,12 @@ public class AuthManager {
 
     private String sessionKey(UUID uuid) {
         return "auth:session:" + uuid;
+    }
+
+    private void sendList(Player player, String path, List<String> fallback, String... placeholders) {
+        for (String line : plugin.getMessageConfig().getList(path, fallback, placeholders)) {
+            player.sendMessage(line);
+        }
     }
 
     public static class SetupResult {

@@ -1,11 +1,12 @@
 package net.curxxed.dev.wintercore.rank;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.command.CommandSender;
+
+import java.util.Arrays;
 
 @CommandInfo(
         name = "rank",
@@ -57,50 +58,52 @@ public class RankCommand extends BaseCommand {
                 handlePermissions(sender, args);
                 break;
             default:
-                sender.sendMessage(CC.translate("&eRank Help:"));
-                sender.sendMessage(CC.translate("&7- &b/rank create <name>"));
-                sender.sendMessage(CC.translate("&7- &b/rank delete <name>"));
-                sender.sendMessage(CC.translate("&7- &b/rank weight"));
-                sender.sendMessage(CC.translate("&7- &b/rank color"));
-                sender.sendMessage(CC.translate("&7- &b/rank add <rank> <permission>"));
-                sender.sendMessage(CC.translate("&7- &b/rank remove <rank> <permission> [inherit]"));
-                sender.sendMessage(CC.translate("&7- &b/rank prefix <rank> <prefix>"));
-                sender.sendMessage(CC.translate("&7- &b/rank permissions <rank>"));
-                sender.sendMessage(CC.translate("&7- &b/grant <player>"));
+                sendList(sender, "rank.help", Arrays.asList(
+                        "&eRank Help:",
+                        "&7- &b/rank create <name>",
+                        "&7- &b/rank delete <name>",
+                        "&7- &b/rank weight <rank> <weight>",
+                        "&7- &b/rank color <rank> <color>",
+                        "&7- &b/rank add <rank> <permission>",
+                        "&7- &b/rank remove <rank> <permission> [inherit]",
+                        "&7- &b/rank prefix <rank> <prefix>",
+                        "&7- &b/rank permissions <rank>",
+                        "&7- &b/grant <player>"
+                ));
         }
     }
 
     private void handleCreate(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(CC.translate("&cUsage: /rank create <name>"));
+            send(sender, "rank.usage.create", "&cUsage: /rank create <name>");
             return;
         }
         String rankName = args[1];
         try {
             rankManager.createRank(rankName);
-            sender.sendMessage(CC.translate("&aRank " + rankName + " created successfully."));
+            send(sender, "rank.created", "&aRank {rank} created successfully.", "{rank}", rankName);
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(CC.translate("&c" + e.getMessage()));
+            sendRankError(sender, e);
         }
     }
 
     private void handleDelete(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(CC.translate("&cUsage: /rank delete <name>"));
+            send(sender, "rank.usage.delete", "&cUsage: /rank delete <name>");
             return;
         }
         String rankName = args[1];
         try {
             new Rank(rankName, plugin).delete();
-            sender.sendMessage(CC.translate("&aRank " + rankName + " deleted successfully."));
+            send(sender, "rank.deleted", "&aRank {rank} deleted successfully.", "{rank}", rankName);
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(CC.translate("&c" + e.getMessage()));
+            sendRankError(sender, e);
         }
     }
 
     private void handleWeight(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(CC.translate("&cUsage: /rank weight <rank> <weight>"));
+            send(sender, "rank.usage.weight", "&cUsage: /rank weight <rank> <weight>");
             return;
         }
         String rankName = args[1];
@@ -109,17 +112,19 @@ public class RankCommand extends BaseCommand {
             weight = Integer.parseInt(args[2]);
             Rank rank = new Rank(rankName, plugin);
             rank.setWeight(weight);
-            sender.sendMessage(CC.translate("&aWeight for rank " + rankName + " set to " + weight + "."));
+            send(sender, "rank.weight-set", "&aWeight for rank {rank} set to {weight}.",
+                    "{rank}", rankName,
+                    "{weight}", String.valueOf(weight));
         } catch (NumberFormatException e) {
-            sender.sendMessage(CC.translate("&cWeight must be a valid number."));
+            send(sender, "rank.invalid-weight", "&cWeight must be a valid number.");
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(CC.translate("&c" + e.getMessage()));
+            sendRankError(sender, e);
         }
     }
 
     private void handleColor(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(CC.translate("&cUsage: /rank color <rank> <color>"));
+            send(sender, "rank.usage.color", "&cUsage: /rank color <rank> <color>");
             return;
         }
         String rankName = args[1];
@@ -127,15 +132,17 @@ public class RankCommand extends BaseCommand {
         try {
             Rank rank = new Rank(rankName, plugin);
             rank.setColor(color);
-            sender.sendMessage(CC.translate("&aColor for rank " + rankName + " set to " + color + "."));
+            send(sender, "rank.color-set", "&aColor for rank {rank} set to {color}.",
+                    "{rank}", rankName,
+                    "{color}", color);
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(CC.translate("&c" + e.getMessage()));
+            sendRankError(sender, e);
         }
     }
 
     private void handleAddPermission(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(CC.translate("&cUsage: /rank add <rank> <permission>"));
+            send(sender, "rank.usage.add", "&cUsage: /rank add <rank> <permission>");
             return;
         }
         String rankName = args[1];
@@ -143,15 +150,17 @@ public class RankCommand extends BaseCommand {
         try {
             Rank rank = new Rank(rankName, plugin);
             rank.addPermission(permission);
-            sender.sendMessage(CC.translate("&aPermission " + permission + " added to rank " + rankName + "."));
+            send(sender, "rank.permission-added", "&aPermission {permission} added to rank {rank}.",
+                    "{permission}", permission,
+                    "{rank}", rankName);
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(CC.translate("&c" + e.getMessage()));
+            sendRankError(sender, e);
         }
     }
 
     private void handleRemovePermission(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(CC.translate("&cUsage: /rank remove <rank> <permission>"));
+            send(sender, "rank.usage.remove", "&cUsage: /rank remove <rank> <permission>");
             return;
         }
         String rankName = args[1];
@@ -159,15 +168,17 @@ public class RankCommand extends BaseCommand {
         try {
             Rank rank = new Rank(rankName, plugin);
             rank.removePermission(permission);
-            sender.sendMessage(CC.translate("&aPermission " + permission + " removed from rank " + rankName + "."));
+            send(sender, "rank.permission-removed", "&aPermission {permission} removed from rank {rank}.",
+                    "{permission}", permission,
+                    "{rank}", rankName);
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(CC.translate("&c" + e.getMessage()));
+            sendRankError(sender, e);
         }
     }
 
     private void handlePrefix(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(CC.translate("&cUsage: /rank prefix <rank> <prefix>"));
+            send(sender, "rank.usage.prefix", "&cUsage: /rank prefix <rank> <prefix>");
             return;
         }
         String rankName = args[1];
@@ -175,23 +186,31 @@ public class RankCommand extends BaseCommand {
         try {
             Rank rank = new Rank(rankName, plugin);
             rank.setPrefix(prefix);
-            sender.sendMessage(CC.translate("&aPrefix for rank " + rankName + " set to " + prefix + "."));
+            send(sender, "rank.prefix-set", "&aPrefix for rank {rank} set to {prefix}.",
+                    "{rank}", rankName,
+                    "{prefix}", prefix);
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(CC.translate("&c" + e.getMessage()));
+            sendRankError(sender, e);
         }
     }
 
     private void handlePermissions(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(CC.translate("&cUsage: /rank permissions <rank>"));
+            send(sender, "rank.usage.permissions", "&cUsage: /rank permissions <rank>");
             return;
         }
         String rankName = args[1];
         try {
             Rank rank = new Rank(rankName, plugin);
-            sender.sendMessage(CC.translate("&aPermissions for rank " + rankName + ": " + rank.getPermissions()));
+            send(sender, "rank.permissions-list", "&aPermissions for rank {rank}: {permissions}",
+                    "{rank}", rankName,
+                    "{permissions}", String.valueOf(rank.getPermissions()));
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(CC.translate("&c" + e.getMessage()));
+            sendRankError(sender, e);
         }
+    }
+
+    private void sendRankError(CommandSender sender, IllegalArgumentException e) {
+        send(sender, "rank.error", "&c{error}", "{error}", e.getMessage());
     }
 }

@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.utils;
 
+import net.curxxed.dev.wintercore.config.ModerationMessages;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
@@ -162,7 +163,7 @@ public final class BanList implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onProjectileLaunch(ProjectileLaunchEvent event) {
-        if (!(event.getEntity() instanceof Projectile)) {
+        if (event.getEntity() == null) {
             return;
         }
 

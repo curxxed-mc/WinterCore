@@ -4,7 +4,7 @@ import net.curxxed.dev.wintercore.database.redis.packet.packets.*;
 import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.utils.ModerationMessages;
+import net.curxxed.dev.wintercore.config.ModerationMessages;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -57,8 +57,12 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
     @Override
     public void handle(ServerStatusPacket packet) {
         String statusMessage = packet.isOnline()
-                ? CC.translate("&7Server &b" + packet.getSourceServer() + "&7 has just came &aonline&7 and will be &b&ljoinable in 5 seconds!")
-                : CC.translate("&7Server &b" + packet.getSourceServer() + "&7 has just went &4offline&7 and is no longer &4&ljoinable!");
+                ? plugin.getMessageConfig().get("network.server-online",
+                        "&7Server &b{server}&7 has just came &aonline&7 and will be &b&ljoinable in 5 seconds!",
+                        "{server}", packet.getSourceServer())
+                : plugin.getMessageConfig().get("network.server-offline",
+                        "&7Server &b{server}&7 has just went &4offline&7 and is no longer &4&ljoinable!",
+                        "{server}", packet.getSourceServer());
 
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (Player p : Bukkit.getOnlinePlayers()) {
@@ -66,22 +70,28 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                     p.sendMessage(statusMessage);
                 }
             }
-            plugin.getLogger().info(statusMessage.replaceAll("§.", ""));
+            plugin.getLogger().info(CC.stripColor(statusMessage));
         });
     }
 
     @Override
     public void handle(StaffActivityPacket packet) {
-        String template = plugin.getConfig().getString(packet.getActivityType() + "-message");
-        if (template == null) return;
+        String legacyTemplate = plugin.getConfig().getString(packet.getActivityType() + "-message");
+        String fallback = legacyTemplate != null
+                ? legacyTemplate
+                .replace("%player%", "{player}")
+                .replace("%previous-server%", "{previous_server}")
+                .replace("%server-name%", "{server}")
+                : staffActivityFallback(packet.getActivityType());
+        if (fallback == null) return;
 
-        String formatted = CC.translate(
-                template.replace("%player%", packet.getColor() + packet.getPlayerName() + "&r")
-                        .replace("%previous-server%", packet.getFromServer())
-                        .replace("%server-name%", packet.getToServer() == null || packet.getToServer().isEmpty()
-                                ? packet.getFromServer()
-                                : packet.getToServer())
-        );
+        String formatted = plugin.getMessageConfig().get("staff-activity." + packet.getActivityType(),
+                fallback,
+                "{player}", packet.getColor() + packet.getPlayerName() + "&r",
+                "{previous_server}", packet.getFromServer(),
+                "{server}", packet.getToServer() == null || packet.getToServer().isEmpty()
+                        ? packet.getFromServer()
+                        : packet.getToServer());
 
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (Player online : Bukkit.getOnlinePlayers()) {
@@ -244,7 +254,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                     break;
                 case TAGS:
                     plugin.getTagsManager().loadTags();
-                    plugin.getTagsGUI().refresh();
+                    plugin.getTagsMenu().refresh();
                     break;
                 case MENUS:
                     plugin.getMenuConfig().load();
@@ -276,8 +286,21 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                     online.sendMessage(packet.getMessage());
                 }
             }
-            plugin.getLogger().info(packet.getMessage().replaceAll("§.", ""));
+            plugin.getLogger().info(CC.stripColor(packet.getMessage()));
         });
+    }
+
+    private String staffActivityFallback(String activityType) {
+        if ("join".equalsIgnoreCase(activityType)) {
+            return "&9[S] {player} &bconnected to &e{server}";
+        }
+        if ("switch".equalsIgnoreCase(activityType)) {
+            return "&9[S] {player} &bconnected to &e{server} &bfrom &e{previous_server}";
+        }
+        if ("quit".equalsIgnoreCase(activityType)) {
+            return "&9[S] {player} &bdisconnected from &e{server}";
+        }
+        return null;
     }
 
     private boolean canReceiveChatBroadcast(Player player, ChatBroadcastPacket.ChatType chatType) {

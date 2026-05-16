@@ -25,12 +25,12 @@ public class WinterCorePlayer {
         try {
             String raw = chatColorCode == null ? "" : chatColorCode.trim();
             if (raw.isEmpty()) {
-                return CC.WHITE;
+                return CC.translate("&f");
             }
             String normalized = raw.startsWith("&") || raw.startsWith(String.valueOf('\u00A7')) ? raw : "&" + raw;
             return normalized.startsWith(String.valueOf('\u00A7')) ? normalized : CC.translate(normalized);
         } catch (Exception e) {
-            return CC.WHITE;
+            return CC.translate("&f");
         }
     }
 }

@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.misc;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.utils.CC;
@@ -42,7 +42,7 @@ public class ListCommand extends BaseCommand {
         CommandSender sender = args.getSender();
         ConfigurationSection ranksSection = rankManager.getRanksSection();
         if (ranksSection == null) {
-            sender.sendMessage(CC.translate("&cThe 'ranks' section is missing from ranks.yml."));
+            send(sender, "list.ranks-missing", "&cThe 'ranks' section is missing from ranks.yml.");
             return;
         }
         Map<String, Integer> rankWeights = new HashMap<>();
@@ -79,7 +79,7 @@ public class ListCommand extends BaseCommand {
 
             String rankDisplay = rankManager.getSortedRanks().stream()
                     .map(rankName -> CC.translate(rankColors.getOrDefault(rankName.toLowerCase(), "&f") + rankName))
-                    .collect(Collectors.joining(CC.translate("&7, ")));
+                    .collect(Collectors.joining(msg("list.rank-separator", "&7, ")));
 
             String playerDisplay = onlinePlayers.stream()
                     .map(player -> {
@@ -87,12 +87,16 @@ public class ListCommand extends BaseCommand {
                         String color = rankColors.getOrDefault(rankName, "&f");
                         return CC.translate(color + player.getName());
                     })
-                    .collect(Collectors.joining(CC.translate("&7, ")));
+                    .collect(Collectors.joining(msg("list.player-separator", "&7, ")));
 
-            String finalPlayerCount = CC.translate("&7(" + onlinePlayers.size() + "/" + Bukkit.getMaxPlayers() + ") ");
+            String finalPlayerCount = msg("list.player-count", "&7({online}/{max}) ",
+                    "{online}", String.valueOf(onlinePlayers.size()),
+                    "{max}", String.valueOf(Bukkit.getMaxPlayers()));
 
-            sender.sendMessage(rankDisplay);
-            sender.sendMessage(finalPlayerCount + playerDisplay);
+            send(sender, "list.ranks-line", "{ranks}", "{ranks}", rankDisplay);
+            send(sender, "list.players-line", "{count}{players}",
+                    "{count}", finalPlayerCount,
+                    "{players}", playerDisplay);
         }));
     }
 }

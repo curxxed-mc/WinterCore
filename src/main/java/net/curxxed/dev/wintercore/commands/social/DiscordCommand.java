@@ -1,9 +1,8 @@
 package net.curxxed.dev.wintercore.commands.social;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.entity.Player;
 
@@ -16,8 +15,6 @@ import org.bukkit.entity.Player;
 )
 public class DiscordCommand extends BaseCommand {
 
-    private final String discordLink = CC.DARK_PURPLE + "discord.gg/wintercore";
-
     public DiscordCommand(WinterCore plugin) {
         super(plugin);
     }
@@ -26,10 +23,7 @@ public class DiscordCommand extends BaseCommand {
 
     public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
-        player.sendMessage(CC.AQUA + "Join our discord: " + discordLink);
+        send(player, "discord.message", "&bJoin our discord: &5{link}",
+                "{link}", msg("discord.link", "discord.gg/wintercore"));
     }
 }
-
-
-
-

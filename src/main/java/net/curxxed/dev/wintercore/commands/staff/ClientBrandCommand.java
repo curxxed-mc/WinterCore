@@ -1,10 +1,9 @@
-package net.curxxed.dev.wintercore.client;
+package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.entity.Player;
 
 import java.util.Set;
@@ -26,17 +25,17 @@ public class ClientBrandCommand extends BaseCommand {
     @Override
     public void execute(CommandArguments commandArgs) {
         if (!commandArgs.isPlayer()) {
-            commandArgs.getSender().sendMessage(CC.translate("&cThis command can only be used by players."));
+            send(commandArgs.getSender(), "client-brand.player-only", "&cThis command can only be used by players.");
             return;
         }
         Player player = commandArgs.getPlayer();
         UUID uuid = player.getUniqueId();
         if (silenced.contains(uuid)) {
             silenced.remove(uuid);
-            player.sendMessage(CC.translate("&aClient join messages enabled."));
+            send(player, "client-brand.enabled", "&aClient join messages enabled.");
         } else {
             silenced.add(uuid);
-            player.sendMessage(CC.translate("&cClient join messages disabled."));
+            send(player, "client-brand.disabled", "&cClient join messages disabled.");
         }
     }
 }

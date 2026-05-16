@@ -1,14 +1,15 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -40,19 +41,20 @@ public class AltsCommand extends BaseCommand {
     private void executeOnMainThread(CommandArguments commandArgs) {
         String[] args = commandArgs.getArgs();
         if (args.length != 1) {
-            commandArgs.getSender().sendMessage(CC.translate("&cUsage: /alts <player>"));
+            sendUsage(commandArgs.getSender());
             return;
         }
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
         if (target == null || target.getName() == null) {
-            commandArgs.getSender().sendMessage(CC.translate("&cPlayer not found."));
+            send(commandArgs.getSender(), "general.player-not-found", "&cPlayer not found.");
             return;
         }
 
         plugin.getDatabaseManager().getIdentityService().getAlts(target.getUniqueId(), alts -> runSync(() -> {
             if (alts.isEmpty()) {
-                commandArgs.getSender().sendMessage(CC.translate("&a" + target.getName() + " has no detected alts."));
+                send(commandArgs.getSender(), "alts.none", "&a{target} has no detected alts.",
+                        "{target}", target.getName());
                 return;
             }
 
@@ -86,12 +88,16 @@ public class AltsCommand extends BaseCommand {
                         formatted.add(color + name);
 
                         if (completed.incrementAndGet() == altList.size()) {
-                            String joined = formatted.stream().collect(Collectors.joining(CC.translate("&f, ")));
+                            String joined = formatted.stream().collect(Collectors.joining(msg("alts.separator", "&f, ")));
                             int count = altList.size();
-                            commandArgs.getSender().sendMessage(CC.translate("&3------[ &bAlts of &e" + target.getName() + " &b(&d" + count + "&b) &3]------"));
-                            commandArgs.getSender().sendMessage(joined);
-                            commandArgs.getSender().sendMessage(CC.translate("&8[&aOnline&8, &cMuted&8, &4Banned&8, &7Offline&8]"));
-                            commandArgs.getSender().sendMessage(CC.translate("&3----------------------------------------"));
+                            sendList(commandArgs.getSender(), "alts.list", Arrays.asList(
+                                    "&3------[ &bAlts of &e{target} &b(&d{count}&b) &3]------",
+                                    "{alts}",
+                                    "&8[&aOnline&8, &cMuted&8, &4Banned&8, &7Offline&8]",
+                                    "&3----------------------------------------"
+                            ), "{target}", target.getName(),
+                                    "{count}", String.valueOf(count),
+                                    "{alts}", joined);
                         }
                     }))
             );

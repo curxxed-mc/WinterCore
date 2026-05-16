@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.auth;
 
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -12,9 +13,6 @@ import org.bukkit.event.player.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class AuthListener implements Listener {
-
-    private static final String MSG_NOT_AUTHED = "§cAuthenticate first! §7Use §e/auth <code>§7.";
-    private static final String MSG_SETUP_REQUIRED = "§cSet up 2FA first! §7Use §e/2fa setup§7.";
 
     private static final String[] SETUP_ALLOWED_COMMANDS = {"/2fa"};
     private static final String[] AUTH_ALLOWED_COMMANDS = {"/auth", "/2fa"};
@@ -51,7 +49,10 @@ public class AuthListener implements Listener {
                 if (rawCmd.startsWith(allowed)) return;
             }
             event.setCancelled(true);
-            player.sendMessage(MSG_SETUP_REQUIRED);
+            WinterCore winterCore = WinterCore.getInstance();
+            if (winterCore != null && winterCore.getMessageConfig() != null) {
+                player.sendMessage(winterCore.getMessageConfig().get("auth.setup-required", "&c&l2FA Setup Required"));
+            }
             return;
         }
 
@@ -60,7 +61,10 @@ public class AuthListener implements Listener {
                 if (rawCmd.startsWith(allowed)) return;
             }
             event.setCancelled(true);
-            player.sendMessage(MSG_NOT_AUTHED);
+            WinterCore winterCore = WinterCore.getInstance();
+            if (winterCore != null && winterCore.getMessageConfig() != null) {
+                player.sendMessage(winterCore.getMessageConfig().get("auth.auth-required", "&c&lAuthentication Required"));
+            }
         }
     }
 
@@ -69,12 +73,18 @@ public class AuthListener implements Listener {
         Player player = event.getPlayer();
         if (authManager.isPendingSetup(player)) {
             event.setCancelled(true);
-            player.sendMessage(MSG_SETUP_REQUIRED);
+            WinterCore winterCore = WinterCore.getInstance();
+            if (winterCore != null && winterCore.getMessageConfig() != null) {
+                player.sendMessage(winterCore.getMessageConfig().get("auth.setup-required", "&c&l2FA Setup Required"));
+            }
             return;
         }
         if (authManager.isPendingAuth(player)) {
             event.setCancelled(true);
-            player.sendMessage(MSG_NOT_AUTHED);
+            WinterCore winterCore = WinterCore.getInstance();
+            if (winterCore != null && winterCore.getMessageConfig() != null) {
+                player.sendMessage(winterCore.getMessageConfig().get("auth.auth-required", "&c&lAuthentication Required"));
+            }
         }
     }
 

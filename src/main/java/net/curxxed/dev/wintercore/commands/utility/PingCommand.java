@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.utils.Utilities;
@@ -29,36 +29,39 @@ public class PingCommand extends BaseCommand {
 
         if (args.length == 0) {
             int ping = Utilities.getPing(player);
-            player.sendMessage(CC.AQUA + "Your ping: " + getColoredPing(ping));
+            send(player, "ping.self", "&bYour ping: {ping}",
+                    "{ping}", getColoredPing(ping));
         } else if (args.length == 1) {
             Player target = Bukkit.getPlayer(args[0]);
             if (target != null && target.isOnline()) {
                 int ping = Utilities.getPing(target);
 
-                player.sendMessage(CC.AQUA + target.getName() + "'s ping: " + getColoredPing(ping));
+                send(player, "ping.other", "&b{target}'s ping: {ping}",
+                        "{target}", target.getName(),
+                        "{ping}", getColoredPing(ping));
             } else {
-                player.sendMessage(CC.RED + "Player not found.");
+                send(player, "general.player-not-found", "&cPlayer not found.");
             }
         } else {
-            player.sendMessage(CC.RED + "Usage: /ping [player]");
+            sendUsage(player);
         }
     }
 
     private String getColoredPing(int ping) {
         String color;
         if (ping <= 50) {
-            color = CC.GREEN;
+            color = CC.translate("&a");
         } else if (ping <= 100) {
-            color = CC.DARK_GREEN;
+            color = CC.translate("&2");
         } else if (ping <= 150) {
-            color = CC.YELLOW;
+            color = CC.translate("&e");
         } else if (ping <= 200) {
-            color = CC.GOLD;
+            color = CC.translate("&6");
         } else if (ping <= 300) {
-            color = CC.RED;
+            color = CC.translate("&c");
         } else {
-            color = CC.DARK_RED;
+            color = CC.translate("&4");
         }
-        return color + ping + "ms" + CC.RESET;
+        return color + ping + "ms" + CC.translate("&r");
     }
 }

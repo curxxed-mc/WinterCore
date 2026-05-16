@@ -119,38 +119,38 @@ public class DisguiseMenu extends Menu {
         disguiseHandler.disguise(player, rankKey, targetName, targetName, result -> {
             switch (result) {
                 case SUCCESS:
-                    player.sendMessage(menuMessage("disguise-menu.messages.success",
+                    player.sendMessage(menuMessage("disguise.success",
                             "&aDisguise applied as &e{target} &7with rank &b{rank}&a!", rankKey));
                     break;
                 case ERROR:
-                    player.sendMessage(menuMessage("disguise-menu.messages.error",
+                    player.sendMessage(menuMessage("disguise.disguise-error",
                             "&cFailed to apply disguise. Try again later.", rankKey));
                     break;
                 case NO_RANK_FOUND:
-                    player.sendMessage(menuMessage("disguise-menu.messages.no-rank-found",
+                    player.sendMessage(menuMessage("disguise.no-rank-found",
                             "&cSelected rank is invalid or not found.", rankKey));
                     break;
                 case GLOBAL_PLAYER_FOUND:
-                    player.sendMessage(menuMessage("disguise-menu.messages.global-player-found",
+                    player.sendMessage(menuMessage("disguise.global-player-found",
                             "&cA player with that name is already online.", rankKey));
                     break;
                 case SAME_NAME:
-                    player.sendMessage(menuMessage("disguise-menu.messages.same-name",
+                    player.sendMessage(menuMessage("disguise.same-name",
                             "&cYou cannot disguise as yourself.", rankKey));
                     break;
                 case NOT_ONLINE:
-                    player.sendMessage(menuMessage("disguise-menu.messages.not-online",
+                    player.sendMessage(menuMessage("disguise.not-online",
                             "&cYou must be online to disguise.", rankKey));
                     break;
                 default:
-                    player.sendMessage(menuMessage("disguise-menu.messages.unknown",
+                    player.sendMessage(menuMessage("disguise.unknown",
                             "&cUnknown error occurred.", rankKey));
             }
         });
     }
 
     private String menuMessage(String path, String fallback, String rankKey) {
-        return plugin.getMenuConfig().getString(path, fallback,
+        return plugin.getMessageConfig().get(path, fallback,
                 "{target}", targetName,
                 "{rank}", rankKey);
     }

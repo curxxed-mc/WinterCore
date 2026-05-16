@@ -2,11 +2,12 @@ package net.curxxed.dev.wintercore.staff;
 
 import net.curxxed.dev.wintercore.commands.staff.VanishCommand;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
-import org.bukkit.*;
+import net.curxxed.dev.wintercore.utils.ItemBuilder;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
@@ -16,14 +17,6 @@ public class StaffModeManager {
     private final Map<UUID, GameMode> savedGameModes = new HashMap<>();
     private final Set<UUID> staffModePlayers = new HashSet<>();
     private final WinterCore plugin;
-
-    private static final String PUSH_FORWARD    = CC.translate("&6Push Forward");
-    private static final String STAFF_LIST      = CC.translate("&eStaff List");
-    private static final String RANDOM_TELEPORT = CC.translate("&bRandom Teleport");
-    private static final String INSPECT_PLAYER  = CC.translate("&bInspect Player");
-    private static final String FREEZE_PLAYER   = CC.translate("&bFreeze Player");
-    private static final String VANISH          = CC.translate("&aVanish");
-    private static final String UNVANISH        = CC.translate("&7Un-Vanish");
 
     public StaffModeManager(WinterCore plugin) {
         this.plugin = plugin;
@@ -51,22 +44,28 @@ public class StaffModeManager {
         player.setGameMode(GameMode.CREATIVE);
         player.getInventory().clear();
 
-        player.getInventory().setItem(0, createItem(Material.COMPASS, PUSH_FORWARD,
-                Collections.singletonList(CC.translate("&7Use this to move forward quickly."))));
-        player.getInventory().setItem(1, createItem(Material.SKULL_ITEM, STAFF_LIST,
-                Collections.singletonList(CC.translate("&7View the list of online staff members."))));
-        player.getInventory().setItem(2, createItem(Material.NETHER_STAR, RANDOM_TELEPORT,
-                Collections.singletonList(CC.translate("&7Teleport to a random player."))));
-        player.getInventory().setItem(4, createItem(Material.CARPET, CC.translate("&bBetter View"),
-                Collections.singletonList(CC.translate("&7Enhance your view for better observation."))));
-        player.getInventory().setItem(6, createItem(Material.BOOK, INSPECT_PLAYER,
-                Collections.singletonList(CC.translate("&7Inspect a nearby player's inventory."))));
-        player.getInventory().setItem(7, createItem(Material.PACKED_ICE, FREEZE_PLAYER,
-                Collections.singletonList(CC.translate("&7Freeze a nearby player."))));
+        player.getInventory().setItem(0, createItem(Material.COMPASS,
+                itemName("push-forward", "&6Push Forward"),
+                itemLore("push-forward", Collections.singletonList("&7Use this to move forward quickly."))));
+        player.getInventory().setItem(1, createItem(Material.SKULL_ITEM,
+                itemName("staff-list", "&eStaff List"),
+                itemLore("staff-list", Collections.singletonList("&7View the list of online staff members."))));
+        player.getInventory().setItem(2, createItem(Material.NETHER_STAR,
+                itemName("random-teleport", "&bRandom Teleport"),
+                itemLore("random-teleport", Collections.singletonList("&7Teleport to a random player."))));
+        player.getInventory().setItem(4, createItem(Material.CARPET,
+                itemName("better-view", "&bBetter View"),
+                itemLore("better-view", Collections.singletonList("&7Enhance your view for better observation."))));
+        player.getInventory().setItem(6, createItem(Material.BOOK,
+                itemName("inspect-player", "&bInspect Player"),
+                itemLore("inspect-player", Collections.singletonList("&7Inspect a nearby player's inventory."))));
+        player.getInventory().setItem(7, createItem(Material.PACKED_ICE,
+                itemName("freeze-player", "&bFreeze Player"),
+                itemLore("freeze-player", Collections.singletonList("&7Freeze a nearby player."))));
 
         updateVanishItem(player);
         refreshNameTag(player, true);
-        player.sendMessage(CC.translate("&aStaff mode enabled."));
+        player.sendMessage(message("staff-mode.enabled", "&aStaff mode enabled."));
     }
 
     public void disableStaffMode(Player player) {
@@ -83,30 +82,30 @@ public class StaffModeManager {
 
         staffModePlayers.remove(uuid);
         refreshNameTag(player, false);
-        player.sendMessage(CC.translate("&cStaff mode disabled and inventory restored."));
+        player.sendMessage(message("staff-mode.disabled", "&cStaff mode disabled and inventory restored."));
     }
 
     public void handleItemUse(Player player, String itemName, Player target, ItemStack item) {
         if (itemName == null) return;
 
-        if (itemName.equals(PUSH_FORWARD)) {
+        if (itemName.equals(itemName("push-forward", "&6Push Forward"))) {
             player.setVelocity(player.getLocation().getDirection().multiply(3.5));
 
-        } else if (itemName.equals(STAFF_LIST)) {
+        } else if (itemName.equals(itemName("staff-list", "&eStaff List"))) {
             player.performCommand("stafflist");
 
-        } else if (itemName.equals(RANDOM_TELEPORT)) {
+        } else if (itemName.equals(itemName("random-teleport", "&bRandom Teleport"))) {
             teleportToRandomPlayer(player);
 
-        } else if (itemName.equals(INSPECT_PLAYER)) {
+        } else if (itemName.equals(itemName("inspect-player", "&bInspect Player"))) {
             if (target != null) player.performCommand("invsee " + target.getName());
-            else player.sendMessage(CC.translate("&cNo player nearby to inspect."));
+            else player.sendMessage(message("staff-mode.no-nearby-inspect", "&cNo player nearby to inspect."));
 
-        } else if (itemName.equals(FREEZE_PLAYER)) {
+        } else if (itemName.equals(itemName("freeze-player", "&bFreeze Player"))) {
             if (target != null) player.performCommand("freeze " + target.getName());
-            else player.sendMessage(CC.translate("&cNo player nearby to freeze."));
+            else player.sendMessage(message("staff-mode.no-nearby-freeze", "&cNo player nearby to freeze."));
 
-        } else if (itemName.equals(VANISH) || itemName.equals(UNVANISH)) {
+        } else if (itemName.equals(vanishItemName(false)) || itemName.equals(vanishItemName(true))) {
             VanishCommand.toggleVanish(player, plugin, vanished -> updateVanishItem(player));
         }
     }
@@ -124,22 +123,24 @@ public class StaffModeManager {
         }
 
         if (nonStaff.isEmpty()) {
-            player.sendMessage(CC.translate("&cNo non-staff players online."));
+            player.sendMessage(message("staff-mode.no-random-targets", "&cNo non-staff players online."));
             return;
         }
 
         Player target = nonStaff.get(new Random().nextInt(nonStaff.size()));
         player.teleport(target);
-        player.sendMessage(CC.translate("&aTeleported to " + target.getName() + "."));
+        player.sendMessage(message("staff-mode.random-teleport-success", "&aTeleported to {target}.",
+                "{target}", target.getName()));
     }
 
     private void updateVanishItem(Player player) {
         boolean vanished = VanishCommand.isVanished(player);
         player.getInventory().setItem(8, createItem(
                 Material.INK_SACK,
-                vanished ? UNVANISH : VANISH,
+                vanishItemName(vanished),
                 (short) (vanished ? 8 : 10),
-                Collections.singletonList(CC.translate("&7Toggle vanish mode."))
+                plugin.getMessageConfig().getList("vanish.item.lore",
+                        Collections.singletonList("&7Toggle vanish mode."))
         ));
     }
 
@@ -157,18 +158,33 @@ public class StaffModeManager {
         return closest;
     }
 
+    private String itemName(String key, String fallback) {
+        return message("staff-mode.items." + key + ".name", fallback);
+    }
+
+    private List<String> itemLore(String key, List<String> fallback) {
+        return plugin.getMessageConfig().getList("staff-mode.items." + key + ".lore", fallback);
+    }
+
+    private String vanishItemName(boolean vanished) {
+        return message(vanished ? "vanish.item.unvanish" : "vanish.item.vanish",
+                vanished ? "&7Un-Vanish" : "&aVanish");
+    }
+
+    private String message(String path, String fallback, String... placeholders) {
+        return plugin.getMessageConfig().get(path, fallback, placeholders);
+    }
+
     private ItemStack createItem(Material material, String name, List<String> lore) {
         return createItem(material, name, (short) 0, lore);
     }
 
     private ItemStack createItem(Material material, String name, short data, List<String> lore) {
-        ItemStack item = new ItemStack(material, 1, data);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(name);
-            if (lore != null && !lore.isEmpty()) meta.setLore(lore);
-            item.setItemMeta(meta);
+        ItemBuilder itemBuilder = new ItemBuilder(material, 1, (byte) data);
+        itemBuilder.setName(name);
+        if (lore != null && !lore.isEmpty()) {
+            itemBuilder.setLore(lore);
         }
-        return item;
+        return itemBuilder.toItemStack();
     }
 }

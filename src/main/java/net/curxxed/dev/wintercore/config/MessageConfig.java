@@ -1,12 +1,13 @@
-package net.curxxed.dev.wintercore.utils;
+package net.curxxed.dev.wintercore.config;
 
 import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public final class MessageConfig {
@@ -52,7 +53,7 @@ public final class MessageConfig {
     }
 
     public List<String> getList(String path, String... placeholders) {
-        return getList(path, Arrays.asList(""), placeholders);
+        return getList(path, Collections.singletonList(""), placeholders);
     }
 
     private String applyPlaceholders(String input, String... placeholders) {

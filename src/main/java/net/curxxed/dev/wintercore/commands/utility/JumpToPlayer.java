@@ -1,9 +1,8 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -27,21 +26,18 @@ public class JumpToPlayer extends BaseCommand {
         String[] args = commandArgs.getArgs();
 
         if (args.length != 1) {
-            p.sendMessage(CC.RED + "Usage: /jtp <player>");
+            sendUsage(p);
             return;
         }
 
         Player target = Bukkit.getPlayer(args[0]);
         if (target == null) {
-            p.sendMessage(CC.RED + "Player not found.");
+            send(p, "general.player-not-found", "&cPlayer not found.");
             return;
         }
 
         p.teleport(target.getLocation());
-        p.sendMessage(CC.GREEN + "Jumped to " + target.getName() + ".");
+        send(p, "jump-to-player.success", "&aJumped to {target}.",
+                "{target}", target.getName());
     }
 }
-
-
-
-

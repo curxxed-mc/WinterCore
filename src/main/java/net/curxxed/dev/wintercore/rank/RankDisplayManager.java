@@ -2,6 +2,7 @@ package net.curxxed.dev.wintercore.rank;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import net.curxxed.dev.wintercore.config.RankConfigManager;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissible;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
@@ -95,21 +96,16 @@ public class RankDisplayManager {
             plugin.getLogger().severe("Failed to update permissions for " + player.getName() + ": " + e.getMessage());
         }
     }
-
     private void applyVisuals(Player player, String color) {
         String visibleName = player.getName();
         if (plugin.getNameTagColorManager() != null) {
             visibleName = plugin.getNameTagColorManager().getVisibleName(player);
         }
 
-        String coloredName = CC.translate(color) + visibleName + CC.RESET;
+        String coloredName = CC.translate(color) + visibleName + CC.translate("&r");
 
         Bukkit.getScheduler().runTask(plugin, () -> {
             player.setDisplayName(coloredName);
         });
     }
 }
-
-
-
-

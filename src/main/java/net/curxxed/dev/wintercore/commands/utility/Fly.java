@@ -1,9 +1,8 @@
 package net.curxxed.dev.wintercore.commands.utility;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -24,7 +23,6 @@ public class Fly extends BaseCommand {
     @Override
     public void execute(CommandArguments commandArgs) {
         Player senderPlayer = commandArgs.getPlayer();
-        boolean isPlayer = commandArgs.isPlayer();
 
         if (commandArgs.length() == 0) {
 
@@ -34,7 +32,7 @@ public class Fly extends BaseCommand {
 
         Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null) {
-            commandArgs.getSender().sendMessage(CC.RED + "Player not found!");
+            send(commandArgs.getSender(), "general.player-not-found", "&cPlayer not found!");
             return;
         }
 
@@ -45,19 +43,17 @@ public class Fly extends BaseCommand {
         target.setAllowFlight(!target.getAllowFlight());
 
         if (target.getAllowFlight()) {
-            target.sendMessage(CC.GREEN + "You can now fly!");
+            send(target, "fly.enabled", "&aYou can now fly!");
             if (!target.equals(sender)) {
-                sender.sendMessage(CC.GREEN + target.getName() + " can now fly!");
+                send(sender, "fly.enabled-other", "&a{target} can now fly!",
+                        "{target}", target.getName());
             }
         } else {
-            target.sendMessage(CC.RED + "You can no longer fly!");
+            send(target, "fly.disabled", "&cYou can no longer fly!");
             if (!target.equals(sender)) {
-                sender.sendMessage(CC.RED + target.getName() + " can no longer fly!");
+                send(sender, "fly.disabled-other", "&c{target} can no longer fly!",
+                        "{target}", target.getName());
             }
         }
     }
 }
-
-
-
-

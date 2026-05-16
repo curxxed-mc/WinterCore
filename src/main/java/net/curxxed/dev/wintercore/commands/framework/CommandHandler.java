@@ -1,8 +1,7 @@
-package net.curxxed.dev.wintercore.commands.api;
+package net.curxxed.dev.wintercore.commands.framework;
 
 import lombok.SneakyThrows;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.PluginCommand;
@@ -85,7 +84,8 @@ public class CommandHandler {
             pluginCommand.setPermission(null);
         }
         
-        pluginCommand.setPermissionMessage(CC.translate("&cYou do not have permission to use this command."));
+        pluginCommand.setPermissionMessage(plugin.getMessageConfig().get("general.no-permission",
+                "&cYou do not have permission to use this command."));
 
         commandMap.register(plugin.getDescription().getName(), pluginCommand);
         registeredCommands.add(commandExecutor);

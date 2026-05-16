@@ -1,4 +1,4 @@
-package net.curxxed.dev.wintercore.commands.api;
+package net.curxxed.dev.wintercore.commands.framework;
 
 import lombok.Getter;
 import org.bukkit.Bukkit;

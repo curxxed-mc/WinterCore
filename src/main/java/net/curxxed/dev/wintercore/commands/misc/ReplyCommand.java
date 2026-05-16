@@ -1,8 +1,8 @@
 package net.curxxed.dev.wintercore.commands.misc;
 
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.chat.MessagingService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.entity.Player;

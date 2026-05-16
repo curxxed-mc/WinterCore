@@ -1,9 +1,8 @@
 package net.curxxed.dev.wintercore.commands.staff;
 
-import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.commands.api.BaseCommand;
-import net.curxxed.dev.wintercore.commands.api.CommandInfo;
-import net.curxxed.dev.wintercore.commands.api.CommandArguments;
+import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
+import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
+import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -27,13 +26,13 @@ public class InvSeeCommand extends BaseCommand {
         Player player = commandArgs.getPlayer();
 
         if (commandArgs.length() != 1) {
-            player.sendMessage(CC.RED + "Usage: /invsee <player>");
+            sendUsage(player);
             return;
         }
 
         Player target = Bukkit.getPlayer(commandArgs.getArgs()[0]);
         if (target == null || !target.isOnline()) {
-            player.sendMessage(CC.RED + "Player not found or offline.");
+            send(player, "invsee.not-online", "&cPlayer not found or offline.");
             return;
         }
 
@@ -43,10 +42,7 @@ public class InvSeeCommand extends BaseCommand {
     private void openInventory(Player viewer, Player target) {
         Inventory targetInv = target.getInventory();
         viewer.openInventory(targetInv);
-        viewer.sendMessage(CC.GREEN + "You are now viewing " + CC.YELLOW + target.getName() + "'s inventory.");
+        send(viewer, "invsee.opened", "&aYou are now viewing &e{target}&a's inventory.",
+                "{target}", target.getName());
     }
 }
-
-
-
-

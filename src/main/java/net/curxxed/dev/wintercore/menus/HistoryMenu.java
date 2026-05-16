@@ -1,21 +1,18 @@
 package net.curxxed.dev.wintercore.menus;
 
+import net.curxxed.dev.wintercore.config.MenuConfig;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.menu.Button;
 import net.curxxed.dev.wintercore.menu.Menu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class HistoryMenu extends Menu {
 
@@ -200,20 +197,14 @@ public class HistoryMenu extends Menu {
 
     private ItemStack buildEntryItem(String configPath, String... loreLines) {
         ItemStack base = menuConfig.buildItem(configPath);
-        ItemMeta meta = base.getItemMeta();
-        if (meta == null) return base;
         List<String> lore = new ArrayList<>();
         for (String line : loreLines) lore.add(CC.translate(line));
-        meta.setLore(lore);
-        base.setItemMeta(meta);
-        return base;
+        return new ItemBuilder(base).setLore(lore).toItemStack();
     }
 
     private ItemStack navItem(String name) {
-        ItemStack item = new ItemStack(Material.ARROW);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(CC.translate(name));
-        item.setItemMeta(meta);
-        return item;
+        return new ItemBuilder(Material.ARROW)
+                .setName(CC.translate(name))
+                .toItemStack();
     }
 }

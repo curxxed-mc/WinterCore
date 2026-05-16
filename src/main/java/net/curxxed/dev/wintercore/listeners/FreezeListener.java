@@ -2,7 +2,7 @@ package net.curxxed.dev.wintercore.listeners;
 
 import lombok.Getter;
 import net.curxxed.dev.wintercore.player.PlayerService;
-import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -23,12 +23,14 @@ import java.util.Set;
 public class FreezeListener implements Listener {
     private final Set<Player> frozenPlayers = new HashSet<>();
     private final PlayerService playerService;
+    private final WinterCore plugin;
     @Getter
     public static FreezeListener instance;
 
 
-    public FreezeListener(PlayerService playerService) {
+    public FreezeListener(PlayerService playerService, WinterCore plugin) {
         this.playerService = playerService;
+        this.plugin = plugin;
         instance = this;
     }
 
@@ -69,7 +71,7 @@ public class FreezeListener implements Listener {
     public void onInteract(PlayerInteractEvent event) {
         if (isFrozen(event.getPlayer())) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(CC.translate("&cYou cannot interact while frozen."));
+            event.getPlayer().sendMessage(message("moderation.freeze.cannot-interact", "&cYou cannot interact while frozen."));
         }
     }
 
@@ -127,14 +129,16 @@ public class FreezeListener implements Listener {
                 // If the attacker is frozen, cancel their attack
                 if (isFrozen(attacker)) {
                     event.setCancelled(true);
-                    attacker.sendMessage(CC.translate("&cYou cannot attack while frozen."));
+                    attacker.sendMessage(message("moderation.freeze.cannot-attack", "&cYou cannot attack while frozen."));
                     return;
                 }
 
                 // If the victim is frozen, cancel the attack and notify the attacker
                 if (isFrozen(victim)) {
                     event.setCancelled(true);
-                    attacker.sendMessage(CC.translate("&c" + victim.getName() + " is frozen and cannot be attacked!"));
+                    attacker.sendMessage(message("moderation.freeze.target-cannot-be-attacked",
+                            "&c{target} is frozen and cannot be attacked!",
+                            "{target}", victim.getName()));
                 }
             }
         }
@@ -160,5 +164,9 @@ public class FreezeListener implements Listener {
                 event.setCancelled(true);
             }
         }
+    }
+
+    private String message(String path, String fallback, String... placeholders) {
+        return plugin.getMessageConfig().get(path, fallback, placeholders);
     }
 }
