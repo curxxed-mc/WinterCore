@@ -10,6 +10,7 @@ import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
+import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,8 +21,10 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -44,7 +47,7 @@ public class ConnectionListener implements Listener {
         this.disguiseEventListener = disguiseEventListener;
         this.networkRedisService = networkRedisService;
 
-        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::refreshOnlinePresence, 40L, 100L);
+        Bukkit.getScheduler().runTaskTimer(plugin, this::refreshOnlinePresence, 40L, 100L);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -63,13 +66,19 @@ public class ConnectionListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onLogin(PlayerLoginEvent event) {
         Player player = event.getPlayer();
-        identityService.recordPlayerIP(player.getUniqueId(), event.getAddress().getHostAddress());
-        networkRedisService.cacheUsername(player.getUniqueId(), player.getName());
+        UUID uuid = player.getUniqueId();
+        String playerName = player.getName();
+
+        identityService.recordPlayerIP(uuid, event.getAddress().getHostAddress());
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+                networkRedisService.cacheUsername(uuid, playerName)
+        );
         try {
             WinterCorePermissibleInjector.initPlayer(player);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        denyMaintenanceJoin(event, player);
     }
 
     @EventHandler
@@ -77,11 +86,14 @@ public class ConnectionListener implements Listener {
         event.setJoinMessage(null);
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
+        String playerName = player.getName();
         String serverName = plugin.getConfig().getString("server-name", "unknown");
 
         ClientBrandCommand.silenced.add(uuid);
         joinTimes.put(uuid, System.currentTimeMillis());
-        networkRedisService.setOnlinePresence(uuid, player.getName(), serverName);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+                networkRedisService.setOnlinePresence(uuid, playerName, serverName)
+        );
 
         refreshDisplayForAll(player);
         applyNametag(player);
@@ -97,20 +109,34 @@ public class ConnectionListener implements Listener {
         event.setQuitMessage(null);
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
+        String playerName = player.getName();
 
         lastSeenTimes.put(uuid, System.currentTimeMillis());
         lastServers.put(uuid, plugin.getConfig().getString("server-name", "unknown"));
         joinTimes.remove(uuid);
-        networkRedisService.clearOnlinePresence(uuid, player.getName());
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+                networkRedisService.clearOnlinePresence(uuid, playerName)
+        );
 
         broadcastStaffQuit(player);
     }
 
     private void refreshOnlinePresence() {
         String serverName = plugin.getConfig().getString("server-name", "unknown");
+        List<OnlinePlayerSnapshot> snapshots = new ArrayList<>();
         for (Player online : Bukkit.getOnlinePlayers()) {
-            networkRedisService.setOnlinePresence(online.getUniqueId(), online.getName(), serverName);
+            snapshots.add(new OnlinePlayerSnapshot(online.getUniqueId(), online.getName()));
         }
+
+        if (snapshots.isEmpty()) {
+            return;
+        }
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            for (OnlinePlayerSnapshot snapshot : snapshots) {
+                networkRedisService.setOnlinePresence(snapshot.uuid, snapshot.name, serverName);
+            }
+        });
     }
 
     private void refreshDisplayForAll(Player joined) {
@@ -187,7 +213,10 @@ public class ConnectionListener implements Listener {
         String currentServer = plugin.getConfig().getString("server-name", "unknown");
         String realName = resolveRealName(player);
 
-        networkRedisService.setStaffLastSeen(uuid, System.currentTimeMillis());
+        long quitTime = System.currentTimeMillis();
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+                networkRedisService.setStaffLastSeen(uuid, quitTime)
+        );
 
         rankManager.getRank(uuid, rank -> rankManager.getColorPreference(rank, color -> {
             Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
@@ -240,10 +269,40 @@ public class ConnectionListener implements Listener {
         }
     }
 
+    private static final class OnlinePlayerSnapshot {
+        private final UUID uuid;
+        private final String name;
+
+        private OnlinePlayerSnapshot(UUID uuid, String name) {
+            this.uuid = uuid;
+            this.name = name;
+        }
+    }
+
     private boolean isStaff(Player player) {
         return player.hasPermission("wintercore.staff")
                 || player.hasPermission("wintercore.admin")
                 || player.hasPermission("wintercore.manager")
                 || player.isOp();
+    }
+
+    private void denyMaintenanceJoin(PlayerLoginEvent event, Player player) {
+        if (player.isOp() || player.hasPermission("wintercore.network.maintenance.bypass")) {
+            return;
+        }
+
+        NetworkRedisService.MaintenanceState state = networkRedisService.getMaintenanceState();
+        if (!state.isEnabled()) {
+            return;
+        }
+
+        List<String> lines = plugin.getMessageConfig().getList("network-maintenance.kick", Arrays.asList(
+                "&cThe network is currently under maintenance.",
+                "&7Reason: &f{reason}"
+        ), "{reason}", state.getReason(),
+                "{actor}", state.getActor(),
+                "{server}", state.getServerName());
+
+        event.disallow(PlayerLoginEvent.Result.KICK_OTHER, CC.translate(String.join("\n", lines)));
     }
 }

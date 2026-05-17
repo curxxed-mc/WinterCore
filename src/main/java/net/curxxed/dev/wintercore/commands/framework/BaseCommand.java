@@ -9,13 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class BaseCommand implements TabExecutor {
@@ -272,7 +266,7 @@ public abstract class BaseCommand implements TabExecutor {
             }
         }
 
-        return candidates.stream().collect(Collectors.toList());
+        return new ArrayList<>(candidates);
     }
 
     public abstract void execute(CommandArguments args);

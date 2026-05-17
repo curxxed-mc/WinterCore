@@ -14,17 +14,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 public final class ChatFilterService {
 
     private static final String FILE_NAME = "chat-filter.yml";
+    private static final Pattern DIACRITICS = Pattern.compile("\\p{M}");
+    private static final Pattern MULTI_SPACE = Pattern.compile("\\s+");
 
     private final WinterCore plugin;
+
     private FileConfiguration config;
     private boolean enabled;
     private boolean notifyStaff;
     private boolean logToConsole;
-    private boolean cancelMessage;
     private boolean normalizeLeetspeak;
     private boolean collapseRepeats;
     private boolean stripSymbols;
@@ -32,6 +35,7 @@ public final class ChatFilterService {
     private int minFuzzyLength;
     private String bypassPermission;
     private String staffPermission;
+
     private final List<FilterCategory> categories = new ArrayList<>();
 
     public ChatFilterService(WinterCore plugin) {
@@ -49,7 +53,6 @@ public final class ChatFilterService {
         this.enabled = config.getBoolean("enabled", true);
         this.notifyStaff = config.getBoolean("actions.notify-staff", true);
         this.logToConsole = config.getBoolean("actions.log-to-console", true);
-        this.cancelMessage = config.getBoolean("actions.cancel-message", true);
         this.normalizeLeetspeak = config.getBoolean("algorithm.normalize-leetspeak", true);
         this.collapseRepeats = config.getBoolean("algorithm.collapse-repeated-letters", true);
         this.stripSymbols = config.getBoolean("algorithm.strip-symbols", true);
@@ -72,10 +75,26 @@ public final class ChatFilterService {
 
             String label = categorySection.getString("label", key);
             int sensitivity = Math.max(0, categorySection.getInt("sensitivity", maxEditDistance));
-            List<String> triggers = new ArrayList<>();
-            triggers.addAll(categorySection.getStringList("triggers"));
-            triggers.addAll(categorySection.getStringList("phrases"));
+
+            List<NormalizedTrigger> triggers = new ArrayList<>();
+            addTriggers(triggers, categorySection.getStringList("triggers"));
+            addTriggers(triggers, categorySection.getStringList("phrases"));
+
             categories.add(new FilterCategory(key, label, sensitivity, triggers));
+        }
+    }
+
+    private void addTriggers(List<NormalizedTrigger> target, List<String> source) {
+        if (source == null || source.isEmpty()) {
+            return;
+        }
+
+        for (String rawTrigger : source) {
+            if (rawTrigger == null || rawTrigger.trim().isEmpty()) {
+                continue;
+            }
+
+            target.add(new NormalizedTrigger(rawTrigger, normalizeMessage(rawTrigger)));
         }
     }
 
@@ -85,14 +104,27 @@ public final class ChatFilterService {
             return false;
         }
 
-        sender.sendMessage(format("messages.blocked-sender",
-                "&cYour message was blocked by the chat filter. &7Category: &f{category}",
-                result, sender, message, channel));
+        if (sender != null) {
+            sender.sendMessage(format(
+                    "messages.blocked-sender",
+                    "&cYour message was blocked by the chat filter. &7Category: &f{category}",
+                    result,
+                    sender,
+                    message,
+                    channel
+            ));
+        }
 
         if (notifyStaff) {
-            String staffMessage = format("messages.staff-alert",
+            String staffMessage = format(
+                    "messages.staff-alert",
                     "&8[&cFilter&8] &f{player} &7triggered &f{category}&7 in &f{channel}&7: &f{message}",
-                    result, sender, message, channel);
+                    result,
+                    sender,
+                    message,
+                    channel
+            );
+
             for (Player online : Bukkit.getOnlinePlayers()) {
                 if (online.equals(sender)) {
                     continue;
@@ -104,19 +136,22 @@ public final class ChatFilterService {
         }
 
         if (logToConsole) {
-            plugin.getLogger().warning("[ChatFilter] " + sender.getName()
-                    + " triggered " + result.getCategoryKey()
-                    + " in " + channel.getDisplayName()
-                    + " using detector '" + result.getDetector() + "'. Message: " + message);
+            plugin.getLogger().warning(
+                    "[ChatFilter] " + (sender == null ? "Unknown" : sender.getName())
+                            + " triggered " + result.getCategoryKey()
+                            + " in " + channel.getDisplayName()
+                            + " using detector '" + result.getDetector() + "'. Message: " + message
+            );
         }
 
-        return cancelMessage;
+        return true;
     }
 
     public FilterResult inspect(Player sender, String message, MessageChannel channel) {
         if (!enabled || message == null || message.trim().isEmpty()) {
             return FilterResult.allowed();
         }
+
         if (sender != null && hasPermission(sender, bypassPermission)) {
             return FilterResult.allowed();
         }
@@ -127,7 +162,7 @@ public final class ChatFilterService {
         }
 
         for (FilterCategory category : categories) {
-            for (String trigger : category.getTriggers()) {
+            for (NormalizedTrigger trigger : category.getTriggers()) {
                 FilterResult result = matchTrigger(category, trigger, normalized);
                 if (result.isBlocked()) {
                     return result;
@@ -138,33 +173,30 @@ public final class ChatFilterService {
         return FilterResult.allowed();
     }
 
-    private FilterResult matchTrigger(FilterCategory category, String rawTrigger, NormalizedMessage message) {
-        if (rawTrigger == null || rawTrigger.trim().isEmpty()) {
+    private FilterResult matchTrigger(FilterCategory category, NormalizedTrigger trigger, NormalizedMessage message) {
+        if (trigger == null || trigger.normalized == null || trigger.normalized.compact.isEmpty()) {
             return FilterResult.allowed();
         }
 
-        NormalizedMessage trigger = normalizeMessage(rawTrigger);
-        if (trigger.compact.isEmpty()) {
-            return FilterResult.allowed();
+        NormalizedMessage triggerNormalized = trigger.normalized;
+
+        if (message.compact.contains(triggerNormalized.compact)) {
+            return FilterResult.blocked(category, trigger.raw, "compact");
         }
 
-        if (message.compact.contains(trigger.compact)) {
-            return FilterResult.blocked(category, rawTrigger, "compact");
+        if (message.collapsedCompact.contains(triggerNormalized.collapsedCompact)) {
+            return FilterResult.blocked(category, trigger.raw, "repeat-collapse");
         }
 
-        if (message.collapsedCompact.contains(trigger.collapsedCompact)) {
-            return FilterResult.blocked(category, rawTrigger, "repeat-collapse");
-        }
-
-        if (message.visibleWords.contains(trigger.visibleWords)) {
-            return FilterResult.blocked(category, rawTrigger, "visible");
+        if (message.visibleWords.contains(triggerNormalized.visibleWords)) {
+            return FilterResult.blocked(category, trigger.raw, "visible");
         }
 
         int distance = Math.max(maxEditDistance, category.getSensitivity());
-        if (trigger.compact.length() >= minFuzzyLength && distance > 0) {
-            if (containsFuzzy(message.compact, trigger.compact, distance)
-                    || containsFuzzy(message.collapsedCompact, trigger.collapsedCompact, distance)) {
-                return FilterResult.blocked(category, rawTrigger, "fuzzy");
+        if (triggerNormalized.compact.length() >= minFuzzyLength && distance > 0) {
+            if (containsFuzzy(message.compact, triggerNormalized.compact, distance)
+                    || containsFuzzy(message.collapsedCompact, triggerNormalized.collapsedCompact, distance)) {
+                return FilterResult.blocked(category, trigger.raw, "fuzzy");
             }
         }
 
@@ -178,10 +210,9 @@ public final class ChatFilterService {
             noColor = lower;
         }
 
-        String deAccented = Normalizer.normalize(noColor, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "");
-        StringBuilder visible = new StringBuilder();
-        StringBuilder compact = new StringBuilder();
+        String deAccented = DIACRITICS.matcher(Normalizer.normalize(noColor, Normalizer.Form.NFD)).replaceAll("");
+        StringBuilder visible = new StringBuilder(deAccented.length());
+        StringBuilder compact = new StringBuilder(deAccented.length());
 
         for (int i = 0; i < deAccented.length(); i++) {
             char mapped = mapCharacter(deAccented.charAt(i));
@@ -195,7 +226,7 @@ public final class ChatFilterService {
             }
         }
 
-        String visibleWords = visible.toString().replaceAll("\\s+", " ").trim();
+        String visibleWords = MULTI_SPACE.matcher(visible.toString()).replaceAll(" ").trim();
         String compactText = compact.toString();
         String collapsed = collapseRepeats ? collapseRepeatedCharacters(compactText) : compactText;
         return new NormalizedMessage(visibleWords, compactText, collapsed);
@@ -242,7 +273,7 @@ public final class ChatFilterService {
             return input;
         }
 
-        StringBuilder output = new StringBuilder();
+        StringBuilder output = new StringBuilder(input.length());
         char last = 0;
         for (int i = 0; i < input.length(); i++) {
             char current = input.charAt(i);
@@ -255,6 +286,10 @@ public final class ChatFilterService {
     }
 
     private boolean containsFuzzy(String haystack, String needle, int maxDistance) {
+        if (haystack.isEmpty() || needle.isEmpty()) {
+            return false;
+        }
+
         if (haystack.length() < needle.length() - maxDistance) {
             return false;
         }
@@ -400,13 +435,23 @@ public final class ChatFilterService {
         }
     }
 
+    private static final class NormalizedTrigger {
+        private final String raw;
+        private final NormalizedMessage normalized;
+
+        private NormalizedTrigger(String raw, NormalizedMessage normalized) {
+            this.raw = raw;
+            this.normalized = normalized;
+        }
+    }
+
     private static final class FilterCategory {
         private final String key;
         private final String label;
         private final int sensitivity;
-        private final List<String> triggers;
+        private final List<NormalizedTrigger> triggers;
 
-        private FilterCategory(String key, String label, int sensitivity, List<String> triggers) {
+        private FilterCategory(String key, String label, int sensitivity, List<NormalizedTrigger> triggers) {
             this.key = key;
             this.label = label;
             this.sensitivity = sensitivity;
@@ -425,7 +470,7 @@ public final class ChatFilterService {
             return sensitivity;
         }
 
-        private List<String> getTriggers() {
+        private List<NormalizedTrigger> getTriggers() {
             return triggers;
         }
     }
