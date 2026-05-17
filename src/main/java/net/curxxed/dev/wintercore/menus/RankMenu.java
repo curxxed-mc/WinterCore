@@ -298,34 +298,39 @@ public class RankMenu extends Menu {
         @EventHandler(priority = EventPriority.LOWEST)
         public void onPlayerChat(AsyncPlayerChatEvent event) {
             Player player = event.getPlayer();
-            GrantState gs = pendingGrants.get(player.getUniqueId());
+            GrantState gs = pendingGrants.remove(player.getUniqueId());
             if (gs == null) {
                 return;
             }
 
             event.setCancelled(true);
             String message = event.getMessage();
+            Bukkit.getScheduler().runTask(plugin, () -> handleGrantReason(player, gs, message));
+        }
+
+        private void handleGrantReason(Player player, GrantState gs, String message) {
+            if (player == null || !player.isOnline()) {
+                return;
+            }
 
             if (message.equalsIgnoreCase("cancel")) {
-                pendingGrants.remove(player.getUniqueId());
                 player.sendMessage(plugin.getMenuConfig().getString("rank-menu.messages.cancelled",
                         "&cRank grant cancelled."));
                 return;
             }
-
-            pendingGrants.remove(player.getUniqueId());
 
             long now = System.currentTimeMillis();
             Long expiresAt = gs.permanent ? null : (gs.durationMillis > 0 ? now + gs.durationMillis : null);
 
             plugin.getDatabaseManager().getProfileService().setRankWithMeta(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
             plugin.getDatabaseManager().getModerationService().addRankGrant(gs.targetUUID, gs.rank, player.getUniqueId(), now, expiresAt, message);
-            plugin.getRedisManager().publish(new RankTagSyncPacket(
+            RankTagSyncPacket packet = new RankTagSyncPacket(
                     plugin.getConfig().getString("server-name", "Unknown"),
                     System.currentTimeMillis(),
                     gs.targetUUID,
                     gs.rank
-            ));
+            );
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getRedisManager().publish(packet));
 
             String grantedName = Bukkit.getOfflinePlayer(gs.targetUUID).getName();
             player.sendMessage(plugin.getMenuConfig().getString("rank-menu.messages.granted",
@@ -333,19 +338,17 @@ public class RankMenu extends Menu {
                     "{rank}", gs.rank,
                     "{target}", grantedName == null ? gs.targetUUID.toString() : grantedName));
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                Player target = Bukkit.getPlayer(gs.targetUUID);
-                if (target != null) {
-                    plugin.getRankManager().cachePlayerRank(target, gs.rank);
-                    plugin.getRankManager().refreshPlayerDisplay(target);
-                    plugin.getRankManager().refreshPlayerDisplayForAll(target);
-                    Bukkit.getPluginManager().callEvent(new RankChangeEvent(
-                            target,
-                            gs.rank,
-                            plugin.getRankManager().getRankSync(target)
-                    ));
-                }
-            });
+            Player target = Bukkit.getPlayer(gs.targetUUID);
+            if (target != null) {
+                plugin.getRankManager().cachePlayerRank(target, gs.rank);
+                plugin.getRankManager().refreshPlayerDisplay(target);
+                plugin.getRankManager().refreshPlayerDisplayForAll(target);
+                Bukkit.getPluginManager().callEvent(new RankChangeEvent(
+                        target,
+                        gs.rank,
+                        plugin.getRankManager().getRankSync(target)
+                ));
+            }
         }
     }
 }

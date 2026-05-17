@@ -73,19 +73,22 @@ public class AuthListener implements Listener {
         Player player = event.getPlayer();
         if (authManager.isPendingSetup(player)) {
             event.setCancelled(true);
-            WinterCore winterCore = WinterCore.getInstance();
-            if (winterCore != null && winterCore.getMessageConfig() != null) {
-                player.sendMessage(winterCore.getMessageConfig().get("auth.setup-required", "&c&l2FA Setup Required"));
-            }
+            sendAuthMessage(player, "auth.setup-required", "&c&l2FA Setup Required");
             return;
         }
         if (authManager.isPendingAuth(player)) {
             event.setCancelled(true);
-            WinterCore winterCore = WinterCore.getInstance();
-            if (winterCore != null && winterCore.getMessageConfig() != null) {
-                player.sendMessage(winterCore.getMessageConfig().get("auth.auth-required", "&c&lAuthentication Required"));
-            }
+            sendAuthMessage(player, "auth.auth-required", "&c&lAuthentication Required");
         }
+    }
+
+    private void sendAuthMessage(Player player, String path, String fallback) {
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            WinterCore winterCore = WinterCore.getInstance();
+            if (player.isOnline() && winterCore != null && winterCore.getMessageConfig() != null) {
+                player.sendMessage(winterCore.getMessageConfig().get(path, fallback));
+            }
+        });
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)

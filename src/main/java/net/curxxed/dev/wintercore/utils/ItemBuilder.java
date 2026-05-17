@@ -55,7 +55,17 @@ public class ItemBuilder {
      * @param durability The durability/data byte of the item.
      */
     public ItemBuilder(Material m, int amount, byte durability){
-        this.is = new ItemStack(m, amount, (short) durability);
+        this(m, amount, (short) durability);
+    }
+
+    /**
+     * Create a new ItemBuilder from scratch.
+     * @param m The material of the item.
+     * @param amount The amount of the item.
+     * @param durability The durability/data value of the item.
+     */
+    public ItemBuilder(Material m, int amount, short durability){
+        this.is = new ItemStack(m, amount, durability);
     }
 
     /**

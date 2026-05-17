@@ -1,4 +1,4 @@
-package net.curxxed.dev.wintercore.utils;
+package net.curxxed.dev.wintercore.player;
 
 import net.curxxed.dev.wintercore.config.ModerationMessages;
 import net.curxxed.dev.wintercore.database.service.ModerationService;

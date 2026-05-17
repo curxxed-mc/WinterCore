@@ -68,11 +68,17 @@ public class ProfileCommand extends BaseCommand implements Listener {
         }
 
         Player finalTarget = target;
-        runAsync(() -> openProfileInventory(viewer, finalTarget));
+        UUID targetUuid = finalTarget.getUniqueId();
+        runAsync(() -> {
+            Map<String, String> socials = redis.getAllSocialLinks(targetUuid);
+            runSync(() -> openProfileInventory(viewer, finalTarget, socials));
+        });
     }
 
-    private void openProfileInventory(Player viewer, Player target) {
-        Map<String, String> socials = redis.getAllSocialLinks(target.getUniqueId());
+    private void openProfileInventory(Player viewer, Player target, Map<String, String> socials) {
+        if (!viewer.isOnline() || !target.isOnline()) {
+            return;
+        }
 
         rankManager.getRank(target, rank ->
                 rankManager.getRankPrefix(target, prefix ->

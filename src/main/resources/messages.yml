@@ -8,6 +8,8 @@ general:
   unknown: "Unknown"
 
 chat:
+  set-server-chat-mute: "&aSuccessfully set server chat mute state to: {state}"
+  server-chat-muted: "&cChat is currently muted."
   muted: "&cYou are muted and cannot send messages."
   public-format: "{name}&f: {message_color}{message}"
   private:
@@ -476,6 +478,42 @@ server-manager:
   info-failed: "&cFailed to fetch server info."
   joining: "&7Sending you to {server}..."
   command-sent: "&aSent command to {server}."
+
+network-broadcast:
+  format: "&8[&bNetwork&8] &f{message}"
+  sent: "&aNetwork broadcast sent."
+
+network-find:
+  not-online: "&c{player} is not online on the network."
+  found: "&b{player} &7is online on &e{server}&7."
+
+network-list:
+  empty: "&cNo players are online on the network."
+  header: "&bNetwork Players &7({online} online across {servers} servers):"
+  server: "&7- &b{server} &7({count}): &f{players}"
+  separator: "&7, "
+
+network-send:
+  not-online: "&c{player} is not online on the network."
+  server-not-online: "&cServer {server} is not online."
+  already-there: "&c{player} is already on {server}."
+  sent: "&aSending {player} to {server}."
+  target: "&7Sending you to &b{server}&7..."
+
+network-maintenance:
+  enabled: "&aNetwork maintenance enabled. Reason: &f{reason}"
+  disabled: "&aNetwork maintenance disabled."
+  enabled-broadcast: "&cNetwork maintenance has been enabled. &7Reason: &f{reason}"
+  disabled-broadcast: "&aNetwork maintenance has been disabled."
+  status-enabled: "&cEnabled"
+  status-disabled: "&aDisabled"
+  status:
+    - "&bNetwork Maintenance: {status}"
+    - "&7Reason: &f{reason}"
+    - "&7Updated by: &f{actor} &7from &f{server}"
+  kick:
+    - "&cThe network is currently under maintenance."
+    - "&7Reason: &f{reason}"
 
 social-input:
   pending: "&cYou already have an active input pending. Please type your {platform} info first."

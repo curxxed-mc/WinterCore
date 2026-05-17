@@ -15,4 +15,6 @@ public interface RedisPacketHandler {
     void handle(ChatBroadcastPacket packet);
     void handle(VanishPacket packet);
     void handle(PlayerUpdatePacket packet);
+    void handle(NetworkBroadcastPacket packet);
+    void handle(PlayerTransferPacket packet);
 }
