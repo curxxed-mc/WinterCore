@@ -5,13 +5,18 @@ import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class StaffModeManager {
+
+    private static final Material PUSH_FORWARD_MATERIAL = Material.FEATHER;
+    private static final double TARGET_RANGE_SQUARED = 25.0D;
 
     private final Map<UUID, ItemStack[]> savedInventories = new HashMap<>();
     private final Map<UUID, GameMode> savedGameModes = new HashMap<>();
@@ -36,7 +41,7 @@ public class StaffModeManager {
     public void enableStaffMode(Player player) {
         UUID uuid = player.getUniqueId();
         if (!isInStaffMode(player)) {
-            savedInventories.put(uuid, player.getInventory().getContents());
+            savedInventories.put(uuid, cloneContents(player.getInventory().getContents()));
             savedGameModes.put(uuid, player.getGameMode());
         }
 
@@ -44,7 +49,7 @@ public class StaffModeManager {
         player.setGameMode(GameMode.CREATIVE);
         player.getInventory().clear();
 
-        player.getInventory().setItem(0, createItem(Material.COMPASS,
+        player.getInventory().setItem(0, createItem(PUSH_FORWARD_MATERIAL,
                 itemName("push-forward", "&6Push Forward"),
                 itemLore("push-forward", Collections.singletonList("&7Use this to move forward quickly."))));
         player.getInventory().setItem(1, createItem(Material.SKULL_ITEM,
@@ -69,20 +74,35 @@ public class StaffModeManager {
     }
 
     public void disableStaffMode(Player player) {
-        UUID uuid = player.getUniqueId();
-        player.getInventory().clear();
+        disableStaffMode(player, true);
+    }
 
-        if (savedInventories.containsKey(uuid)) {
-            player.getInventory().setContents(savedInventories.remove(uuid));
+    public void handleQuit(Player player) {
+        disableStaffMode(player, false);
+    }
+
+    private void disableStaffMode(Player player, boolean notify) {
+        UUID uuid = player.getUniqueId();
+        boolean wasInStaffMode = staffModePlayers.remove(uuid);
+        ItemStack[] savedInventory = savedInventories.remove(uuid);
+        GameMode savedGameMode = savedGameModes.remove(uuid);
+
+        if (!wasInStaffMode && savedInventory == null && savedGameMode == null) {
+            return;
         }
 
-        player.setGameMode(savedGameModes.containsKey(uuid)
-                ? savedGameModes.remove(uuid)
-                : GameMode.SURVIVAL);
+        player.getInventory().clear();
 
-        staffModePlayers.remove(uuid);
+        if (savedInventory != null) {
+            player.getInventory().setContents(cloneContents(savedInventory));
+        }
+
+        player.setGameMode(savedGameMode != null ? savedGameMode : GameMode.SURVIVAL);
+
         refreshNameTag(player, false);
-        player.sendMessage(message("staff-mode.disabled", "&cStaff mode disabled and inventory restored."));
+        if (notify) {
+            player.sendMessage(message("staff-mode.disabled", "&cStaff mode disabled and inventory restored."));
+        }
     }
 
     public void handleItemUse(Player player, String itemName, Player target, ItemStack item) {
@@ -127,7 +147,7 @@ public class StaffModeManager {
             return;
         }
 
-        Player target = nonStaff.get(new Random().nextInt(nonStaff.size()));
+        Player target = nonStaff.get(ThreadLocalRandom.current().nextInt(nonStaff.size()));
         player.teleport(target);
         player.sendMessage(message("staff-mode.random-teleport-success", "&aTeleported to {target}.",
                 "{target}", target.getName()));
@@ -147,15 +167,33 @@ public class StaffModeManager {
     public Player getTargetPlayer(Player player) {
         Player closest = null;
         double closestDist = Double.MAX_VALUE;
+        Location origin = player.getLocation();
+
         for (Player other : player.getWorld().getPlayers()) {
             if (other.equals(player) || !player.canSee(other)) continue;
-            double dist = player.getLocation().distance(other.getLocation());
-            if (dist <= 5 && dist < closestDist) {
+            double dist = origin.distanceSquared(other.getLocation());
+            if (dist <= TARGET_RANGE_SQUARED && dist < closestDist) {
                 closestDist = dist;
                 closest = other;
             }
         }
         return closest;
+    }
+
+    public boolean isStaffModeItem(ItemStack item) {
+        if (item == null || !item.hasItemMeta() || !item.getItemMeta().hasDisplayName()) {
+            return false;
+        }
+
+        String displayName = item.getItemMeta().getDisplayName();
+        return displayName.equals(itemName("push-forward", "&6Push Forward"))
+                || displayName.equals(itemName("staff-list", "&eStaff List"))
+                || displayName.equals(itemName("random-teleport", "&bRandom Teleport"))
+                || displayName.equals(itemName("better-view", "&bBetter View"))
+                || displayName.equals(itemName("inspect-player", "&bInspect Player"))
+                || displayName.equals(itemName("freeze-player", "&bFreeze Player"))
+                || displayName.equals(vanishItemName(false))
+                || displayName.equals(vanishItemName(true));
     }
 
     private String itemName(String key, String fallback) {
@@ -180,11 +218,19 @@ public class StaffModeManager {
     }
 
     private ItemStack createItem(Material material, String name, short data, List<String> lore) {
-        ItemBuilder itemBuilder = new ItemBuilder(material, 1, (byte) data);
+        ItemBuilder itemBuilder = new ItemBuilder(material, 1, data);
         itemBuilder.setName(name);
         if (lore != null && !lore.isEmpty()) {
             itemBuilder.setLore(lore);
         }
         return itemBuilder.toItemStack();
+    }
+
+    private ItemStack[] cloneContents(ItemStack[] contents) {
+        ItemStack[] clone = new ItemStack[contents.length];
+        for (int i = 0; i < contents.length; i++) {
+            clone[i] = contents[i] == null ? null : contents[i].clone();
+        }
+        return clone;
     }
 }

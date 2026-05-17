@@ -17,8 +17,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//TODO: fix this shit idk why but the names aren't applied in Grant, Tags, Disguise and Staff List don't have the items inside
-//named correctly
 public class MenuConfig {
 
     private final WinterCore plugin;
@@ -95,13 +93,13 @@ public class MenuConfig {
         if (section == null) {
             plugin.getLogger().warning("[MenuConfig] Missing config section '" + path
                     + "' in menus.yml — returning fallback item. Check your menus.yml.");
-            return new ItemBuilder(fallbackMaterial, 1, (byte) fallbackData).toItemStack();
+            return new ItemBuilder(fallbackMaterial, 1, fallbackData).toItemStack();
         }
 
         Material mat = parseMaterial(section.getString("material", fallbackMaterial.name()), fallbackMaterial);
         int amount = Math.max(1, Math.min(64, section.getInt("amount", 1)));
         short data = (short) section.getInt("data", fallbackData);
-        ItemBuilder itemBuilder = new ItemBuilder(mat, amount, (byte) data);
+        ItemBuilder itemBuilder = new ItemBuilder(mat, amount, data);
         ItemMeta meta = itemBuilder.toItemStack().getItemMeta();
         if (meta == null) return itemBuilder.toItemStack();
 

@@ -116,6 +116,20 @@ public final class RedisPacketCodec {
                 json.get("timestamp").getAsLong(),
                 UUID.fromString(json.get("targetUuid").getAsString())
         ));
+        deserializers.put(RedisPacketType.NETWORK_BROADCAST, json -> new NetworkBroadcastPacket(
+                json.get("sourceServer").getAsString(),
+                json.get("timestamp").getAsLong(),
+                json.get("sender").getAsString(),
+                json.get("message").getAsString()
+        ));
+        deserializers.put(RedisPacketType.PLAYER_TRANSFER, json -> new PlayerTransferPacket(
+                json.get("sourceServer").getAsString(),
+                json.get("timestamp").getAsLong(),
+                UUID.fromString(json.get("targetUuid").getAsString()),
+                json.get("targetName").getAsString(),
+                json.get("destinationServer").getAsString(),
+                json.get("issuer").getAsString()
+        ));
     }
 
     public String encode(RedisPacket<?> packet) {

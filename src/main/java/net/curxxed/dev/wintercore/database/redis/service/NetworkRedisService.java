@@ -14,6 +14,7 @@ public final class NetworkRedisService {
 
     private final WinterCore plugin;
     private static final int ONLINE_PRESENCE_TTL_SECONDS = 30;
+    private static final String MAINTENANCE_KEY = "network:maintenance";
 
     public NetworkRedisService(WinterCore plugin) {
         this.plugin = plugin;
@@ -143,7 +144,9 @@ public final class NetworkRedisService {
 
         String uuidKey = "player:online:uuid:" + uuid;
         String nameKey = "player:online:name:" + normalizedName;
-        String payload = playerName + "|" + (serverName == null ? "unknown" : serverName);
+        String payload = playerName + "|"
+                + (serverName == null ? "unknown" : serverName)
+                + "|" + System.currentTimeMillis();
 
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             Pipeline pipeline = jedis.pipelined();
@@ -199,12 +202,216 @@ public final class NetworkRedisService {
         }
     }
 
+    public OnlinePresence getOnlinePresence(UUID uuid) {
+        if (uuid == null) {
+            return null;
+        }
+
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            String payload = jedis.get("player:online:uuid:" + uuid);
+            return parsePresence(uuid, payload);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to get online presence for " + uuid + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    public OnlinePresence getOnlinePresenceByName(String playerName) {
+        UUID uuid = getOnlineUuidByName(playerName);
+        if (uuid == null) {
+            return null;
+        }
+        return getOnlinePresence(uuid);
+    }
+
+    public Map<UUID, OnlinePresence> getOnlinePlayers() {
+        Map<UUID, OnlinePresence> players = new HashMap<>();
+
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            String cursor = ScanParams.SCAN_POINTER_START;
+            ScanParams params = new ScanParams().match("player:online:uuid:*").count(100);
+            do {
+                ScanResult<String> result = jedis.scan(cursor, params);
+                for (String key : result.getResult()) {
+                    UUID uuid = uuidFromPresenceKey(key);
+                    if (uuid == null) {
+                        continue;
+                    }
+
+                    OnlinePresence presence = parsePresence(uuid, jedis.get(key));
+                    if (presence != null) {
+                        players.put(uuid, presence);
+                    }
+                }
+                cursor = result.getCursor();
+            } while (!ScanParams.SCAN_POINTER_START.equals(cursor));
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to scan online player presence: " + e.getMessage());
+        }
+
+        return players;
+    }
+
     public boolean isNameOnlineElsewhere(String playerName, UUID excludingUuid) {
         UUID onlineUuid = getOnlineUuidByName(playerName);
         return onlineUuid != null && (excludingUuid == null || !onlineUuid.equals(excludingUuid));
     }
 
+    public void setMaintenance(boolean enabled, String reason, String actor, String serverName) {
+        Map<String, String> values = new HashMap<>();
+        values.put("enabled", String.valueOf(enabled));
+        values.put("reason", reason == null || reason.trim().isEmpty() ? "Maintenance" : reason.trim());
+        values.put("actor", actor == null || actor.trim().isEmpty() ? "Console" : actor.trim());
+        values.put("server", serverName == null || serverName.trim().isEmpty() ? "unknown" : serverName.trim());
+        values.put("updatedAt", String.valueOf(System.currentTimeMillis()));
+
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            jedis.hset(MAINTENANCE_KEY, values);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to set network maintenance state: " + e.getMessage());
+        }
+    }
+
+    public MaintenanceState getMaintenanceState() {
+        try (Jedis jedis = plugin.getRedisPool().getResource()) {
+            Map<String, String> values = jedis.hgetAll(MAINTENANCE_KEY);
+            if (values == null || values.isEmpty()) {
+                return MaintenanceState.disabled();
+            }
+
+            boolean enabled = Boolean.parseBoolean(values.getOrDefault("enabled", "false"));
+            long updatedAt = parseLong(values.get("updatedAt"));
+            return new MaintenanceState(
+                    enabled,
+                    values.getOrDefault("reason", "Maintenance"),
+                    values.getOrDefault("actor", "Console"),
+                    values.getOrDefault("server", "unknown"),
+                    updatedAt
+            );
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to get network maintenance state: " + e.getMessage());
+            return MaintenanceState.disabled();
+        }
+    }
+
+    public boolean isMaintenanceEnabled() {
+        return getMaintenanceState().isEnabled();
+    }
+
     private String normalizeName(String name) {
         return name.trim().toLowerCase(Locale.ENGLISH);
+    }
+
+    private UUID uuidFromPresenceKey(String key) {
+        String prefix = "player:online:uuid:";
+        if (key == null || !key.startsWith(prefix)) {
+            return null;
+        }
+
+        try {
+            return UUID.fromString(key.substring(prefix.length()));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private OnlinePresence parsePresence(UUID uuid, String payload) {
+        if (uuid == null || payload == null || payload.trim().isEmpty()) {
+            return null;
+        }
+
+        String[] parts = payload.split("\\|", 3);
+        if (parts.length < 2) {
+            return null;
+        }
+
+        return new OnlinePresence(
+                uuid,
+                parts[0],
+                parts[1],
+                parts.length >= 3 ? parseLong(parts[2]) : 0L
+        );
+    }
+
+    private long parseLong(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return 0L;
+        }
+
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException ignored) {
+            return 0L;
+        }
+    }
+
+    public static final class OnlinePresence {
+        private final UUID uuid;
+        private final String playerName;
+        private final String serverName;
+        private final long updatedAt;
+
+        private OnlinePresence(UUID uuid, String playerName, String serverName, long updatedAt) {
+            this.uuid = uuid;
+            this.playerName = playerName;
+            this.serverName = serverName;
+            this.updatedAt = updatedAt;
+        }
+
+        public UUID getUuid() {
+            return uuid;
+        }
+
+        public String getPlayerName() {
+            return playerName;
+        }
+
+        public String getServerName() {
+            return serverName;
+        }
+
+        public long getUpdatedAt() {
+            return updatedAt;
+        }
+    }
+
+    public static final class MaintenanceState {
+        private final boolean enabled;
+        private final String reason;
+        private final String actor;
+        private final String serverName;
+        private final long updatedAt;
+
+        private MaintenanceState(boolean enabled, String reason, String actor, String serverName, long updatedAt) {
+            this.enabled = enabled;
+            this.reason = reason;
+            this.actor = actor;
+            this.serverName = serverName;
+            this.updatedAt = updatedAt;
+        }
+
+        public static MaintenanceState disabled() {
+            return new MaintenanceState(false, "Maintenance", "Console", "unknown", 0L);
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public String getReason() {
+            return reason;
+        }
+
+        public String getActor() {
+            return actor;
+        }
+
+        public String getServerName() {
+            return serverName;
+        }
+
+        public long getUpdatedAt() {
+            return updatedAt;
+        }
     }
 }

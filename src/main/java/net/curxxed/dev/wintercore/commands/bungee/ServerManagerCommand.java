@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -199,16 +200,21 @@ public class ServerManagerCommand extends BaseCommand {
     }
 
     private void joinServer(Player player, String serverName) {
-        try (Jedis jedis = plugin.getRedisPool().getResource()) {
-            jedis.setex("pending_switch:" + player.getUniqueId(), 30, "true");
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to set pending switch for " + player.getName() + ": " + e.getMessage());
-        }
+        runSync(() -> {
+            UUID playerId = player.getUniqueId();
+            String playerName = player.getName();
 
-        reply(player, "server-manager.joining", "&7Sending you to {server}...",
-                "{server}", serverName);
+            runAsync(() -> {
+                try (Jedis jedis = plugin.getRedisPool().getResource()) {
+                    jedis.setex("pending_switch:" + playerId, 30, "true");
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Failed to set pending switch for " + playerName + ": " + e.getMessage());
+                }
+            });
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
+            player.sendMessage(message("server-manager.joining", "&7Sending you to {server}...",
+                    "{server}", serverName));
+
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("Connect");
             out.writeUTF(serverName);

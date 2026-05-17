@@ -66,7 +66,7 @@ public class ButtonBuilder {
     }
 
     public Button build() {
-        ItemBuilder itemBuilder = new ItemBuilder(material, amount, (byte) data);
+        ItemBuilder itemBuilder = new ItemBuilder(material, amount, data);
         if (name != null) {
             itemBuilder.setName(name);
         }

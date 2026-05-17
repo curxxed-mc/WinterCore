@@ -36,17 +36,19 @@ public class VanishCommand extends BaseCommand {
 
     @Override
     public void execute(CommandArguments commandArgs) {
-        Player player = commandArgs.getPlayer();
+        runSync(() -> {
+            Player player = commandArgs.getPlayer();
 
-        toggleVanish(player, plugin, (vanished) -> {
-            ItemStack dye = player.getInventory().getItem(8);
-            if (dye != null) {
-                ItemBuilder builder = new ItemBuilder(dye);
-                builder.setName(message(plugin,
-                        vanished ? "vanish.item.unvanish" : "vanish.item.vanish",
-                        vanished ? "&7Un-Vanish" : "&aVanish"));
-                player.getInventory().setItem(8, builder.toItemStack());
-            }
+            toggleVanish(player, plugin, (vanished) -> {
+                ItemStack dye = player.getInventory().getItem(8);
+                if (dye != null) {
+                    ItemBuilder builder = new ItemBuilder(dye);
+                    builder.setName(message(plugin,
+                            vanished ? "vanish.item.unvanish" : "vanish.item.vanish",
+                            vanished ? "&7Un-Vanish" : "&aVanish"));
+                    player.getInventory().setItem(8, builder.toItemStack());
+                }
+            });
         });
     }
 

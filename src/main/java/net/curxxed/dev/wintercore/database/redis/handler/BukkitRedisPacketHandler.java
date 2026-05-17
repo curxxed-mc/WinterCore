@@ -1,5 +1,7 @@
 package net.curxxed.dev.wintercore.database.redis.handler;
 
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.*;
 import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
@@ -352,6 +354,36 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
         }
     }
 
+    @Override
+    public void handle(NetworkBroadcastPacket packet) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                online.sendMessage(packet.getMessage());
+            }
+            plugin.getLogger().info(CC.stripColor(packet.getMessage()));
+        });
+    }
+
+    @Override
+    public void handle(PlayerTransferPacket packet) {
+        Player target = Bukkit.getPlayer(packet.getTargetUuid());
+        if (target == null || !target.isOnline()) {
+            return;
+        }
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            target.sendMessage(plugin.getMessageConfig().get("network-send.target",
+                    "&7Sending you to &b{server}&7...",
+                    "{server}", packet.getDestinationServer(),
+                    "{issuer}", packet.getIssuer()));
+
+            ByteArrayDataOutput out = ByteStreams.newDataOutput();
+            out.writeUTF("Connect");
+            out.writeUTF(packet.getDestinationServer());
+            target.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+        });
+    }
+
     private void writeFile(File file, String yaml) {
         try {
             Files.write(file.toPath(), yaml.getBytes(StandardCharsets.UTF_8));
@@ -369,4 +401,3 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
         }
     }
 }
-
