@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.utils;
 
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
@@ -8,8 +9,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Utilities {
 
@@ -18,6 +22,7 @@ public class Utilities {
     public static final boolean IS_1_7;
     public static final boolean IS_1_13_OR_NEWER;
     private static Field pingField = null;
+    private static final Map<String, String[]> MODERN_NMS_ALIASES = buildModernNmsAliases();
 
     static {
         SERVER_VERSION = detectServerVersion();
@@ -61,6 +66,10 @@ public class Utilities {
 
     public static String getServerVersion() {
         return SERVER_VERSION;
+    }
+
+    public static int getMinecraftMinorVersion() {
+        return detectMinecraftMajor();
     }
 
     public static double[] getTPS() {
@@ -131,7 +140,32 @@ public class Utilities {
     }
 
     public static @NonNull List<Player> getOnlinePlayers() {
-        return new ArrayList<>((Collection<? extends Player>) Bukkit.getOnlinePlayers());
+        try {
+            return normalizeOnlinePlayers(Bukkit.class.getMethod("getOnlinePlayers").invoke(null));
+        } catch (Exception ignored) {}
+
+        try {
+            Object server = Bukkit.getServer();
+            return normalizeOnlinePlayers(server.getClass().getMethod("getOnlinePlayers").invoke(server));
+        } catch (Exception ignored) {}
+
+        return new ArrayList<>();
+    }
+
+    public static int getOnlinePlayerCount() {
+        return getOnlinePlayers().size();
+    }
+
+    private static @NonNull List<Player> normalizeOnlinePlayers(Object onlinePlayers) {
+        if (onlinePlayers instanceof Player[]) {
+            return new ArrayList<>(Arrays.asList((Player[]) onlinePlayers));
+        }
+
+        if (onlinePlayers instanceof Collection) {
+            return new ArrayList<>((Collection<? extends Player>) onlinePlayers);
+        }
+
+        return new ArrayList<>();
     }
 
 
@@ -151,22 +185,32 @@ public class Utilities {
     public static Class<?> getNMSClass(String what) {
         try {
             return Class.forName("net.minecraft.server." + SERVER_VERSION + "." + what);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("NMS class not found: " + what, e);
+        } catch (ClassNotFoundException ignored) {
         }
+
+        String[] aliases = MODERN_NMS_ALIASES.get(what);
+        if (aliases != null) {
+            for (String alias : aliases) {
+                try {
+                    return Class.forName(alias);
+                } catch (ClassNotFoundException ignored) {
+                }
+            }
+        }
+
+        throw new RuntimeException("NMS class not found: " + what);
     }
 
     public static void sendPacket(Player player, Object packet) {
-        try {
-            Object handle     = player.getClass().getMethod("getHandle").invoke(player);
-            Object connection = handle.getClass().getField("playerConnection").get(handle);
-            connection.getClass()
-                    .getMethod("sendPacket",
-                            Class.forName("net.minecraft.server." + SERVER_VERSION + ".Packet"))
-                    .invoke(connection, packet);
-        } catch (Exception e) {
-            e.printStackTrace();
+        trySendPacket(player, packet);
+    }
+
+    public static boolean trySendPacket(Player player, Object packet) {
+        WinterCore plugin = WinterCore.getInstance();
+        if (plugin != null && plugin.getPacketSender() != null) {
+            return plugin.getPacketSender().sendPacket(player, packet);
         }
+        return new net.curxxed.dev.wintercore.nms.PacketSender(Bukkit.getLogger()).sendPacket(player, packet);
     }
 
     public static Constructor<?> getConstructorByParamCount(Class<?> clazz, int count) {
@@ -201,5 +245,20 @@ public class Utilities {
 
     public static void stop() {
         Bukkit.shutdown();
+    }
+
+    private static Map<String, String[]> buildModernNmsAliases() {
+        Map<String, String[]> aliases = new HashMap<>();
+        aliases.put("Packet", new String[]{"net.minecraft.network.protocol.Packet"});
+        aliases.put("EntityPlayer", new String[]{"net.minecraft.server.level.ServerPlayer"});
+        aliases.put("EntityHuman", new String[]{"net.minecraft.world.entity.player.Player"});
+        aliases.put("World", new String[]{"net.minecraft.world.level.Level"});
+        aliases.put("ItemStack", new String[]{"net.minecraft.world.item.ItemStack"});
+        aliases.put("EnumItemSlot", new String[]{"net.minecraft.world.entity.EquipmentSlot"});
+        aliases.put("PacketPlayOutEntityDestroy", new String[]{"net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket"});
+        aliases.put("PacketPlayOutNamedEntitySpawn", new String[]{"net.minecraft.network.protocol.game.ClientboundAddPlayerPacket"});
+        aliases.put("PacketPlayOutEntityEquipment", new String[]{"net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket"});
+        aliases.put("PacketPlayOutPlayerInfo", new String[]{"net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket"});
+        return aliases;
     }
 }

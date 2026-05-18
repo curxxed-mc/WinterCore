@@ -4,6 +4,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -54,6 +55,27 @@ public final class ProfileRepository {
         return doc != null ? doc.getString("name") : null;
     }
 
+    public long getLong(UUID uuid, String field, long fallback) {
+        Document doc = findById(uuid);
+        if (doc == null) {
+            return fallback;
+        }
+
+        Object value = doc.get(field);
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+
+        if (value instanceof String) {
+            try {
+                return Long.parseLong((String) value);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        return fallback;
+    }
+
     public void upsertField(UUID uuid, String field, Object value) {
         profiles.updateOne(
                 Filters.eq("_id", uuid.toString()),
@@ -88,6 +110,14 @@ public final class ProfileRepository {
                 Updates.inc(field, amount),
                 new UpdateOptions().upsert(true)
         );
+    }
+
+    public boolean decrementIfEnough(UUID uuid, String field, long amount) {
+        UpdateResult result = profiles.updateOne(
+                Filters.and(Filters.eq("_id", uuid.toString()), Filters.gte(field, amount)),
+                Updates.inc(field, -amount)
+        );
+        return result.getModifiedCount() > 0;
     }
 
     public void updateMany(Bson filter, Bson update) {

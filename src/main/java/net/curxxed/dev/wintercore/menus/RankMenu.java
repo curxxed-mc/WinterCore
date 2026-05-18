@@ -1,7 +1,6 @@
 package net.curxxed.dev.wintercore.menus;
 
 import net.curxxed.dev.wintercore.database.redis.packet.packets.RankTagSyncPacket;
-import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
 import net.curxxed.dev.wintercore.menu.Button;
 import net.curxxed.dev.wintercore.menu.Menu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
@@ -305,7 +304,7 @@ public class RankMenu extends Menu {
 
             event.setCancelled(true);
             String message = event.getMessage();
-            Bukkit.getScheduler().runTask(plugin, () -> handleGrantReason(player, gs, message));
+            plugin.getTasks().sync(() -> handleGrantReason(player, gs, message));
         }
 
         private void handleGrantReason(Player player, GrantState gs, String message) {
@@ -330,7 +329,7 @@ public class RankMenu extends Menu {
                     gs.targetUUID,
                     gs.rank
             );
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getRedisManager().publish(packet));
+            plugin.getTasks().async(() -> plugin.getRedisManager().publish(packet));
 
             String grantedName = Bukkit.getOfflinePlayer(gs.targetUUID).getName();
             player.sendMessage(plugin.getMenuConfig().getString("rank-menu.messages.granted",
@@ -343,11 +342,6 @@ public class RankMenu extends Menu {
                 plugin.getRankManager().cachePlayerRank(target, gs.rank);
                 plugin.getRankManager().refreshPlayerDisplay(target);
                 plugin.getRankManager().refreshPlayerDisplayForAll(target);
-                Bukkit.getPluginManager().callEvent(new RankChangeEvent(
-                        target,
-                        gs.rank,
-                        plugin.getRankManager().getRankSync(target)
-                ));
             }
         }
     }

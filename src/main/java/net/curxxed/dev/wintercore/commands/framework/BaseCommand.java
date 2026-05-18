@@ -42,7 +42,7 @@ public abstract class BaseCommand implements TabExecutor {
 
         final CommandArguments commandArgs = new CommandArguments(sender, args, label);
         if (commandInfo.async()) {
-            Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> this.execute(commandArgs));
+            this.plugin.getTasks().async(() -> this.execute(commandArgs));
         } else {
             this.execute(commandArgs);
         }
@@ -84,11 +84,11 @@ public abstract class BaseCommand implements TabExecutor {
             action.run();
             return;
         }
-        Bukkit.getScheduler().runTask(plugin, action);
+        plugin.getTasks().sync( action);
     }
 
     protected void runAsync(Runnable action) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, action);
+        plugin.getTasks().async( action);
     }
 
     protected String msg(String path, String fallback, String... placeholders) {
@@ -134,7 +134,7 @@ public abstract class BaseCommand implements TabExecutor {
     }
 
     protected List<String> completeOnlinePlayers(CommandArguments args) {
-        List<String> players = Bukkit.getOnlinePlayers().stream()
+        List<String> players = net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().stream()
                 .map(Player::getName)
                 .collect(Collectors.toList());
         return completeCurrentArg(args, players);

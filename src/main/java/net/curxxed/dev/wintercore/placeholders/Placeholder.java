@@ -4,19 +4,14 @@ import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.disguise.DisguiseRegistry;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import lombok.Getter;
-import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.jspecify.annotations.NonNull;
 
-public class Placeholder extends PlaceholderExpansion implements Listener {
+public class Placeholder extends PlaceholderExpansion {
 
     private final WinterCore plugin;
     private final DisguiseRegistry disguiseRegistry;
@@ -137,22 +132,6 @@ public class Placeholder extends PlaceholderExpansion implements Listener {
             }
             default:
                 return "";
-        }
-    }
-
-    @EventHandler
-    public void onRankChange(RankChangeEvent event) {
-        Player player = event.getPlayer();
-        String newRank = event.getNewRank();
-        RankManager rm = RankManager.getInstance();
-        String currentCached = rm.getRankSync(player);
-        if (currentCached != null && currentCached.equals(newRank)) {
-            return;
-        }
-        rm.cachePlayerRank(player, newRank);
-        rm.refreshPlayerDisplayForAll(player);
-        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            Bukkit.getScheduler().runTask(plugin, () -> PlaceholderAPI.setPlaceholders(player, "%wintercore_player_rank% %wintercore_player_color% %wintercore_player_rank_name% %wintercore_player_rank_weight%"));
         }
     }
 }

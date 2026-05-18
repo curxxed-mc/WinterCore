@@ -198,8 +198,9 @@ client-brand:
   disabled: "&cClient join messages disabled."
   enabled: "&aClient join messages enabled."
   staff-join: "&9[S] {player}&b joined using: &e{client}&7 ({version})"
-  version-unsupported: "Unknown (ViaVersion not supported on 1.7)"
-  version-missing: "Unknown (ViaVersion not installed)"
+  version-unsupported: "Unknown (protocol unavailable)"
+  version-missing: "Unknown (protocol unavailable)"
+  version-unknown: "Unknown (protocol unavailable)"
   names:
     lunar: "Lunar Client"
     vanilla: "Vanilla"

@@ -35,7 +35,7 @@ public class ClearEffectsCommand extends BaseCommand {
                 send(sender, "clear-effects.no-all-permission", "&cYou do not have permission to clear everyone's effects.");
                 return;
             }
-            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            for (Player onlinePlayer : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 for (PotionEffect effect : onlinePlayer.getActivePotionEffects()) {
                     onlinePlayer.removePotionEffect(effect.getType());
                 }
@@ -67,7 +67,7 @@ public class ClearEffectsCommand extends BaseCommand {
     @Override
     public List<String> onTabComplete(CommandArguments args) {
         if (args.length() == 1) {
-            List<String> candidates = Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
+            List<String> candidates = net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
             if (args.getSender().hasPermission("wintercore.cleareffects.all")) {
                 candidates.add("@a");
             }

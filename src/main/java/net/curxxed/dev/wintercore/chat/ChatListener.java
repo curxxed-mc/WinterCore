@@ -47,7 +47,7 @@ public class ChatListener implements Listener {
         Player player = event.getPlayer();
         String message = event.getMessage();
 
-        Bukkit.getScheduler().runTask(plugin, () -> handleChat(player, message));
+        plugin.getTasks().sync(() -> handleChat(player, message));
     }
 
     private void handleChat(Player player, String message) {
@@ -155,7 +155,7 @@ public class ChatListener implements Listener {
         );
 
         Bukkit.getConsoleSender().sendMessage(formattedMessage);
-        for (Player online : Bukkit.getOnlinePlayers()) {
+        for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             online.sendMessage(formattedMessage);
         }
     }

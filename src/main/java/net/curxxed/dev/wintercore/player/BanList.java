@@ -191,10 +191,10 @@ public final class BanList implements Listener {
     }
 
     private void refreshBanStateAsync(UUID uuid, boolean notifyIfOnline) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             ModerationService.ActiveBan activeBan = moderationService.getActiveBan(uuid);
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            plugin.getTasks().sync(() -> {
                 cacheBanState(uuid, activeBan);
                 if (!notifyIfOnline || activeBan == null) {
                     return;
@@ -288,7 +288,7 @@ public final class BanList implements Listener {
             return;
         }
 
-        Bukkit.getScheduler().runTask(plugin, runnable);
+        plugin.getTasks().sync( runnable);
     }
 
     private static final class BanState {

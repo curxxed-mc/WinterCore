@@ -4,4 +4,3 @@ main: net.curxxed.dev.wintercore.plugin.WinterCore
 author: curxxed
 softdepend:
   - PlaceholderAPI
-  - ViaVersion

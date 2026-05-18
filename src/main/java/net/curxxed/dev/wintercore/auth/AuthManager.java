@@ -48,12 +48,12 @@ public class AuthManager {
         final UUID uuid = player.getUniqueId();
         final String currentIp = resolveIp(player);
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             boolean hasSecret = repository.hasSecret(uuid);
             AuthSession session = hasSecret ? getSession(uuid) : null;
             boolean resumed = session != null && session.isValid(currentIp);
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            plugin.getTasks().sync(() -> {
                 Player online = Bukkit.getPlayer(uuid);
                 if (online == null || !online.isOnline()) {
                     return;
@@ -110,9 +110,9 @@ public class AuthManager {
         UUID uuid = player.getUniqueId();
         String currentIp = resolveIp(player);
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             boolean success = authenticate(uuid, currentIp, totpCode);
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            plugin.getTasks().sync(() -> {
                 if (success) {
                     cancelKickTimer(uuid);
                 }
@@ -122,9 +122,9 @@ public class AuthManager {
     }
 
     public void hasSecretConfiguredAsync(UUID uuid, Consumer<Boolean> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             boolean configured = repository.hasSecret(uuid);
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(configured));
+            plugin.getTasks().sync(() -> callback.accept(configured));
         });
     }
 
@@ -196,7 +196,7 @@ public class AuthManager {
         UUID uuid = player.getUniqueId();
         cancelKickTimer(uuid);
 
-        BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        BukkitTask task = plugin.getTasks().later(() -> {
             pendingAuth.remove(uuid);
             pendingSetup.remove(uuid);
             Player online = Bukkit.getPlayer(uuid);

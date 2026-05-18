@@ -6,7 +6,6 @@ import lombok.Getter;
 import net.curxxed.dev.wintercore.config.RankConfigManager;
 import net.curxxed.dev.wintercore.database.cache.RankCacheService;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.RankTagSyncPacket;
-import net.curxxed.dev.wintercore.events.network.RankChangeEvent;
 import net.curxxed.dev.wintercore.player.WinterCorePlayer;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
@@ -49,7 +48,7 @@ public class RankManager {
     }
 
     public void startAutoCacheRefresh() {
-        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, cacheService::cleanupExpiredEntries, 20L * 60L, 20L * 60L);
+        plugin.getTasks().timerAsync( cacheService::cleanupExpiredEntries, 20L * 60L, 20L * 60L);
     }
 
     public void reloadRanksConfig() {
@@ -99,7 +98,6 @@ public class RankManager {
         cacheService.putColor(player.getUniqueId(), color);
 
         displayManager.sendRankUpdateToBungee(player.getName(), rank);
-        Bukkit.getPluginManager().callEvent(new RankChangeEvent(player, rank, getRankSync(player)));
         displayManager.applyRank(player, rank, color);
         plugin.getRedisManager().publish(new RankTagSyncPacket(
                 plugin.getConfig().getString("server-name", "Unknown"),
@@ -134,7 +132,7 @@ public class RankManager {
             if (Bukkit.isPrimaryThread()) {
                 callback.accept(cached);
             } else {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+                plugin.getTasks().sync(() -> callback.accept(cached));
             }
             return;
         }
@@ -144,7 +142,7 @@ public class RankManager {
             if (Bukkit.isPrimaryThread()) {
                 callback.accept(playerDataRank);
             } else {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(playerDataRank));
+                plugin.getTasks().sync(() -> callback.accept(playerDataRank));
             }
             return;
         }

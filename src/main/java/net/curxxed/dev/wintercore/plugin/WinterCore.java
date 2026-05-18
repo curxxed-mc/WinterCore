@@ -1,6 +1,8 @@
 package net.curxxed.dev.wintercore.plugin;
 
 import lombok.Getter;
+import net.curxxed.dev.wintercore.api.SimpleWinterCoreApi;
+import net.curxxed.dev.wintercore.api.WinterCoreApi;
 import net.curxxed.dev.wintercore.auth.AuthModule;
 import net.curxxed.dev.wintercore.chat.ChatFilterService;
 import net.curxxed.dev.wintercore.chat.ChatListener;
@@ -36,12 +38,15 @@ import net.curxxed.dev.wintercore.listeners.FreezeListener;
 import net.curxxed.dev.wintercore.menu.MenuManager;
 import net.curxxed.dev.wintercore.config.MenuConfig;
 import net.curxxed.dev.wintercore.menus.RankMenu;
+import net.curxxed.dev.wintercore.namemc.NameMcService;
 import net.curxxed.dev.wintercore.nametags.NameTagColorManager;
+import net.curxxed.dev.wintercore.nms.PacketSender;
 import net.curxxed.dev.wintercore.config.PermissionConfigManager;
 import net.curxxed.dev.wintercore.placeholders.Placeholder;
 import net.curxxed.dev.wintercore.player.PlayerService;
 import net.curxxed.dev.wintercore.rank.RankCommand;
 import net.curxxed.dev.wintercore.rank.RankManager;
+import net.curxxed.dev.wintercore.scheduler.Tasks;
 import net.curxxed.dev.wintercore.staff.StaffModeListener;
 import net.curxxed.dev.wintercore.staff.StaffModeManager;
 import net.curxxed.dev.wintercore.commands.social.TagsCommand;
@@ -51,10 +56,12 @@ import net.curxxed.dev.wintercore.player.BanList;
 import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.config.MessageConfig;
 import net.curxxed.dev.wintercore.utils.Utilities;
+import net.curxxed.dev.wintercore.version.PlayerProtocolResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -107,6 +114,11 @@ public final class WinterCore extends JavaPlugin {
     private MessageConfig messageConfig;
     private NetworkRedisService NRS;
     private BanList banList;
+    private Tasks tasks;
+    private WinterCoreApi api;
+    private NameMcService nameMcService;
+    private PacketSender packetSender;
+    private PlayerProtocolResolver protocolResolver;
 
     @Override
     public void onEnable() {
@@ -117,8 +129,12 @@ public final class WinterCore extends JavaPlugin {
         loadRanksFile();
 
         instance = this;
+        this.tasks = new Tasks(this);
+        this.packetSender = new PacketSender(getLogger());
+        this.protocolResolver = new PlayerProtocolResolver(this);
         this.messageConfig = new MessageConfig(this);
         this.chatFilterService = new ChatFilterService(this);
+        this.nameMcService = new NameMcService(this);
 
         this.databaseManager = DatabaseManager.init(this);
 
@@ -130,8 +146,7 @@ public final class WinterCore extends JavaPlugin {
         this.rankManager.startAutoCacheRefresh();
         this.permissionConfigManager = new PermissionConfigManager(this);
 
-        getServer().getScheduler().runTaskTimerAsynchronously(
-                this,
+        tasks.timerAsync(
                 () -> databaseManager.getModerationService().removeExpiredBans(),
                 0L,
                 20L
@@ -150,6 +165,7 @@ public final class WinterCore extends JavaPlugin {
         registerListeners();
         registerCommands();
         registerBungee();
+        registerApi();
 
         if (Utilities.isPaperBrigadierSupported()) {
             try {
@@ -195,7 +211,7 @@ public final class WinterCore extends JavaPlugin {
 
         if (redisPool != null) {
             try (Jedis jedis = redisPool.getResource()) {
-                for (Player online : Bukkit.getOnlinePlayers()) {
+                for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                     if (NRS != null) {
                         NRS.clearOnlinePresence(online.getUniqueId(), online.getName());
                     }
@@ -220,6 +236,8 @@ public final class WinterCore extends JavaPlugin {
         if (nameTagColorManager != null) {
             nameTagColorManager.unload();
         }
+
+        unregisterApi();
 
         getLogger().info(CC.translate("&cWinterCore has been disabled."));
         instance = null;
@@ -278,90 +296,17 @@ public final class WinterCore extends JavaPlugin {
     }
 
     private void registerListeners() {
-        PluginManager pm = getServer().getPluginManager();
-
-        this.playerService = new PlayerService(this);
-        this.messagingService = new MessagingService(this, playerService);
-        this.staffChatService = new StaffChatService(this);
-        this.chatListener = new ChatListener(this, tagsManager, playerService, staffChatService);
-        this.freezeListener = new FreezeListener(playerService, this);
-        this.banList = new BanList(this);
-
-        pm.registerEvents(playerService, this);
-        pm.registerEvents(chatListener, this);
-        pm.registerEvents(new ConnectionListener(this, disguiseEventListener, NRS), this);
-        pm.registerEvents(freezeListener, this);
-
-        pm.registerEvents(new RankMenu.ChatListener(this), this);
-
-        pm.registerEvents(socialInput, this);
-        pm.registerEvents(new StaffModeListener(this, staffModeManager), this);
-        pm.registerEvents(disguiseEventListener, this);
-        pm.registerEvents(banList, this);
+        WinterCoreListeners listeners = new WinterCoreListenerRegistrar(this).register();
+        this.playerService = listeners.getPlayerService();
+        this.messagingService = listeners.getMessagingService();
+        this.staffChatService = listeners.getStaffChatService();
+        this.chatListener = listeners.getChatListener();
+        this.freezeListener = listeners.getFreezeListener();
+        this.banList = listeners.getBanList();
     }
 
     private void registerCommands() {
-        commandHandler.register(new FreezeCommand(freezeListener, this));
-        commandHandler.register(ThruCommand.class);
-        commandHandler.register(Fly.class);
-        commandHandler.register(new TrollCommand(this));
-        commandHandler.register(InvSeeCommand.class);
-        commandHandler.register(Feed.class);
-        commandHandler.register(ClearChat.class);
-        commandHandler.register(new ChatColorCommand(this));
-        commandHandler.register(new GameModeCommand(this, staffModeManager));
-        commandHandler.register(DiscordCommand.class);
-        commandHandler.register(Heal.class);
-        commandHandler.register(new GrantCommand(this));
-        commandHandler.register(ManagePermissionCommand.class);
-        commandHandler.register(ReloadConfig.class);
-        commandHandler.register(new ListCommand(this, rankManager));
-        commandHandler.register(VanishCommand.class);
-        commandHandler.register(new ReportCommand(this, tagsManager));
-        commandHandler.register(new StaffChatCommand(this, staffChatService));
-        commandHandler.register(AboutCommand.class);
-        commandHandler.register(MuteCommand.class);
-        commandHandler.register(KickCommand.class);
-        commandHandler.register(BanCommand.class);
-        commandHandler.register(WarningCommand.class);
-        commandHandler.register(UnmuteCommand.class);
-        commandHandler.register(new HistoryCommand(this, menuConfig));
-        commandHandler.register(FixCommand.class);
-        commandHandler.register(MoreCommand.class);
-        commandHandler.register(EnchantCommand.class);
-        commandHandler.register(PingCommand.class);
-        commandHandler.register(MessageCommand.class);
-        commandHandler.register(SpeedCommand.class);
-        commandHandler.register(ClearEffectsCommand.class);
-        commandHandler.register(ServerMuteCommand.class);
-        commandHandler.register(NetworkBroadcastCommand.class);
-        commandHandler.register(NetworkFindCommand.class);
-        commandHandler.register(NetworkListCommand.class);
-        commandHandler.register(NetworkMaintenanceCommand.class);
-        commandHandler.register(NetworkSendCommand.class);
-
-        ProfileCommand profile = new ProfileCommand(this, redisSocials);
-        getServer().getPluginManager().registerEvents(profile, this);
-        commandHandler.register(profile);
-
-        commandHandler.register(ServerManagerCommand.class);
-        commandHandler.register(JumpToPlayer.class);
-        commandHandler.register(StaffListCommand.class);
-        commandHandler.register(new StaffModeCommand(this, staffModeManager));
-        commandHandler.register(new RankCommand(this, rankManager));
-        commandHandler.register(CheckNMS.class);
-        commandHandler.register(SudoCommand.class);
-        commandHandler.register(UnbanCommand.class);
-        commandHandler.register(ClientBrandCommand.class);
-        commandHandler.register(new TagsCommand(tagsMenu, this));
-        commandHandler.register(new DisguiseCommand(disguiseHandler, this));
-        commandHandler.register(new UnDisguiseCommand(disguiseHandler, this));
-        commandHandler.register(ReplyCommand.class);
-        commandHandler.register(AltsCommand.class);
-        commandHandler.register(WhoIsDisguisedCommand.class);
-
-        this.authModule = new AuthModule(this, databaseManager.getMongoDatabase());
-        this.authModule.register(commandHandler);
+        this.authModule = new WinterCoreCommandRegistrar(this).register();
     }
 
     private void registerBungee() {
@@ -369,6 +314,18 @@ public final class WinterCore extends JavaPlugin {
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, channel);
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         Bukkit.getMessenger().registerIncomingPluginChannel(this, "BungeeCord", (ch, player, message) -> { });
+    }
+
+    private void registerApi() {
+        this.api = new SimpleWinterCoreApi(this);
+        getServer().getServicesManager().register(WinterCoreApi.class, api, this, ServicePriority.Normal);
+    }
+
+    private void unregisterApi() {
+        if (api != null) {
+            getServer().getServicesManager().unregister(WinterCoreApi.class, api);
+            api = null;
+        }
     }
 
     public void saveVanishedPlayers() {

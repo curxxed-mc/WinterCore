@@ -301,7 +301,7 @@ public class ServerManagerCommand extends BaseCommand {
     }
 
     private void replyLines(CommandSender sender, List<String> messages) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             for (String message : messages) {
                 sender.sendMessage(CC.translate(message));
             }

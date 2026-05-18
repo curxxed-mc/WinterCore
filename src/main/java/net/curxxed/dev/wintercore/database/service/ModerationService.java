@@ -3,7 +3,6 @@ package net.curxxed.dev.wintercore.database.service;
 import net.curxxed.dev.wintercore.database.mongo.ProfileRepository;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bson.Document;
-import org.bukkit.Bukkit;
 
 import java.time.Instant;
 import java.util.*;
@@ -45,7 +44,7 @@ public final class ModerationService {
     }
 
     public void banPlayer(UUID uuid, String reason, Instant expiration) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 Document banDoc = new Document()
                         .append("reason", reason)
@@ -61,7 +60,7 @@ public final class ModerationService {
     }
 
     public void unbanPlayer(UUID uuid) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 profiles.unset(uuid, "activeBan");
             } catch (Exception e) {
@@ -97,9 +96,9 @@ public final class ModerationService {
     }
 
     public void getActiveBan(UUID uuid, Consumer<ActiveBan> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             ActiveBan activeBan = getActiveBan(uuid);
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(activeBan));
+            plugin.getTasks().sync(() -> callback.accept(activeBan));
         });
     }
 
@@ -123,7 +122,7 @@ public final class ModerationService {
     }
 
     public void removeExpiredBans() {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 profiles.updateMany(
                         new Document("$and", Arrays.asList(
@@ -140,7 +139,7 @@ public final class ModerationService {
     }
 
     public void mutePlayer(UUID targetUUID, String reason, String issuer, Instant expirationTime) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 Document muteDoc = new Document()
                         .append("reason", reason)
@@ -157,7 +156,7 @@ public final class ModerationService {
     }
 
     public void unmutePlayer(UUID uuid) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 profiles.unset(uuid, "activeMute");
             } catch (Exception e) {
@@ -167,7 +166,7 @@ public final class ModerationService {
     }
 
     public void isPlayerMuted(UUID uuid, Consumer<Boolean> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             boolean muted = false;
             try {
                 Document doc = profiles.findById(uuid);
@@ -186,12 +185,12 @@ public final class ModerationService {
             }
 
             boolean finalMuted = muted;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalMuted));
+            plugin.getTasks().sync(() -> callback.accept(finalMuted));
         });
     }
 
     public void getMuteDetails(UUID uuid, Consumer<Map<String, Object>> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             Map<String, Object> details = new HashMap<>();
             try {
                 Document doc = profiles.findById(uuid);
@@ -207,8 +206,7 @@ public final class ModerationService {
                 plugin.getLogger().log(Level.SEVERE, "Could not fetch mute details for " + uuid, e);
             }
 
-            Map<String, Object> finalDetails = details;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalDetails));
+            plugin.getTasks().sync(() -> callback.accept(details));
         });
     }
 
@@ -219,7 +217,7 @@ public final class ModerationService {
                 return;
             }
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getTasks().async(() -> {
                 try {
                     Document warning = new Document()
                             .append("id", UUID.randomUUID().toString())
@@ -236,7 +234,7 @@ public final class ModerationService {
     }
 
     public void incrementKickCount(UUID uuid) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 profiles.inc(uuid, "kickCount", 1);
             } catch (Exception e) {
@@ -246,7 +244,7 @@ public final class ModerationService {
     }
 
     public void addRankGrant(UUID targetUUID, String rank, UUID grantedBy, long grantedAt, Long expiresAt, String reason) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 Document grant = new Document()
                         .append("id", UUID.randomUUID().toString())
@@ -266,11 +264,11 @@ public final class ModerationService {
     public void getWarnings(String playerName, Consumer<List<Map<String, String>>> callback) {
         identityService.getUUIDByName(playerName, uuid -> {
             if (uuid == null) {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(Collections.emptyList()));
+                plugin.getTasks().sync(() -> callback.accept(Collections.emptyList()));
                 return;
             }
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getTasks().async(() -> {
                 List<Map<String, String>> result = new ArrayList<>();
                 try {
                     Document doc = profiles.findById(uuid);
@@ -288,14 +286,13 @@ public final class ModerationService {
                     plugin.getLogger().log(Level.SEVERE, "Could not fetch warnings for " + playerName, e);
                 }
 
-                List<Map<String, String>> finalResult = result;
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalResult));
+                plugin.getTasks().sync(() -> callback.accept(result));
             });
         });
     }
 
     public void getMutes(UUID uuid, Consumer<List<Map<String, String>>> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             List<Map<String, String>> result = new ArrayList<>();
             try {
                 Document doc = profiles.findById(uuid);
@@ -313,19 +310,18 @@ public final class ModerationService {
                 plugin.getLogger().log(Level.SEVERE, "Could not fetch mutes for " + uuid, e);
             }
 
-            List<Map<String, String>> finalResult = result;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalResult));
+            plugin.getTasks().sync(() -> callback.accept(result));
         });
     }
 
     public void getKicks(String playerName, Consumer<List<Map<String, String>>> callback) {
         identityService.getUUIDByName(playerName, uuid -> {
             if (uuid == null) {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(Collections.emptyList()));
+                plugin.getTasks().sync(() -> callback.accept(Collections.emptyList()));
                 return;
             }
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getTasks().async(() -> {
                 List<Map<String, String>> result = new ArrayList<>();
                 try {
                     Document doc = profiles.findById(uuid);
@@ -338,8 +334,7 @@ public final class ModerationService {
                     plugin.getLogger().log(Level.SEVERE, "Could not fetch kicks for " + playerName, e);
                 }
 
-                List<Map<String, String>> finalResult = result;
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalResult));
+                plugin.getTasks().sync(() -> callback.accept(result));
             });
         });
     }
@@ -347,11 +342,11 @@ public final class ModerationService {
     public void getBans(String playerName, Consumer<List<Map<String, String>>> callback) {
         identityService.getUUIDByName(playerName, uuid -> {
             if (uuid == null) {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(Collections.emptyList()));
+                plugin.getTasks().sync(() -> callback.accept(Collections.emptyList()));
                 return;
             }
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getTasks().async(() -> {
                 List<Map<String, String>> result = new ArrayList<>();
                 try {
                     Document doc = profiles.findById(uuid);
@@ -369,14 +364,13 @@ public final class ModerationService {
                     plugin.getLogger().log(Level.SEVERE, "Could not fetch bans for " + playerName, e);
                 }
 
-                List<Map<String, String>> finalResult = result;
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalResult));
+                plugin.getTasks().sync(() -> callback.accept(result));
             });
         });
     }
 
     public void getRankGrants(UUID uuid, Consumer<List<Map<String, String>>> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             List<Map<String, String>> result = new ArrayList<>();
             try {
                 Document doc = profiles.findById(uuid);
@@ -398,13 +392,12 @@ public final class ModerationService {
                 plugin.getLogger().log(Level.SEVERE, "Could not fetch rank grants for " + uuid, e);
             }
 
-            List<Map<String, String>> finalResult = result;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalResult));
+            plugin.getTasks().sync(() -> callback.accept(result));
         });
     }
 
     public void removeWarning(String warningId) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 profiles.updateMany(
                         new Document("warnings", new Document("$exists", true)),
@@ -417,7 +410,7 @@ public final class ModerationService {
     }
 
     public void removeRankGrant(String grantId) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 profiles.updateMany(
                         new Document("rankGrants", new Document("$exists", true)),

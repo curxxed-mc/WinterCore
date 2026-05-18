@@ -146,7 +146,7 @@ public class TagsMenu extends Menu {
      * @param notifyStaff the staff player who ran /tags reload, or null for silent refresh
      */
     public void refresh(Player notifyStaff) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (Player player : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             if (!MenuManager.getInstance().hasOpenMenu(player)) continue;
             if (MenuManager.getInstance().getOpenMenu(player) != this) continue;
 

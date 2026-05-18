@@ -121,7 +121,7 @@ public class NameTagColorManager implements Listener {
     }
 
     public void fullRefresh() {
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             rebuildRankIndex();
             syncViewerBoards();
             for (Player target : Utilities.getOnlinePlayers()) {
@@ -235,7 +235,7 @@ public class NameTagColorManager implements Listener {
     }
 
     private void scheduleRefresh(Player target) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             updatePlayerListName(target);
             refreshAllViewersForTarget(target);
         });
@@ -328,7 +328,7 @@ public class NameTagColorManager implements Listener {
     }
 
     private void startBoardWatcher() {
-        boardSyncTask = Bukkit.getScheduler().runTaskTimer(plugin, this::syncViewerBoards, 1L, BOARD_SYNC_INTERVAL_TICKS);
+        boardSyncTask = plugin.getTasks().timer( this::syncViewerBoards, 1L, BOARD_SYNC_INTERVAL_TICKS);
     }
 
     private void syncViewerBoards() {

@@ -186,7 +186,7 @@ public class ReloadConfig extends BaseCommand {
             return;
         }
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (Player player : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             plugin.getRankManager().refreshPlayerDisplay(player);
             if (plugin.getPlayerService() != null) {
                 plugin.getPlayerService().loadPlayerData(player.getUniqueId(), player.getName());

@@ -186,7 +186,7 @@ public class HistoryMenu extends Menu {
     }
 
     private void showCategory(Player player, List<ItemStack> items, String title) {
-        plugin.getServer().getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             this.view = View.CATEGORY;
             this.categoryTitle = title;
             this.categoryItems = items;
