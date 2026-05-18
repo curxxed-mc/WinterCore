@@ -15,7 +15,6 @@ dependencies {
     compileOnly("org.jspecify:jspecify:1.0.0")
     compileOnly("org.projectlombok:lombok:1.18.32")
     annotationProcessor("org.projectlombok:lombok:1.18.32")
-    compileOnly("com.viaversion:viaversion:4.8.1")
     compileOnly("org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT")
     compileOnly("me.clip:placeholderapi:2.11.6")
     //compileOnly(files("libs/spigot-1.7.10-SNAPSHOT-b1657.jar"))
