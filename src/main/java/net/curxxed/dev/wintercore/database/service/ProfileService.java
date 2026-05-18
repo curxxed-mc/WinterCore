@@ -32,7 +32,7 @@ public final class ProfileService {
     }
 
     public void setRank(UUID uuid, String rank) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try {
                 profiles.upsertField(uuid, "rank", rank);
                 rankCache.put(uuid, rank);
@@ -43,7 +43,7 @@ public final class ProfileService {
     }
 
     public void setRankWithMeta(UUID uuid, String rank, UUID grantedBy, long grantedAt, Long expiresAt, String reason) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+        plugin.getTasks().async(() ->
         {
             try {
                 Document meta = new Document()
@@ -66,7 +66,7 @@ public final class ProfileService {
     }
 
     public void setPlayerTag(UUID uuid, String tag) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+        plugin.getTasks().async(() ->
         {
             try {
                 profiles.upsertField(uuid, "tag", tag);
@@ -86,7 +86,7 @@ public final class ProfileService {
     }
 
     public void setChatColorPreference(UUID uuid, String colorCode, Runnable callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+        plugin.getTasks().async(() ->
         {
             try {
                 profiles.upsertField(uuid, "chatColor", colorCode);
@@ -95,7 +95,7 @@ public final class ProfileService {
                 plugin.getLogger().log(Level.SEVERE, "Could not save chat color for " + uuid, e);
             } finally {
                 if (callback != null) {
-                    Bukkit.getScheduler().runTask(plugin, callback);
+                    plugin.getTasks().sync( callback);
                 }
             }
         });
@@ -104,11 +104,11 @@ public final class ProfileService {
     public void getChatColorPreference(UUID uuid, Consumer<String> callback) {
         String cached = rankCache.peekColor(uuid);
         if (cached != null) {
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+            plugin.getTasks().sync(() -> callback.accept(cached));
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             String color;
             try {
                 color = profiles.getChatColor(uuid);
@@ -122,7 +122,7 @@ public final class ProfileService {
 
             rankCache.putColor(uuid, color);
             String finalColor = color;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalColor));
+            plugin.getTasks().sync(() -> callback.accept(finalColor));
         });
     }
 }

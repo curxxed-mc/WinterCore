@@ -22,7 +22,7 @@ public class ClearChat extends BaseCommand {
 
     @Override
     public void execute(CommandArguments commandArgs) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (Player player : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             for (int i = 0; i < 200; i++) {
                 player.sendMessage("");
             }

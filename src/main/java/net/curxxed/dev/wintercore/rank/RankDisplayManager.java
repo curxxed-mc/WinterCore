@@ -7,7 +7,6 @@ import net.curxxed.dev.wintercore.permissions.WinterCorePermissible;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
@@ -33,7 +32,7 @@ public class RankDisplayManager {
     }
 
     public void refreshDisplayForAll(Player target, String rankName, String color) {
-        Bukkit.getScheduler().runTask(plugin, () -> applyRank(target, rankName, color));
+        plugin.getTasks().sync(() -> applyRank(target, rankName, color));
     }
 
     public void applyNameTag(Player player, String rankName) {
@@ -58,7 +57,7 @@ public class RankDisplayManager {
     }
 
     public void sendRankUpdateToBungee(String playerName, String rankName) {
-        Collection<? extends Player> online = Bukkit.getOnlinePlayers();
+        Collection<? extends Player> online = net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers();
         if (online.isEmpty()) return;
 
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
@@ -104,8 +103,6 @@ public class RankDisplayManager {
 
         String coloredName = CC.translate(color) + visibleName + CC.translate("&r");
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            player.setDisplayName(coloredName);
-        });
+        plugin.getTasks().sync(() -> player.setDisplayName(coloredName));
     }
 }

@@ -52,7 +52,7 @@ public class ListCommand extends BaseCommand {
             rankColors.put(rankName.toLowerCase(), ranksSection.getString(rankName + ".name-color", "&f"));
         }
 
-        List<Player> onlinePlayers = new ArrayList<>(Bukkit.getOnlinePlayers());
+        List<Player> onlinePlayers = new ArrayList<>(net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers());
         Map<UUID, String> playerRankNames = new ConcurrentHashMap<>();
         CompletableFuture.allOf(onlinePlayers.stream()
                 .map(player -> {

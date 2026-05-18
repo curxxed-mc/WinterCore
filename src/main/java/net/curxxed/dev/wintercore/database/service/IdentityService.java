@@ -24,11 +24,11 @@ public final class IdentityService {
     }
 
     public void recordPlayerIP(UUID uuid, String ip) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
             String name = offlinePlayer.getName();
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getTasks().async(() -> {
                 try {
                     profiles.addToSet(uuid, "ips", ip);
                     profiles.upsertField(uuid, "lastIp", ip);
@@ -42,7 +42,7 @@ public final class IdentityService {
     }
 
     public void getPlayerName(UUID uuid, Consumer<String> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             String name = null;
             try {
                 name = profiles.getPlayerName(uuid);
@@ -51,12 +51,12 @@ public final class IdentityService {
             }
 
             String finalName = name;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalName));
+            plugin.getTasks().sync(() -> callback.accept(finalName));
         });
     }
 
     public void getUUIDByName(String playerName, Consumer<UUID> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             UUID uuid = null;
 
             try {
@@ -68,7 +68,7 @@ public final class IdentityService {
             }
 
             if (uuid == null) {
-                Bukkit.getScheduler().runTask(plugin, () -> {
+                plugin.getTasks().sync(() -> {
                     try {
                         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
                         callback.accept(offlinePlayer.getUniqueId());
@@ -80,12 +80,12 @@ public final class IdentityService {
             }
 
             UUID finalUuid = uuid;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalUuid));
+            plugin.getTasks().sync(() -> callback.accept(finalUuid));
         });
     }
 
     public void getIPsForUUID(UUID uuid, Consumer<Set<String>> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             Set<String> ips = new HashSet<>();
             try {
                 Document doc = profiles.findById(uuid);
@@ -97,12 +97,12 @@ public final class IdentityService {
             }
 
             Set<String> finalIps = ips;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalIps));
+            plugin.getTasks().sync(() -> callback.accept(finalIps));
         });
     }
 
     public void getUUIDsForIP(String ip, Consumer<Set<UUID>> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             Set<UUID> uuids = new HashSet<>();
             try {
                 for (Document doc : profiles.findByIp(ip)) {
@@ -116,18 +116,18 @@ public final class IdentityService {
             }
 
             Set<UUID> finalUuids = uuids;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalUuids));
+            plugin.getTasks().sync(() -> callback.accept(finalUuids));
         });
     }
 
     public void getAlts(UUID uuid, Consumer<Set<UUID>> callback) {
         getIPsForUUID(uuid, ips -> {
             if (ips.isEmpty()) {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(Collections.singleton(uuid)));
+                plugin.getTasks().sync(() -> callback.accept(Collections.singleton(uuid)));
                 return;
             }
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getTasks().async(() -> {
                 Set<UUID> alts = new HashSet<>();
                 try {
                     for (Document doc : profiles.findByAnyIp(ips)) {
@@ -141,7 +141,7 @@ public final class IdentityService {
                 }
 
                 Set<UUID> finalAlts = alts;
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalAlts));
+                plugin.getTasks().sync(() -> callback.accept(finalAlts));
             });
         });
     }

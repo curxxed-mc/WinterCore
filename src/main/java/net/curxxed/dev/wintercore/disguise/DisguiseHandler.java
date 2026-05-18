@@ -139,7 +139,7 @@ public abstract class DisguiseHandler {
 
     public Object getPlayerHandle(Object invoke) {
         try {
-            Class<?> craftPlayer = Class.forName("org.bukkit.craftbukkit." + Utilities.getServerVersion() + ".entity.CraftPlayer");
+            Class<?> craftPlayer = Utilities.getCraftBukkitClass("entity.CraftPlayer");
             return craftPlayer.getMethod("getHandle").invoke(invoke);
         } catch (Exception e) {
             e.printStackTrace();

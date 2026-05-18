@@ -29,7 +29,7 @@ abstract class NetworkCommand extends BaseCommand {
         runSync(() -> send(sender, path, fallback, placeholders));
     }
 
-    protected void replyList(CommandSender sender, String path, List<String> fallback, String... placeholders) {
+    protected void replyList(CommandSender sender, @SuppressWarnings("SameParameterValue") String path, List<String> fallback, String... placeholders) {
         runSync(() -> sendList(sender, path, fallback, placeholders));
     }
 

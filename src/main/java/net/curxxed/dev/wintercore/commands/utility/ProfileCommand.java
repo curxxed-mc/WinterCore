@@ -140,7 +140,7 @@ public class ProfileCommand extends BaseCommand implements Listener {
 
         if (clickCooldown.contains(uuid)) return;
         clickCooldown.add(uuid);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> clickCooldown.remove(uuid), 10L);
+        plugin.getTasks().later(() -> clickCooldown.remove(uuid), 10L);
 
         if (e.getClick() != ClickType.LEFT && e.getClick() != ClickType.RIGHT) return;
 

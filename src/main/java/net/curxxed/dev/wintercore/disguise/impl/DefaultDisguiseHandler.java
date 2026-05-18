@@ -5,29 +5,27 @@ import com.google.gson.JsonObject;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.DisguiseRegistry;
 import net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback;
+import net.curxxed.dev.wintercore.disguise.packet.DisguisePacketAdapter;
+import net.curxxed.dev.wintercore.disguise.packet.DisguisePacketAdapters;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
-import net.curxxed.dev.wintercore.events.disguise.PlayerDisguiseEvent;
-import net.curxxed.dev.wintercore.events.disguise.PlayerUnDisguiseEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.utils.Utilities;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 public class DefaultDisguiseHandler extends DisguiseHandler {
 
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private final Map<UUID, String> disguiseRanks = new ConcurrentHashMap<>();
     private final DisguiseRegistry disguiseRegistry;
+    private final DisguisePacketAdapter packetAdapter;
 
     private final Class<?> gameProfileClass;
     private final Class<?> propertyClass;
@@ -35,12 +33,25 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     public DefaultDisguiseHandler(final WinterCore plugin, final DisguiseRegistry disguiseRegistry) {
         super(plugin);
         this.disguiseRegistry = disguiseRegistry;
+        this.packetAdapter = DisguisePacketAdapters.create(plugin, this);
         this.gameProfileClass = Utilities.resolveAuthlibClass("GameProfile");
         this.propertyClass = Utilities.resolveAuthlibClass("properties.Property");
     }
 
+    public String getPacketAdapterName() {
+        return packetAdapter.name();
+    }
+
     private Object getGameProfile(Object entityPlayer) throws Exception {
-        return entityPlayer.getClass().getMethod("getProfile").invoke(entityPlayer);
+        try {
+            return entityPlayer.getClass().getMethod("getProfile").invoke(entityPlayer);
+        } catch (NoSuchMethodException ignored) {
+            try {
+                return entityPlayer.getClass().getMethod("getGameProfile").invoke(entityPlayer);
+            } catch (NoSuchMethodException ignoredAgain) {
+                return findGameProfileField(entityPlayer);
+            }
+        }
     }
 
     private Object getProperties(Object gameProfile) throws Exception {
@@ -78,34 +89,28 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         changeField(gameProfile, "name", newName);
     }
 
+    private Object findGameProfileField(Object entityPlayer) throws Exception {
+        Class<?> type = entityPlayer.getClass();
+        while (type != null) {
+            for (java.lang.reflect.Field field : type.getDeclaredFields()) {
+                if (gameProfileClass.isAssignableFrom(field.getType())) {
+                    field.setAccessible(true);
+                    return field.get(entityPlayer);
+                }
+            }
+            type = type.getSuperclass();
+        }
+        throw new NoSuchFieldException("GameProfile");
+    }
+
     private void setTablistName(Player player, String name) {
         try {
             player.setDisplayName(name);
         } catch (Throwable ignored) {
         }
-    }
-
-    private void sendPlayerInfoPacket(String action, Object entityPlayer, Player observer) throws Exception {
-        Class<?> packetClass = getNMSClass("PacketPlayOutPlayerInfo");
-        Object packet;
-
-        if (Utilities.IS_1_7) {
-            String methodName = action.equals("ADD") ? "addPlayer" : "removePlayer";
-            packet = packetClass.getMethod(methodName, getNMSClass("EntityPlayer")).invoke(null, entityPlayer);
-        } else {
-            Class<?> enumClass = doesClassExists("PacketPlayOutPlayerInfo$EnumPlayerInfoAction")
-                    ? getNMSClass("PacketPlayOutPlayerInfo$EnumPlayerInfoAction")
-                    : getNMSClass("EnumPlayerInfoAction");
-            Object enumValue = enumClass.getEnumConstants()[action.equals("ADD") ? 0 : 4];
-            packet = packetClass.getConstructor(enumClass, Iterable.class).newInstance(enumValue, Collections.singleton(entityPlayer));
-        }
-
-        sendPacket(observer, packet);
-    }
-
-    private void broadcastPlayerInfoPacket(String action, Object entityPlayer) throws Exception {
-        for (Player online : Bukkit.getOnlinePlayers()) {
-            sendPlayerInfoPacket(action, entityPlayer, online);
+        try {
+            player.setPlayerListName(name);
+        } catch (Throwable ignored) {
         }
     }
 
@@ -116,7 +121,8 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             return;
         }
 
-        if (plugin.getRankManager().getRanksSection().getConfigurationSection(rank) == null) {
+        final String effectiveRank = resolveDisguiseRank(player, rank);
+        if (plugin.getRankManager().getRanksSection().getConfigurationSection(effectiveRank) == null) {
             callback.accept(DisguiseCallback.NO_RANK_FOUND);
             return;
         }
@@ -140,9 +146,9 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             serializeProperties(gameProfile, properties);
             data.add("properties", properties);
 
-            final DisguiseData disguiseData = new DisguiseData(rank, name, skin, data, System.currentTimeMillis());
+            final DisguiseData disguiseData = new DisguiseData(effectiveRank, name, skin, data, System.currentTimeMillis());
             plugin.getDisguiseDataMap().put(player.getUniqueId(), disguiseData);
-            disguiseRanks.put(player.getUniqueId(), rank);
+            disguiseRanks.put(player.getUniqueId(), effectiveRank);
 
             fetchSkinData(skin, skinProperty -> {
                 if (skinProperty == null) {
@@ -159,40 +165,16 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                     clearProperties(gameProfile);
                     putTextureProperty(gameProfile, value, signature);
 
-                    Bukkit.getScheduler().runTask(plugin, () -> {
+                    plugin.getTasks().sync(() -> {
                         try {
-                            Bukkit.getOnlinePlayers().forEach(o -> o.hidePlayer(player));
-                            Bukkit.getOnlinePlayers().forEach(o -> o.showPlayer(player));
-
                             setProfileName(gameProfile, name);
                             setTablistName(player, name);
-
-                            broadcastPlayerInfoPacket("REMOVE", entityPlayer);
-
-                            Class<?> destroyClass = getNMSClass("PacketPlayOutEntityDestroy");
-                            int entityId = (int) entityPlayer.getClass().getMethod("getId").invoke(entityPlayer);
-                            Object packetDestroy = destroyClass.getConstructor(int[].class).newInstance((Object) new int[]{entityId});
-                            for (Player online : Bukkit.getOnlinePlayers()) {
-                                sendPacket(online, packetDestroy);
-                            }
 
                             String displayField = Utilities.IS_1_7 ? "listName" : "displayName";
                             changeField(entityPlayer, displayField, name);
 
-                            broadcastPlayerInfoPacket("ADD", entityPlayer);
-
-                            Class<?> spawnClass = getNMSClass("PacketPlayOutNamedEntitySpawn");
-                            Object packetSpawn = getConstructorWithParameterExact(spawnClass, 1)
-                                    .newInstance(safeCastTo(entityPlayer, getNMSClass("EntityHuman")));
-                            for (Player online : Bukkit.getOnlinePlayers()) {
-                                sendPacket(online, packetSpawn);
-                            }
-
-                            sendEquipmentPackets(entityPlayer, entityId);
-
                             int held = player.getInventory().getHeldItemSlot();
-                            sendPacket(player, packetDestroy);
-                            Bukkit.getScheduler().runTask(plugin, () -> {
+                            packetAdapter.refresh(player, entityPlayer, () -> {
                                 moveToWorld(player);
                                 player.setFlying(flying);
                                 player.setAllowFlight(allowFlight);
@@ -200,18 +182,18 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                                 player.updateInventory();
                             });
 
-                            String rawPrefix = getRankString(rank, "prefix", "");
-                            String nameColor = getRankString(rank, "name-color", "&f");
+                            String rawPrefix = getRankString(effectiveRank, "prefix", "");
+                            String nameColor = getRankString(effectiveRank, "name-color", "&f");
                             String coloredPrefix = CC.translate(rawPrefix);
 
-                            disguiseRegistry.publishDisguiseState(player, name, rank, skin, nameColor, coloredPrefix);
+                            disguiseRegistry.publishDisguiseState(player, name, effectiveRank, skin, nameColor, coloredPrefix);
                             disguiseRegistry.getEffectiveColor(player, color -> {
                                 if (plugin.getNameTagColorManager() != null) {
                                     plugin.getNameTagColorManager().applyDisguise(player, name, nameColor);
                                 }
                             });
 
-                            Bukkit.getPluginManager().callEvent(new PlayerDisguiseEvent(player, player.getName(), name, rank));
+                            disguiseRegistry.updateColorCache(player);
                             callback.accept(DisguiseCallback.SUCCESS);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -261,20 +243,6 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                 }
             }
 
-            runSyncOrInline(() -> {
-                Bukkit.getOnlinePlayers().forEach(o -> o.hidePlayer(player));
-                Bukkit.getOnlinePlayers().forEach(o -> o.showPlayer(player));
-            });
-
-            broadcastPlayerInfoPacket("REMOVE", entityPlayer);
-
-            Class<?> destroyClass = getNMSClass("PacketPlayOutEntityDestroy");
-            int entityId = (int) entityPlayer.getClass().getMethod("getId").invoke(entityPlayer);
-            Object packetDestroy = destroyClass.getConstructor(int[].class).newInstance((Object) new int[]{entityId});
-            for (Player online : Bukkit.getOnlinePlayers()) {
-                sendPacket(online, packetDestroy);
-            }
-
             final String originalName = profileData.get("name").getAsString();
             String displayField = Utilities.IS_1_7 ? "listName" : "displayName";
             setProfileName(gameProfile, originalName);
@@ -290,25 +258,13 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                 }
                 plugin.getRankManager().refreshPlayerDisplay(player);
                 disguiseRegistry.publishClearDisguise(player);
-                Bukkit.getPluginManager().callEvent(new PlayerUnDisguiseEvent(player, disguiseData.getName(), originalName, disguiseData.getRank()));
+                disguiseRegistry.updateColorCache(player);
                 callback.accept(DisguiseCallback.SUCCESS);
                 return;
             }
 
-            broadcastPlayerInfoPacket("ADD", entityPlayer);
-
-            Class<?> spawnClass = getNMSClass("PacketPlayOutNamedEntitySpawn");
-            Object packetSpawn = getConstructorWithParameterExact(spawnClass, 1)
-                    .newInstance(safeCastTo(entityPlayer, getNMSClass("EntityHuman")));
-            for (Player online : Bukkit.getOnlinePlayers()) {
-                sendPacket(online, packetSpawn);
-            }
-
-            sendEquipmentPackets(entityPlayer, entityId);
-
             int held = player.getInventory().getHeldItemSlot();
-            sendPacket(player, packetDestroy);
-            runSyncOrInline(() -> {
+            packetAdapter.refresh(player, entityPlayer, () -> {
                 moveToWorld(player);
                 player.setFlying(flying);
                 player.setAllowFlight(allowFlight);
@@ -324,7 +280,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             }
             plugin.getRankManager().refreshPlayerDisplay(player);
             disguiseRegistry.publishClearDisguise(player);
-            Bukkit.getPluginManager().callEvent(new PlayerUnDisguiseEvent(player, disguiseData.getName(), originalName, disguiseData.getRank()));
+            disguiseRegistry.updateColorCache(player);
 
             callback.accept(DisguiseCallback.SUCCESS);
         } catch (Exception e) {
@@ -335,11 +291,6 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
     @Override
     public void disguise(Player player, String targetName, Consumer<DisguiseCallback> callback) {
-        String version = Utilities.getServerVersion();
-        if (!(Utilities.IS_1_7 || version.startsWith("v1_8"))) {
-            callback.accept(DisguiseCallback.ERROR);
-            return;
-        }
         if (player == null || !player.isOnline()) {
             callback.accept(DisguiseCallback.NOT_ONLINE);
             return;
@@ -373,55 +324,16 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             return;
         }
 
-        disguise(player, "", targetName, targetName, callback);
+        disguise(player, resolveDisguiseRank(player, null), targetName, targetName, callback);
     }
 
     @Override
     public void undisguise(Player player, Consumer<DisguiseCallback> callback) {
-        String version = Utilities.getServerVersion();
-        if (!(Utilities.IS_1_7 || version.startsWith("v1_8"))) {
-            callback.accept(DisguiseCallback.ERROR);
-            return;
-        }
         if (player == null || !player.isOnline()) {
             callback.accept(DisguiseCallback.NOT_ONLINE);
             return;
         }
         unDisguise(player, true, callback);
-    }
-
-    private void sendEquipmentPackets(Object entityPlayer, int entityId) {
-        String version = Utilities.getServerVersion();
-        if (Utilities.IS_1_7 || version.contains("1_8")) {
-            Stream.of(0, 1, 2, 3).forEach(i -> {
-                try {
-                    Class<?> packetEquip = getNMSClass("PacketPlayOutEntityEquipment");
-                    Object pkt = packetEquip.getConstructor(Integer.TYPE, Integer.TYPE, getNMSClass("ItemStack"))
-                            .newInstance(entityId, i,
-                                    safeCastTo(entityPlayer.getClass().getMethod("getEquipment", Integer.TYPE).invoke(entityPlayer, i), getNMSClass("ItemStack")));
-                    for (Player online : Bukkit.getOnlinePlayers()) {
-                        sendPacket(online, pkt);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        } else {
-            try {
-                Class<?> enumSlotsClass = getNMSClass("EnumItemSlot");
-                for (Object constant : enumSlotsClass.getEnumConstants()) {
-                    Class<?> packetEquip = getNMSClass("PacketPlayOutEntityEquipment");
-                    Object pkt = packetEquip.getConstructor(Integer.TYPE, enumSlotsClass, getNMSClass("ItemStack"))
-                            .newInstance(entityId, constant,
-                                    safeCastTo(entityPlayer.getClass().getMethod("getEquipment", enumSlotsClass).invoke(entityPlayer, constant), getNMSClass("ItemStack")));
-                    for (Player online : Bukkit.getOnlinePlayers()) {
-                        sendPacket(online, pkt);
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private String getRankString(String rank, String key, String def) {
@@ -430,12 +342,17 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         return section != null ? section.getString(key, def) : def;
     }
 
-    private void runSyncOrInline(Runnable task) {
-        if (WinterCore.isShuttingDown) {
-            task.run();
-        } else {
-            Bukkit.getScheduler().runTask(plugin, task);
+    private String resolveDisguiseRank(Player player, String rank) {
+        if (rank != null && !rank.trim().isEmpty()) {
+            return rank;
         }
+
+        String current = plugin.getRankManager().getRankSync(player);
+        if (current != null && !current.trim().isEmpty()) {
+            return current;
+        }
+
+        return plugin.getConfig().getString("default-rank", "Default");
     }
 
     private boolean isDisguiseNameTakenOnNetwork(String requestedName, UUID selfUuid) {
@@ -443,7 +360,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             return false;
         }
 
-        boolean localConflict = Bukkit.getOnlinePlayers().stream()
+        boolean localConflict = net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().stream()
                 .anyMatch(online -> online.getName().equalsIgnoreCase(requestedName)
                         && !online.getUniqueId().equals(selfUuid));
         if (localConflict) {

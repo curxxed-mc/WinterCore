@@ -120,7 +120,7 @@ public class PlayerService implements Listener {
                 "{target}", target.getDisplayName(),
                 "{staff}", staff.getDisplayName());
 
-        Bukkit.getOnlinePlayers().stream()
+        net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().stream()
                 .filter(p -> p.hasPermission("wintercore.staff"))
                 .forEach(p -> p.sendMessage(alert));
     }

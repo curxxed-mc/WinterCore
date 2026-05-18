@@ -33,12 +33,12 @@ public class RankCacheService {
             if (Bukkit.isPrimaryThread()) {
                 callback.accept(cached);
             } else {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+                plugin.getTasks().sync(() -> callback.accept(cached));
             }
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             String rank;
             try {
                 rank = profileRepository.getRank(uuid);
@@ -51,7 +51,7 @@ public class RankCacheService {
             lastRefresh.put(uuid, System.currentTimeMillis());
             String finalRank = rank;
 
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalRank));
+            plugin.getTasks().sync(() -> callback.accept(finalRank));
         });
     }
 

@@ -138,7 +138,7 @@ public class StaffModeManager {
 
     private void teleportToRandomPlayer(Player player) {
         List<Player> nonStaff = new ArrayList<>();
-        for (Player p : Bukkit.getOnlinePlayers()) {
+        for (Player p : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             if (!hasStaffPermission(p)) nonStaff.add(p);
         }
 

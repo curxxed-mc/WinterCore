@@ -125,7 +125,7 @@ public final class ChatFilterService {
                     channel
             );
 
-            for (Player online : Bukkit.getOnlinePlayers()) {
+            for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 if (online.equals(sender)) {
                     continue;
                 }

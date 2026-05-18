@@ -157,7 +157,7 @@ public class TrollCommand extends BaseCommand {
             }
         };
 
-        task.runTaskTimer(plugin, 0L, 2L);
+        plugin.getTasks().timer(task, 0L, 2L);
         dayNightTasks.put(uuid, task);
 
         send(sender, "troll.daynight-started", "&aStarted day/night loop for {target}.",

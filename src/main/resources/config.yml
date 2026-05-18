@@ -12,6 +12,9 @@ Redis:
   host: 127.0.0.1
   port: 6379
   password: ''
+NameMC:
+  enabled: false
+  server: ''
 DiscordWebhook:
   url: https://discord.com/api/webhooks/.../...
   VanishLogs: true
