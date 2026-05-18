@@ -47,7 +47,7 @@ public class ConnectionListener implements Listener {
         this.disguiseEventListener = disguiseEventListener;
         this.networkRedisService = networkRedisService;
 
-        Bukkit.getScheduler().runTaskTimer(plugin, this::refreshOnlinePresence, 40L, 100L);
+        plugin.getTasks().timer( this::refreshOnlinePresence, 40L, 100L);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -70,7 +70,7 @@ public class ConnectionListener implements Listener {
         String playerName = player.getName();
 
         identityService.recordPlayerIP(uuid, event.getAddress().getHostAddress());
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+        plugin.getTasks().async(() ->
                 networkRedisService.cacheUsername(uuid, playerName)
         );
         try {
@@ -91,14 +91,14 @@ public class ConnectionListener implements Listener {
 
         ClientBrandCommand.silenced.add(uuid);
         joinTimes.put(uuid, System.currentTimeMillis());
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+        plugin.getTasks().async(() ->
                 networkRedisService.setOnlinePresence(uuid, playerName, serverName)
         );
 
         refreshDisplayForAll(player);
         applyNametag(player);
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        plugin.getTasks().later(() -> {
             broadcastStaffJoin(player);
             warnMissingPlaceholderAPI(player);
         }, 5L);
@@ -114,7 +114,7 @@ public class ConnectionListener implements Listener {
         lastSeenTimes.put(uuid, System.currentTimeMillis());
         lastServers.put(uuid, plugin.getConfig().getString("server-name", "unknown"));
         joinTimes.remove(uuid);
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+        plugin.getTasks().async(() ->
                 networkRedisService.clearOnlinePresence(uuid, playerName)
         );
 
@@ -124,7 +124,7 @@ public class ConnectionListener implements Listener {
     private void refreshOnlinePresence() {
         String serverName = plugin.getConfig().getString("server-name", "unknown");
         List<OnlinePlayerSnapshot> snapshots = new ArrayList<>();
-        for (Player online : Bukkit.getOnlinePlayers()) {
+        for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             snapshots.add(new OnlinePlayerSnapshot(online.getUniqueId(), online.getName()));
         }
 
@@ -132,7 +132,7 @@ public class ConnectionListener implements Listener {
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             for (OnlinePlayerSnapshot snapshot : snapshots) {
                 networkRedisService.setOnlinePresence(snapshot.uuid, snapshot.name, serverName);
             }
@@ -142,7 +142,7 @@ public class ConnectionListener implements Listener {
     private void refreshDisplayForAll(Player joined) {
         rankManager.refreshPlayerDisplay(joined);
         rankManager.refreshPlayerDisplayForAll(joined);
-        for (Player other : Bukkit.getOnlinePlayers()) {
+        for (Player other : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             if (!other.getUniqueId().equals(joined.getUniqueId())) {
                 rankManager.refreshPlayerDisplayForAll(other);
             }
@@ -168,7 +168,7 @@ public class ConnectionListener implements Listener {
         String realName = resolveRealName(player);
 
         rankManager.getRank(uuid, rank -> rankManager.getColorPreference(rank, color -> {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            plugin.getTasks().async(() -> {
                 Map<String, String> staffServers = networkRedisService.getStaffLastServers();
                 String lastServer = staffServers.get(uuid.toString());
                 long lastSeen = networkRedisService.getStaffLastSeen(uuid);
@@ -185,7 +185,7 @@ public class ConnectionListener implements Listener {
                 final String resolvedLastServer = lastServer;
                 final String resolvedRealName = realName;
 
-                Bukkit.getScheduler().runTask(plugin, () -> {
+                plugin.getTasks().sync(() -> {
                     if (isSwitch) {
                         disguiseEventListener.onServerSwitch(player);
                         plugin.getRedisManager().publish(new ServerSwitchPacket(
@@ -214,12 +214,12 @@ public class ConnectionListener implements Listener {
         String realName = resolveRealName(player);
 
         long quitTime = System.currentTimeMillis();
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+        plugin.getTasks().async(() ->
                 networkRedisService.setStaffLastSeen(uuid, quitTime)
         );
 
         rankManager.getRank(uuid, rank -> rankManager.getColorPreference(rank, color -> {
-            Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+            plugin.getTasks().laterAsync(() -> {
                 Map<String, String> staffServers = networkRedisService.getStaffLastServers();
                 String updatedServer = staffServers.get(uuid.toString());
 

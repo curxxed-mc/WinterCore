@@ -5,8 +5,6 @@ import com.google.gson.JsonParser;
 import net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback;
 import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
-import net.curxxed.dev.wintercore.events.disguise.PlayerDisguiseEvent;
-import net.curxxed.dev.wintercore.events.disguise.PlayerUnDisguiseEvent;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -30,7 +28,7 @@ public class DisguiseEventListener implements Listener {
     public DisguiseEventListener(WinterCore plugin, DefaultDisguiseHandler handler) {
         this.plugin = plugin;
         this.disguiseHandler = handler;
-        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::auditNetworkDisguiseConflicts, 60L, 60L);
+        plugin.getTasks().timerAsync( this::auditNetworkDisguiseConflicts, 60L, 60L);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -48,7 +46,7 @@ public class DisguiseEventListener implements Listener {
                 String skin = obj.has("skin") ? obj.get("skin").getAsString()
                         : (obj.has("skinName") ? obj.get("skinName").getAsString() : name);
 
-                Bukkit.getScheduler().runTaskLater(plugin, () ->
+                plugin.getTasks().later(() ->
                         disguiseHandler.disguise(joining, rank, name, skin, result -> {
                             if (result == DisguiseCallback.GLOBAL_PLAYER_FOUND) {
                                 handleInvalidRestoredDisguise(joining, name);
@@ -67,7 +65,7 @@ public class DisguiseEventListener implements Listener {
             }
         }
 
-        for (Player online : Bukkit.getOnlinePlayers()) {
+        for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             if (online.equals(joining)) continue;
             if (plugin.getDisguiseRegistry().isDisguised(online)) {
                 refreshVisibilityFor(online, joining);
@@ -90,26 +88,16 @@ public class DisguiseEventListener implements Listener {
     public void onServerSwitch(Player player) {
         if (!plugin.getDisguiseRegistry().isDisguised(player)) return;
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            for (Player online : Bukkit.getOnlinePlayers()) {
+        plugin.getTasks().later(() -> {
+            for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 if (online.equals(player)) continue;
                 refreshVisibilityFor(player, online);
             }
         }, 1L);
     }
 
-    @EventHandler
-    public void onPlayerDisguise(PlayerDisguiseEvent event) {
-        plugin.getDisguiseRegistry().updateColorCache(event.getPlayer());
-    }
-
-    @EventHandler
-    public void onPlayerUnDisguise(PlayerUnDisguiseEvent event) {
-        plugin.getDisguiseRegistry().updateColorCache(event.getPlayer());
-    }
-
     public void clearDisguiseOnShutdown() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (Player player : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             if (plugin.getDisguiseRegistry().isDisguised(player)) {
                 disguiseHandler.undisguise(player, result -> {
                     if (result != net.curxxed.dev.wintercore.disguise.callback.DisguiseCallback.SUCCESS) {
@@ -125,7 +113,7 @@ public class DisguiseEventListener implements Listener {
     private void refreshVisibilityFor(Player disguised, Player viewer) {
         if (viewer == null || !viewer.isOnline()) return;
         viewer.hidePlayer(disguised);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        plugin.getTasks().later(() -> {
             if (viewer.isOnline() && disguised.isOnline()) {
                 viewer.showPlayer(disguised);
             }
@@ -176,7 +164,7 @@ public class DisguiseEventListener implements Listener {
             return;
         }
 
-        Bukkit.getScheduler().runTask(plugin, () -> enforceConflictNow(disguisedUuid, conflictingName));
+        plugin.getTasks().sync(() -> enforceConflictNow(disguisedUuid, conflictingName));
     }
 
     private void enforceConflictNow(UUID disguisedUuid, String conflictingName) {
@@ -198,7 +186,7 @@ public class DisguiseEventListener implements Listener {
     }
 
     private void handleInvalidRestoredDisguise(Player player, String conflictingName) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             forceClearDisguiseState(player);
             if (player.isOnline()) {
                 player.kickPlayer(plugin.getMessageConfig().get("disguise.conflict-saved", "&cYour saved disguise as &e{target}&c is invalid because that player is now online on the network.", "{target}", conflictingName));

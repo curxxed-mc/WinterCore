@@ -61,14 +61,14 @@ public final class SocialInput implements Listener {
         Validator validator = VALIDATORS.get(prompt.platform);
 
         if (validator == null || !validator.validate(input)) {
-            Bukkit.getScheduler().runTask(plugin, () -> player.sendMessage(message("social-input.invalid",
+            plugin.getTasks().sync(() -> player.sendMessage(message("social-input.invalid",
                     "&cInvalid {platform} link.",
                     "{platform}", prompt.platform)));
             return;
         }
         prompt.socials.setSocialLink(uuid, prompt.platform, input);
 
-        Bukkit.getScheduler().runTask(plugin, () -> player.sendMessage(message("social-input.updated",
+        plugin.getTasks().sync(() -> player.sendMessage(message("social-input.updated",
                 "&aUpdated your {platform} link to: &f{input}",
                 "{platform}", prompt.platform,
                 "{input}", input)));

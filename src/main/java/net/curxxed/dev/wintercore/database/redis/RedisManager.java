@@ -1,7 +1,6 @@
 package net.curxxed.dev.wintercore.database.redis;
 
 import com.google.gson.Gson;
-import net.curxxed.dev.wintercore.database.redis.event.RedisPacketReceivedEvent;
 import net.curxxed.dev.wintercore.database.redis.handler.BukkitRedisPacketHandler;
 import net.curxxed.dev.wintercore.database.redis.handler.RedisPacketHandler;
 import net.curxxed.dev.wintercore.database.redis.packet.RedisPacket;
@@ -23,12 +22,14 @@ public final class RedisManager {
     private final String serverName;
     private final RedisPacketCodec codec;
     private final BukkitRedisPacketHandler handler;
+    private final RedisPacketBus packetBus;
 
     public RedisManager(WinterCore plugin) {
         this.plugin = plugin;
         this.serverName = plugin.getConfig().getString("server-name", "Unknown");
         this.codec = new RedisPacketCodec(new Gson());
         this.handler = new BukkitRedisPacketHandler(plugin, plugin.getDisguiseEventListener());
+        this.packetBus = new RedisPacketBus(plugin);
     }
 
     public void start() {
@@ -49,7 +50,7 @@ public final class RedisManager {
     }
 
     private void startHeartbeat() {
-        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+        plugin.getTasks().timerAsync(() -> {
             try (Jedis jedis = plugin.getRedisPool().getResource()) {
                 String key = "server:" + serverName + ":heartbeat";
                 jedis.set(key, "1");
@@ -83,7 +84,7 @@ public final class RedisManager {
             if (Bukkit.isPrimaryThread()) {
                 return buildServerInfoSnapshot();
             }
-            return Bukkit.getScheduler().callSyncMethod(plugin, this::buildServerInfoSnapshot).get(2, TimeUnit.SECONDS);
+            return plugin.getTasks().callSync(this::buildServerInfoSnapshot).get(2, TimeUnit.SECONDS);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to collect server info snapshot: " + e.getMessage());
             return new ServerInfoSnapshot("0.00", 0, 0, false);
@@ -91,7 +92,7 @@ public final class RedisManager {
     }
 
     private ServerInfoSnapshot buildServerInfoSnapshot() {
-        int players = Bukkit.getOnlinePlayers().size();
+        int players = net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().size();
         int maxPlayers = Bukkit.getMaxPlayers();
         boolean whitelisted = Bukkit.hasWhitelist();
 
@@ -132,7 +133,7 @@ public final class RedisManager {
     }
 
     private void startListening() {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             try (Jedis jedis = plugin.getRedisPool().getResource()) {
                 jedis.subscribe(new JedisPubSub() {
                     @Override
@@ -149,9 +150,9 @@ public final class RedisManager {
                                 return;
                             }
 
-                            Bukkit.getScheduler().runTask(plugin, () -> {
+                            plugin.getTasks().sync(() -> {
                                 try {
-                                    Bukkit.getPluginManager().callEvent(new RedisPacketReceivedEvent(packet));
+                                    packetBus.notifyListeners(packet);
                                     packet.handle(handler);
                                 } catch (Exception e) {
                                     plugin.getLogger().warning("Failed to handle Redis packet: " + e.getMessage());
@@ -170,12 +171,17 @@ public final class RedisManager {
 
     public void publishAndHandleLocally(RedisPacket<RedisPacketHandler> packet) {
         publish(packet);
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             try {
+                packetBus.notifyListeners(packet);
                 packet.handle(handler);
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to handle local packet: " + e.getMessage());
             }
         });
+    }
+
+    public RedisPacketBus getPacketBus() {
+        return packetBus;
     }
 }

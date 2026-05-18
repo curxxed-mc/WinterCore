@@ -56,14 +56,14 @@ public class VanishCommand extends BaseCommand {
         UUID playerId = player.getUniqueId();
 
         plugin.getRankManager().getRank(player, rank -> plugin.getRankManager().getColorPreference(rank, rankColor -> {
-            Bukkit.getScheduler().runTask(plugin, () -> {
+            plugin.getTasks().sync(() -> {
                 String playerRankColor = CC.translateAlternateColorCodes('&', rankColor);
 
                 boolean nowVanished;
 
                 if (vanishedPlayers.contains(playerId)) {
                     vanishedPlayers.remove(playerId);
-                    Bukkit.getOnlinePlayers().forEach(p -> p.showPlayer(player));
+                    net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().forEach(p -> p.showPlayer(player));
                     player.sendMessage(message(plugin, "vanish.disabled", "&bYou are no longer vanished!"));
                     plugin.getRankManager().refreshPlayerDisplay(player);
                     plugin.getRedisManager().publish(new VanishPacket(plugin.getConfig().getString("server-name", "Unknown"), System.currentTimeMillis(), player.getUniqueId(), player.getName(), false));
@@ -71,7 +71,7 @@ public class VanishCommand extends BaseCommand {
                     nowVanished = false;
                 } else {
                     vanishedPlayers.add(playerId);
-                    Bukkit.getOnlinePlayers().stream()
+                    net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().stream()
                             .filter(p -> !(p.hasPermission("wintercore.staff") || p.hasPermission("wintercore.admin") || p.hasPermission("wintercore.Manager")))
                             .forEach(p -> p.hidePlayer(player));
                     player.sendMessage(message(plugin, "vanish.enabled", "&bYou are now vanished!"));
@@ -92,7 +92,7 @@ public class VanishCommand extends BaseCommand {
                 vanished ? "&9[S] {player} &bhas vanished!" : "&9[S] {player} &bhas reappeared!",
                 "{player}", rankColor + player.getName());
 
-        Bukkit.getOnlinePlayers().stream()
+        net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().stream()
                 .filter(p -> p.hasPermission("WinterCore.staff") || p.hasPermission("WinterCore.admin") || p.hasPermission("WinterCore.Manager"))
                 .filter(p -> p != player)
                 .forEach(staff -> staff.sendMessage(message));

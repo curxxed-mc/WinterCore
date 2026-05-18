@@ -198,8 +198,11 @@ public class DisguiseRegistry {
         }
         colorCache.put(uuid, color);
         final String resolvedColor = color;
-        Bukkit.getScheduler().runTask(WinterCore.getInstance(), () -> {
-            WinterCore instance = WinterCore.getInstance();
+        WinterCore instance = WinterCore.getInstance();
+        if (instance == null) {
+            return;
+        }
+        instance.getTasks().sync(() -> {
             if (instance != null && instance.getNameTagColorManager() != null) {
                 instance.getNameTagColorManager().applyColor(player, resolvedColor);
             }

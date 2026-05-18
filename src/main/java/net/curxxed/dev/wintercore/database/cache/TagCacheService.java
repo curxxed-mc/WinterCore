@@ -26,11 +26,11 @@ public class TagCacheService {
     public void get(UUID uuid, Consumer<String> callback) {
         if (tagCache.containsKey(uuid)) {
             String cached = tagCache.get(uuid);
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(NO_TAG.equals(cached) ? null : cached));
+            plugin.getTasks().sync(() -> callback.accept(NO_TAG.equals(cached) ? null : cached));
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             String tag = null;
             try {
                 tag = profileRepository.getTag(uuid);
@@ -40,7 +40,7 @@ public class TagCacheService {
             String cachedValue = tag == null ? NO_TAG : tag;
             tagCache.put(uuid, cachedValue);
             String finalTag = NO_TAG.equals(cachedValue) ? null : cachedValue;
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(finalTag));
+            plugin.getTasks().sync(() -> callback.accept(finalTag));
         });
     }
 

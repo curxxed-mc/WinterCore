@@ -6,6 +6,7 @@ import net.curxxed.dev.wintercore.database.cache.TagCacheService;
 import net.curxxed.dev.wintercore.database.mongo.MongoConnectionManager;
 import net.curxxed.dev.wintercore.database.mongo.ProfileRepository;
 import net.curxxed.dev.wintercore.database.service.IdentityService;
+import net.curxxed.dev.wintercore.database.service.CurrencyService;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.database.service.ProfileService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
@@ -23,6 +24,7 @@ public final class DatabaseManager implements AutoCloseable {
     @Getter private final TagCacheService tagCache;
 
     @Getter private final ProfileService profileService;
+    @Getter private final CurrencyService currencyService;
     @Getter private final IdentityService identityService;
     @Getter private final ModerationService moderationService;
 
@@ -37,6 +39,7 @@ public final class DatabaseManager implements AutoCloseable {
 
         this.identityService = new IdentityService(plugin, profiles);
         this.profileService = new ProfileService(plugin, profiles, rankCache, tagCache);
+        this.currencyService = new CurrencyService(plugin, profiles);
         this.moderationService = new ModerationService(plugin, profiles, identityService);
 
         this.profileRepository = profiles;

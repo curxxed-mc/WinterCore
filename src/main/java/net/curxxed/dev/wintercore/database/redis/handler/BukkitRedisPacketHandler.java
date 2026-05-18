@@ -32,7 +32,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
             return;
         }
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             String rank = packet.getRank();
             if (rank != null && !rank.trim().isEmpty()) {
                 plugin.getRankManager().cachePlayerRank(player, rank);
@@ -51,7 +51,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
         Player player = Bukkit.getPlayer(packet.getUuid());
         if (player == null) return;
 
-        Bukkit.getScheduler().runTask(plugin, () ->
+        plugin.getTasks().sync(() ->
                 disguiseEventListener.onServerSwitch(player)
         );
     }
@@ -66,8 +66,8 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                         "&7Server &b{server}&7 has just went &4offline&7 and is no longer &4&ljoinable!",
                         "{server}", packet.getSourceServer());
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            for (Player p : Bukkit.getOnlinePlayers()) {
+        plugin.getTasks().sync(() -> {
+            for (Player p : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 if (p.hasPermission("wintercore.servermanager") || p.isOp()) {
                     p.sendMessage(statusMessage);
                 }
@@ -95,8 +95,8 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                         ? packet.getFromServer()
                         : packet.getToServer());
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            for (Player online : Bukkit.getOnlinePlayers()) {
+        plugin.getTasks().sync(() -> {
+            for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 if (online.hasPermission("wintercore.staff")
                         || online.hasPermission("wintercore.admin")
                         || online.hasPermission("wintercore.manager")
@@ -115,14 +115,14 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
             return;
         }
 
-        Bukkit.getScheduler().runTask(plugin, () ->
+        plugin.getTasks().sync(() ->
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), packet.getCommand())
         );
     }
 
     @Override
     public void handle(ModerationActionPacket packet) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             if (plugin.getBanList() != null) {
                 if (packet.getActionType() == ModerationActionPacket.ActionType.BAN_APPLIED) {
                     plugin.getBanList().applyBan(packet.getTargetUuid(), packet.getReason(), packet.getExpiresAt(), true);
@@ -143,7 +143,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                     packet.isSilent()
             );
 
-            for (Player online : Bukkit.getOnlinePlayers()) {
+            for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 if (!packet.isSilent() || isStaffAudience(online)) {
                     online.sendMessage(formatted);
                 }
@@ -160,8 +160,8 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                 packet.getServer()
         );
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            for (Player online : Bukkit.getOnlinePlayers()) {
+        plugin.getTasks().sync(() -> {
+            for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 if (isStaffAudience(online)) {
                     online.sendMessage(formattedMessage);
                 }
@@ -245,7 +245,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
 
         writeFile(target, packet.getYaml());
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             switch (type) {
                 case CONFIG:
                     plugin.reloadConfig();
@@ -282,8 +282,8 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
 
     @Override
     public void handle(ChatBroadcastPacket packet) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            for (Player online : Bukkit.getOnlinePlayers()) {
+        plugin.getTasks().sync(() -> {
+            for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 if (canReceiveChatBroadcast(online, packet.getChatType())) {
                     online.sendMessage(packet.getMessage());
                 }
@@ -333,13 +333,13 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
         Player player = Bukkit.getPlayer(packet.getPlayerUuid());
         if (player == null) return;
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             if (packet.isVanished()) {
-                Bukkit.getOnlinePlayers().stream()
+                net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().stream()
                         .filter(p -> !(p.hasPermission("wintercore.staff") || p.hasPermission("wintercore.admin") || p.hasPermission("wintercore.manager")))
                         .forEach(p -> p.hidePlayer(player));
             } else {
-                Bukkit.getOnlinePlayers().forEach(p -> p.showPlayer(player));
+                net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers().forEach(p -> p.showPlayer(player));
             }
         });
     }
@@ -356,8 +356,8 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
 
     @Override
     public void handle(NetworkBroadcastPacket packet) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            for (Player online : Bukkit.getOnlinePlayers()) {
+        plugin.getTasks().sync(() -> {
+            for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 online.sendMessage(packet.getMessage());
             }
             plugin.getLogger().info(CC.stripColor(packet.getMessage()));
@@ -371,7 +371,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
             return;
         }
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             target.sendMessage(plugin.getMessageConfig().get("network-send.target",
                     "&7Sending you to &b{server}&7...",
                     "{server}", packet.getDestinationServer(),
@@ -393,7 +393,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
     }
 
     private void refreshDisplaysForOnlinePlayers() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (Player player : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
             plugin.getRankManager().refreshPlayerDisplay(player);
             if (plugin.getPlayerService() != null) {
                 plugin.getPlayerService().loadPlayerData(player.getUniqueId(), player.getName());

@@ -10,7 +10,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.*;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public class AuthListener implements Listener {
 
@@ -18,17 +17,16 @@ public class AuthListener implements Listener {
     private static final String[] AUTH_ALLOWED_COMMANDS = {"/auth", "/2fa"};
 
     private final AuthManager authManager;
-    private final JavaPlugin plugin;
+    private final WinterCore plugin;
 
-    public AuthListener(AuthManager authManager, JavaPlugin plugin) {
+    public AuthListener(AuthManager authManager, WinterCore plugin) {
         this.authManager = authManager;
         this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent event) {
-        event.getPlayer().getServer().getScheduler().runTaskLater(
-                plugin, // use it here
+        plugin.getTasks().later(
                 () -> authManager.handleJoin(event.getPlayer()),
                 5L
         );
@@ -83,7 +81,7 @@ public class AuthListener implements Listener {
     }
 
     private void sendAuthMessage(Player player, String path, String fallback) {
-        plugin.getServer().getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             WinterCore winterCore = WinterCore.getInstance();
             if (player.isOnline() && winterCore != null && winterCore.getMessageConfig() != null) {
                 player.sendMessage(winterCore.getMessageConfig().get(path, fallback));

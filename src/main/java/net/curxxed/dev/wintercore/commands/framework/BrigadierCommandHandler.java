@@ -262,7 +262,7 @@ public class BrigadierCommandHandler {
     private void dispatch(BaseCommand command, CommandSender sender, String label, String[] args) {
         CommandArguments commandArgs = new CommandArguments(sender, args, label);
         if (command.getCommandInfo().async()) {
-            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> command.execute(commandArgs));
+            plugin.getTasks().async(() -> command.execute(commandArgs));
         } else {
             command.execute(commandArgs);
         }

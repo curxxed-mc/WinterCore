@@ -59,7 +59,7 @@ public class StaffListMenu extends Menu {
     }
 
     private void loadStaffAsync(Player viewer) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.getTasks().async(() -> {
             Map<String, String> lastServers = nrs.getStaffLastServers();
             if (lastServers.isEmpty()) {
                 runRefresh(viewer);
@@ -125,7 +125,7 @@ public class StaffListMenu extends Menu {
                         loaded.add(skull);
 
                         if (remaining.decrementAndGet() == 0) {
-                            Bukkit.getScheduler().runTask(plugin, () -> {
+                            plugin.getTasks().sync(() -> {
                                 skulls.clear();
                                 skulls.addAll(loaded);
                                 if (viewer.isOnline()) {
@@ -140,7 +140,7 @@ public class StaffListMenu extends Menu {
     }
 
     private void runRefresh(Player viewer) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        plugin.getTasks().sync(() -> {
             skulls.clear();
             if (viewer.isOnline()) {
                 refresh(viewer);
