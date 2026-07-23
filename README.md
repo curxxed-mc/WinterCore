@@ -1,47 +1,52 @@
 # WinterCore
 
-WinterCore is a Minecraft server core for a network running around the Spigot/Paper 1.8.8 ecosystem. It brings common staff tools, player-facing quality-of-life commands, rank/tag handling, moderation, and cross-server features into one plugin.
+WinterCore is the core plugin behind a Minecraft server network. It keeps the everyday network features—staff tools, moderation, ranks, player commands, and cross-server communication—in one place.
 
-## What it offers
+The plugin was built around Spigot/Paper 1.8.8. It includes compatibility work for newer server versions, but that support is still experimental and has not been fully tested. Test it on a separate server before using it in production.
 
-- Staff tooling: vanish, staff mode, freeze, invsee, reports, moderation history, alts, disguises, warnings, mutes, bans, and server-wide maintenance controls.
-- Player commands: private messages and replies, profiles/social links, chat colours, tags, ping, movement and utility commands, enchantments, item repair, feed/heal, and more.
-- Network features: Redis-backed player presence, broadcasts, server switches, remote commands, configuration sync, staff activity, and moderation packets.
-- Data and presentation: MongoDB-backed player/moderation data, ranks, permissions, tags, score/tab/name-tag display, menus, chat filtering, and optional PlaceholderAPI placeholders.
+## Features
 
-The exact command set and permissions are defined in the plugin's configuration and command classes; this is a broad core rather than a drop-in replacement for a single-purpose plugin.
+- Staff mode, vanish, freeze, invsee, reports, moderation history, alt checks, disguises, and maintenance controls
+- Bans, mutes, warnings, and other moderation tools
+- Private messages, replies, profiles, social links, tags, chat colours, ping, movement commands, item utilities, and more
+- Redis-backed player presence, broadcasts, server switching, remote commands, configuration sync, and staff activity
+- MongoDB-backed player and moderation data
+- Ranks, permissions, tags, menus, chat filtering, scoreboards, tab lists, and name tags
+- Optional PlaceholderAPI placeholders
+
+WinterCore is a broad, network-specific plugin rather than a ready-made replacement for a single-purpose plugin. The available commands and permissions depend on its configuration and command classes.
 
 ## Requirements
 
 - Java 8
-- A Spigot-compatible server, primarily targeting 1.8.8
+- A Spigot-compatible server; 1.8.8 is the main target
 - MongoDB for persistent player and moderation data
 - Redis for network features
-- PlaceholderAPI is optional
+- PlaceholderAPI, if you want placeholder support
 
-Configure MongoDB, Redis, the server name, and any webhook endpoint in `plugins/WinterCore/config.yml` before enabling the plugin. Do not commit real connection strings, passwords, or webhook URLs.
+Before starting the server, configure MongoDB, Redis, the server name, and any webhook endpoint in `plugins/WinterCore/config.yml`. Keep real passwords, connection strings, and webhook URLs out of version control.
 
-## Build
+## Building
 
 ```powershell
 .\gradlew.bat clean check shadowJar
 ```
 
-The shaded plugin JAR is written to `build/libs/`.
+The finished plugin JAR will be placed in `build/libs/`.
 
 ## Current state
 
-WinterCore is in an active revamp/cleanup phase. The current source compiles and the Gradle `check` task passes, but there are no automated tests yet. It is best treated as a network-specific core: configure and test it on a non-production server before rolling it out.
+WinterCore is being actively cleaned up and reworked. The source currently compiles and the Gradle `check` task passes, although the project does not yet have automated tests.
 
-Recent cleanup removed tracked IDE metadata, tightened lifecycle handling around Redis/disguises, fixed reload-state and scheduled-task issues, and removed unused client-brand/protocol code.
+Recent work has removed tracked IDE files, improved Redis and disguise lifecycle handling, fixed reload and scheduled-task issues, and removed unused client-brand and protocol code. Because the plugin is tailored to a specific network—and newer-version support is not fully tested—you should verify your configuration and test the plugin away from production before deploying it.
 
-## Configuration files
+## Configuration
 
 - `config.yml` — server, Redis, MongoDB, NameMC, webhook, and general settings
-- `ranks.yml` / `permissions.yml` — rank and permission definitions
-- `tags.yml` / `menus.yml` — tag and menu content
-- `messages.yml` / `chat-filter.yml` — messages and chat filtering rules
+- `ranks.yml` and `permissions.yml` — ranks and permissions
+- `tags.yml` and `menus.yml` — tag and menu content
+- `messages.yml` and `chat-filter.yml` — messages and chat filtering
 
 ## License
 
-Licensed under the [Apache License 2.0](LICENSE).
+WinterCore is available under the [Apache License 2.0](LICENSE).
