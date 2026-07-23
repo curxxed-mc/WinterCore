@@ -28,7 +28,7 @@ public final class RedisManager {
         this.plugin = plugin;
         this.serverName = plugin.getConfig().getString("server-name", "Unknown");
         this.codec = new RedisPacketCodec(new Gson());
-        this.handler = new BukkitRedisPacketHandler(plugin, plugin.getDisguiseEventListener());
+        this.handler = new BukkitRedisPacketHandler(plugin);
         this.packetBus = new RedisPacketBus(plugin);
     }
 

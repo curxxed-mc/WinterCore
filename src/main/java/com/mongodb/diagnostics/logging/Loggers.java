@@ -3,7 +3,6 @@ package com.mongodb.diagnostics.logging;
 
 import org.jspecify.annotations.NonNull;
 
-//only way that I know of to make mongodb shut up in a spigot enviroment.
 public final class Loggers {
 
     public static Logger getLogger(@NonNull String suffix) {

@@ -3,7 +3,6 @@ package net.curxxed.dev.wintercore.database.redis.handler;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.*;
-import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.config.ModerationMessages;
@@ -18,11 +17,8 @@ import java.nio.file.Files;
 public final class BukkitRedisPacketHandler implements RedisPacketHandler {
 
     private final WinterCore plugin;
-    private final DisguiseEventListener disguiseEventListener;
-
-    public BukkitRedisPacketHandler(WinterCore plugin, DisguiseEventListener disguiseEventListener) {
+    public BukkitRedisPacketHandler(WinterCore plugin) {
         this.plugin = plugin;
-        this.disguiseEventListener = disguiseEventListener;
     }
 
     @Override
@@ -51,9 +47,11 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
         Player player = Bukkit.getPlayer(packet.getUuid());
         if (player == null) return;
 
-        plugin.getTasks().sync(() ->
-                disguiseEventListener.onServerSwitch(player)
-        );
+        plugin.getTasks().sync(() -> {
+            if (plugin.getDisguiseEventListener() != null) {
+                plugin.getDisguiseEventListener().onServerSwitch(player);
+            }
+        });
     }
 
     @Override

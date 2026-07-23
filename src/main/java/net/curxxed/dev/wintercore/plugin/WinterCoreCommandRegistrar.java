@@ -77,7 +77,6 @@ final class WinterCoreCommandRegistrar {
         commandHandler.register(CheckNMS.class);
         commandHandler.register(SudoCommand.class);
         commandHandler.register(UnbanCommand.class);
-        commandHandler.register(ClientBrandCommand.class);
         commandHandler.register(new TagsCommand(plugin.getTagsMenu(), plugin));
         commandHandler.register(new DisguiseCommand(plugin.getDisguiseHandler(), plugin));
         commandHandler.register(new UnDisguiseCommand(plugin.getDisguiseHandler(), plugin));

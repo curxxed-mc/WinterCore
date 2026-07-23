@@ -122,20 +122,18 @@ public final class ModerationService {
     }
 
     public void removeExpiredBans() {
-        plugin.getTasks().async(() -> {
-            try {
-                profiles.updateMany(
-                        new Document("$and", Arrays.asList(
-                                new Document("activeBan", new Document("$exists", true)),
-                                new Document("activeBan.expiration", new Document("$lte", System.currentTimeMillis())),
-                                new Document("activeBan.expiration", new Document("$ne", null))
-                        )),
-                        new Document("$unset", new Document("activeBan", ""))
-                );
-            } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE, "Could not remove expired bans", e);
-            }
-        });
+        try {
+            profiles.updateMany(
+                    new Document("$and", Arrays.asList(
+                            new Document("activeBan", new Document("$exists", true)),
+                            new Document("activeBan.expiration", new Document("$lte", System.currentTimeMillis())),
+                            new Document("activeBan.expiration", new Document("$ne", null))
+                    )),
+                    new Document("$unset", new Document("activeBan", ""))
+            );
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Could not remove expired bans", e);
+        }
     }
 
     public void mutePlayer(UUID targetUUID, String reason, String issuer, Instant expirationTime) {

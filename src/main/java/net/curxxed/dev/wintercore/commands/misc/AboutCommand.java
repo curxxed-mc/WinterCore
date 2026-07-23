@@ -28,8 +28,6 @@ public class AboutCommand extends BaseCommand {
         PluginDescriptionFile desc = plugin.getDescription();
 
         String description = desc.getDescription();
-
-        // Use a fallback description if the plugin.yml is missing one.
         if (description == null || description.isEmpty()) {
             description = msg("about.default-description", "The core plugin for your server network.");
         }
@@ -46,4 +44,3 @@ public class AboutCommand extends BaseCommand {
                 "{description}", description);
     }
 }
-

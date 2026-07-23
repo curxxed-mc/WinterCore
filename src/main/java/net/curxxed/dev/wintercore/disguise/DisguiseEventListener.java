@@ -175,7 +175,6 @@ public class DisguiseEventListener implements Listener {
         }
 
         try {
-            // Do not run packet-heavy undisguise here; forcing it right before kick can leave ghost entities.
             forceClearDisguiseState(disguisedPlayer);
             if (disguisedPlayer.isOnline()) {
                 disguisedPlayer.kickPlayer(plugin.getMessageConfig().get("disguise.conflict-removed", "&cYour disguise was removed because &e{target}&c is currently online on the network.", "{target}", conflictingName));
