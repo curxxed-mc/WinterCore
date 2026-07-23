@@ -198,7 +198,6 @@ public class BrigadierCommandHandler {
             if (info.inGameOnly() && !(sender instanceof Player)) return false;
             String[] permissions = info.permission();
             if (permissions.length == 0) return true;
-            // Check if sender has any of the required permissions
             for (String perm : permissions) {
                 if (sender.hasPermission(perm)) return true;
             }
