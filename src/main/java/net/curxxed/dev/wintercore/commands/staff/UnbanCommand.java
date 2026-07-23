@@ -42,7 +42,6 @@ public class UnbanCommand extends BaseCommand {
         }
         String targetName = args[0];
         UUID targetUUID = Bukkit.getOfflinePlayer(targetName).getUniqueId();
-        // Always get the correct capitalization for the IGN
         String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
         if (displayName == null || displayName.trim().isEmpty()) {
             displayName = targetName;

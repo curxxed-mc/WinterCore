@@ -17,11 +17,12 @@ import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FreezeListener implements Listener {
-    private final Set<Player> frozenPlayers = new HashSet<>();
+    private final Set<UUID> frozenPlayers = ConcurrentHashMap.newKeySet();
     private final PlayerService playerService;
     private final WinterCore plugin;
     @Getter
@@ -35,38 +36,36 @@ public class FreezeListener implements Listener {
     }
 
     public void freezePlayer(Player player, Player staff) {
-        frozenPlayers.add(player);
+        frozenPlayers.add(player.getUniqueId());
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, Integer.MAX_VALUE, 1, false, false));
         playerService.broadcastFreeze(player, staff,true);
     }
 
     public void unfreezePlayer(Player player, Player staff) {
-        frozenPlayers.remove(player);
+        frozenPlayers.remove(player.getUniqueId());
         player.removePotionEffect(PotionEffectType.BLINDNESS);
 
         playerService.broadcastFreeze(player, staff,false);
     }
 
     public boolean isFrozen(Player player) {
-        return frozenPlayers.contains(player);
+        return player != null && frozenPlayers.contains(player.getUniqueId());
     }
 
     public boolean isPlayerFrozen(Player player) {
         return instance != null && instance.isFrozen(player);
     }
 
-    // Prevents Movement
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        if (isFrozen(player)) {
+        if (isFrozen(player) && event.getTo() != null) {
             if (event.getFrom().getX() != event.getTo().getX() || event.getFrom().getZ() != event.getTo().getZ()) {
-                event.setTo(event.getFrom()); // Cancel movement while preserving yaw/pitch
+                event.setTo(event.getFrom());
             }
         }
     }
 
-    // Prevents Interactions
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
         if (isFrozen(event.getPlayer())) {
@@ -75,7 +74,6 @@ public class FreezeListener implements Listener {
         }
     }
 
-    // Prevents Dropping Items
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDropItem(PlayerDropItemEvent event) {
         if (isFrozen(event.getPlayer())) {
@@ -83,7 +81,6 @@ public class FreezeListener implements Listener {
         }
     }
 
-    // Prevents Picking Up Items
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPickupItem(PlayerPickupItemEvent event) {
         if (isFrozen(event.getPlayer())) {
@@ -91,7 +88,6 @@ public class FreezeListener implements Listener {
         }
     }
 
-    // Prevents Inventory Click
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getWhoClicked() instanceof Player) {
@@ -102,7 +98,6 @@ public class FreezeListener implements Listener {
         }
     }
 
-    // Prevents Block Breaking
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         if (isFrozen(event.getPlayer())) {
@@ -110,7 +105,6 @@ public class FreezeListener implements Listener {
         }
     }
 
-    // Prevents Block Placing
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
         if (isFrozen(event.getPlayer())) {
@@ -118,7 +112,6 @@ public class FreezeListener implements Listener {
         }
     }
 
-    // Prevents Attacking and Getting Hit
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player) {
@@ -126,14 +119,12 @@ public class FreezeListener implements Listener {
             if (event.getEntity() instanceof Player) {
                 Player victim = (Player) event.getEntity();
 
-                // If the attacker is frozen, cancel their attack
                 if (isFrozen(attacker)) {
                     event.setCancelled(true);
                     attacker.sendMessage(message("moderation.freeze.cannot-attack", "&cYou cannot attack while frozen."));
                     return;
                 }
 
-                // If the victim is frozen, cancel the attack and notify the attacker
                 if (isFrozen(victim)) {
                     event.setCancelled(true);
                     attacker.sendMessage(message("moderation.freeze.target-cannot-be-attacked",
@@ -144,7 +135,6 @@ public class FreezeListener implements Listener {
         }
     }
 
-    // Prevents Shooting Arrows or Other Projectiles
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onShootBow(EntityShootBowEvent event) {
         if (event.getEntity() instanceof Player) {
@@ -155,7 +145,6 @@ public class FreezeListener implements Listener {
         }
     }
 
-    // Prevents Hunger Depletion
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onHungerChange(FoodLevelChangeEvent event) {
         if (event.getEntity() instanceof Player) {
@@ -164,6 +153,11 @@ public class FreezeListener implements Listener {
                 event.setCancelled(true);
             }
         }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        frozenPlayers.remove(event.getPlayer().getUniqueId());
     }
 
     private String message(String path, String fallback, String... placeholders) {

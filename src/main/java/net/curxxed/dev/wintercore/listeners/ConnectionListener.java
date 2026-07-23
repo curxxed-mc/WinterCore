@@ -1,6 +1,5 @@
 package net.curxxed.dev.wintercore.listeners;
 
-import net.curxxed.dev.wintercore.commands.staff.ClientBrandCommand;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.ServerSwitchPacket;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.StaffActivityPacket;
 import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
@@ -11,7 +10,6 @@ import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.utils.CC;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -21,11 +19,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ConnectionListener implements Listener {
@@ -89,7 +83,6 @@ public class ConnectionListener implements Listener {
         String playerName = player.getName();
         String serverName = plugin.getConfig().getString("server-name", "unknown");
 
-        ClientBrandCommand.silenced.add(uuid);
         joinTimes.put(uuid, System.currentTimeMillis());
         plugin.getTasks().async(() ->
                 networkRedisService.setOnlinePresence(uuid, playerName, serverName)

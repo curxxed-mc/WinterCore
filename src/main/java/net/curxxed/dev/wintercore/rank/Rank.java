@@ -24,7 +24,6 @@ public class Rank {
         }
     }
 
-    // rank attributes
     public String getPrefix() {
         return rankSection.getString("prefix", "");
     }
@@ -57,10 +56,8 @@ public class Rank {
         List<Map<String, String>> result = new ArrayList<>();
         for (Object obj : rawList) {
             if (obj instanceof Map) {
-                // Already in the correct format
                 result.add((Map<String, String>) obj);
             } else if (obj instanceof String) {
-                // Convert string to map
                 Map<String, String> map = new HashMap<>();
                 map.put("permission", (String) obj);
                 result.add(map);
@@ -87,7 +84,6 @@ public class Rank {
         plugin.getRankManager().saveRanksConfig();
     }
 
-    // Inheritance
     public List<String> getInheritance() {
         return rankSection.getStringList("inheritance");
     }

@@ -8,18 +8,11 @@ import net.curxxed.dev.wintercore.chat.ChatFilterService;
 import net.curxxed.dev.wintercore.chat.ChatListener;
 import net.curxxed.dev.wintercore.chat.MessagingService;
 import net.curxxed.dev.wintercore.chat.StaffChatService;
-import net.curxxed.dev.wintercore.client.ClientBrand;
-import net.curxxed.dev.wintercore.commands.staff.ClientBrandCommand;
 import net.curxxed.dev.wintercore.commands.framework.BrigadierCommandHandler;
 import net.curxxed.dev.wintercore.commands.framework.CommandHandler;
-import net.curxxed.dev.wintercore.commands.bungee.ServerManagerCommand;
-import net.curxxed.dev.wintercore.commands.gamemode.GameModeCommand;
-import net.curxxed.dev.wintercore.commands.misc.*;
-import net.curxxed.dev.wintercore.commands.network.*;
-import net.curxxed.dev.wintercore.commands.social.DiscordCommand;
-import net.curxxed.dev.wintercore.commands.staff.*;
-import net.curxxed.dev.wintercore.commands.troll.TrollCommand;
-import net.curxxed.dev.wintercore.commands.utility.*;
+import net.curxxed.dev.wintercore.config.MenuConfig;
+import net.curxxed.dev.wintercore.config.MessageConfig;
+import net.curxxed.dev.wintercore.config.PermissionConfigManager;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.database.redis.RedisManager;
 import net.curxxed.dev.wintercore.database.redis.RedisSocials;
@@ -29,38 +22,26 @@ import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
 import net.curxxed.dev.wintercore.disguise.DisguiseEventListener;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.DisguiseRegistry;
-import net.curxxed.dev.wintercore.disguise.commands.DisguiseCommand;
-import net.curxxed.dev.wintercore.disguise.commands.UnDisguiseCommand;
 import net.curxxed.dev.wintercore.disguise.impl.DefaultDisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
-import net.curxxed.dev.wintercore.listeners.ConnectionListener;
 import net.curxxed.dev.wintercore.listeners.FreezeListener;
 import net.curxxed.dev.wintercore.menu.MenuManager;
-import net.curxxed.dev.wintercore.config.MenuConfig;
-import net.curxxed.dev.wintercore.menus.RankMenu;
+import net.curxxed.dev.wintercore.menus.TagsMenu;
 import net.curxxed.dev.wintercore.namemc.NameMcService;
 import net.curxxed.dev.wintercore.nametags.NameTagColorManager;
 import net.curxxed.dev.wintercore.nms.PacketSender;
-import net.curxxed.dev.wintercore.config.PermissionConfigManager;
 import net.curxxed.dev.wintercore.placeholders.Placeholder;
+import net.curxxed.dev.wintercore.player.BanList;
 import net.curxxed.dev.wintercore.player.PlayerService;
-import net.curxxed.dev.wintercore.rank.RankCommand;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.scheduler.Tasks;
-import net.curxxed.dev.wintercore.staff.StaffModeListener;
 import net.curxxed.dev.wintercore.staff.StaffModeManager;
-import net.curxxed.dev.wintercore.commands.social.TagsCommand;
-import net.curxxed.dev.wintercore.menus.TagsMenu;
 import net.curxxed.dev.wintercore.tags.TagsManager;
-import net.curxxed.dev.wintercore.player.BanList;
 import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.config.MessageConfig;
 import net.curxxed.dev.wintercore.utils.Utilities;
-import net.curxxed.dev.wintercore.version.PlayerProtocolResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.Jedis;
@@ -118,11 +99,11 @@ public final class WinterCore extends JavaPlugin {
     private WinterCoreApi api;
     private NameMcService nameMcService;
     private PacketSender packetSender;
-    private PlayerProtocolResolver protocolResolver;
 
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
+        isShuttingDown = false;
 
         saveDefaultConfig();
         getConfig().options().copyDefaults(true);
@@ -131,7 +112,6 @@ public final class WinterCore extends JavaPlugin {
         instance = this;
         this.tasks = new Tasks(this);
         this.packetSender = new PacketSender(getLogger());
-        this.protocolResolver = new PlayerProtocolResolver(this);
         this.messageConfig = new MessageConfig(this);
         this.chatFilterService = new ChatFilterService(this);
         this.nameMcService = new NameMcService(this);
@@ -266,10 +246,6 @@ public final class WinterCore extends JavaPlugin {
                 System.currentTimeMillis(),
                 true
         ));
-
-        for (Player player : Utilities.getOnlinePlayers()) {
-            ClientBrandCommand.silenced.add(player.getUniqueId());
-        }
     }
 
     private JedisPool buildJedisPool(JedisPoolConfig config, String host, int port, String password) {
@@ -310,7 +286,6 @@ public final class WinterCore extends JavaPlugin {
     }
 
     private void registerBungee() {
-        Bukkit.getMessenger().registerIncomingPluginChannel(this, channel, new ClientBrand(this));
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, channel);
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         Bukkit.getMessenger().registerIncomingPluginChannel(this, "BungeeCord", (ch, player, message) -> { });

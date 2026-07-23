@@ -170,7 +170,7 @@ public class ItemBuilder {
     public ItemBuilder setLore(List<String> lore) {
         ItemMeta im = this.is.getItemMeta();
         if (im != null) {
-            im.setLore(CC.translate(lore)); // Utilizes your optimized CC list translator
+            im.setLore(CC.translate(lore));
             this.is.setItemMeta(im);
         }
         return this;

@@ -6,7 +6,7 @@ import lombok.Getter;
 public class Tag {
     private final String id;
     private final String prefix;
-    private final String color; // Now stores color code as string, e.g., "&b"
+    private final String color;
     private final String name;
     private final int weight;
 
