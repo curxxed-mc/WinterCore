@@ -1,11 +1,11 @@
 package net.curxxed.dev.wintercore.api;
 
-import net.curxxed.dev.wintercore.database.redis.packet.RedisPacket;
-import net.curxxed.dev.wintercore.database.redis.RedisPacketBus;
 import net.curxxed.dev.wintercore.chat.ChatFilterService;
 import net.curxxed.dev.wintercore.config.MessageConfig;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.database.redis.RedisManager;
+import net.curxxed.dev.wintercore.database.redis.RedisPacketBus;
+import net.curxxed.dev.wintercore.database.redis.packet.RedisPacket;
 import net.curxxed.dev.wintercore.database.service.CurrencyService;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.DisguiseRegistry;
@@ -18,7 +18,6 @@ import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.scheduler.Tasks;
 import net.curxxed.dev.wintercore.tags.TagsManager;
 import net.curxxed.dev.wintercore.utils.Utilities;
-import net.curxxed.dev.wintercore.version.PlayerProtocolResolver;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -41,10 +40,6 @@ public final class SimpleWinterCoreApi implements WinterCoreApi {
         return plugin.getPacketSender();
     }
 
-    @Override
-    public PlayerProtocolResolver protocolResolver() {
-        return plugin.getProtocolResolver();
-    }
 
     @Override
     public String serverVersion() {

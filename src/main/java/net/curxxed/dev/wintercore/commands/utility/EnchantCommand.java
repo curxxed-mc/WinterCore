@@ -25,12 +25,10 @@ public class EnchantCommand extends BaseCommand {
     private static final Set<String> TAB_NAMES = new TreeSet<>();
 
     static {
-        // Runtime discovery: works on whatever version the server is running.
         for (Enchantment enchantment : Enchantment.values()) {
             registerEnchantment(enchantment);
         }
 
-        // Friendly aliases for common names.
         alias("sharpness", "DAMAGE_ALL");
         alias("efficiency", "DIG_SPEED");
         alias("fortune", "LOOT_BONUS_BLOCKS");
@@ -59,8 +57,6 @@ public class EnchantCommand extends BaseCommand {
         alias("vanishing_curse", "VANISHING_CURSE");
         alias("sweeping_edge", "SWEEPING_EDGE");
 
-        // Newer enchantments will be picked up automatically by Enchantment.values()
-        // on servers that support them, so no hardcoding is needed here.
     }
 
     private static void registerEnchantment(Enchantment enchantment) {
@@ -77,7 +73,6 @@ public class EnchantCommand extends BaseCommand {
             register(key, enchantment, false);
             register(cleanKey, enchantment, true);
         } else if (legacyName != null) {
-            // Older servers: legacy name is the tab-complete friendly name.
             register(legacyName, enchantment, true);
         }
     }

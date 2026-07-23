@@ -34,7 +34,7 @@ public class TagsManager {
             config = YamlConfiguration.loadConfiguration(reader);
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to load tags.yml with UTF-8: " + e.getMessage());
-            config = YamlConfiguration.loadConfiguration(file); // fallback
+            config = YamlConfiguration.loadConfiguration(file);
         }
         tags.clear();
         for (String key : config.getKeys(false)) {

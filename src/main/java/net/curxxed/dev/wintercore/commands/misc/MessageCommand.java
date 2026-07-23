@@ -29,33 +29,23 @@ public class MessageCommand extends BaseCommand {
     @Override
     public void execute(CommandArguments args) {
         Player sender = (Player) args.getSender();
-
-        // Ensure the command has enough arguments (player and message)
         if (args.length() < 2) {
             sendUsage(sender);
             return;
         }
-
-        // Safely get the target player from the first argument
         Player target = args.getOptionalPlayer(0).orElse(null);
-
-        // Check if the target player is online
         if (target == null) {
             send(sender, "chat.private.target-not-online",
                     "&cThat player is not online.");
             return;
         }
-
-        // Prevent a player from messaging themselves
         if (sender.equals(target)) {
             send(sender, "chat.private.self",
                     "&cYou cannot send a message to yourself.");
             return;
         }
-
-        // Rebuild the message from the remaining arguments
         String message = args.getArgsList().stream()
-                .skip(1) // Skip the player name argument
+                .skip(1)
                 .collect(Collectors.joining(" "));
 
         if (this.messagingService != null) {

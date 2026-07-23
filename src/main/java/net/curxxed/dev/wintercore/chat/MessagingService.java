@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MessagingService {
 
-    private static final long REPLY_TIMEOUT_MILLIS = 180_000L; // 3 minutes
+    private static final long REPLY_TIMEOUT_MILLIS = 180_000L;
 
     private final WinterCore plugin;
     private final PlayerService playerService;

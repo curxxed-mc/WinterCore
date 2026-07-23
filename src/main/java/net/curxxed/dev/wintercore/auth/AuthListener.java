@@ -159,6 +159,7 @@ public class AuthListener implements Listener {
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         if (!authManager.isPendingSetup(player) && !authManager.isPendingAuth(player)) return;
+        if (event.getTo() == null) return;
 
         if (event.getFrom().getBlockX() != event.getTo().getBlockX()
                 || event.getFrom().getBlockY() != event.getTo().getBlockY()

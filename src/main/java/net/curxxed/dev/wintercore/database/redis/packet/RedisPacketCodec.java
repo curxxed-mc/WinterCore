@@ -128,7 +128,7 @@ public final class RedisPacketCodec {
                 UUID.fromString(json.get("targetUuid").getAsString()),
                 json.get("targetName").getAsString(),
                 json.get("destinationServer").getAsString(),
-                json.get("issuer").getAsString() // i need this comment so I can recommit :L
+                json.get("issuer").getAsString()
         ));
     }
 
