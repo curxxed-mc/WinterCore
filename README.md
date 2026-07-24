@@ -14,7 +14,7 @@ The plugin was built around Spigot/Paper 1.8.8. It includes compatibility work f
 - Ranks, permissions, tags, menus, chat filtering, scoreboards, tab lists, and name tags
 - Optional PlaceholderAPI placeholders
 
-WinterCore is a broad, network-specific plugin rather than a ready-made replacement for a single-purpose plugin. The available commands and permissions depend on its configuration and command classes.
+WinterCore is a broad, ready-made replacement for a single-purpose plugin. The available commands and permissions depend on its configuration and command classes.
 
 ## Requirements
 
@@ -24,7 +24,7 @@ WinterCore is a broad, network-specific plugin rather than a ready-made replacem
 - Redis for network features
 - PlaceholderAPI, if you want placeholder support
 
-Before starting the server, configure MongoDB, Redis, the server name, and any webhook endpoint in `plugins/WinterCore/config.yml`. Keep real passwords, connection strings, and webhook URLs out of version control.
+Before starting the server, configure MongoDB, Redis, the server name, in `plugins/WinterCore/config.yml`. 
 
 ## Building
 
