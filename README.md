@@ -36,9 +36,9 @@ The finished plugin JAR will be placed in `build/libs/`.
 
 ## Current state
 
-WinterCore is being actively cleaned up and reworked. The source currently compiles and the Gradle `check` task passes, although the project does not yet have automated tests.
+WinterCore is being actively cleaned up and reworked. 
 
-Recent work has removed tracked IDE files, improved Redis and disguise lifecycle handling, fixed reload and scheduled-task issues, and removed unused client-brand and protocol code. Because the plugin is tailored to a specific network—and newer-version support is not fully tested—you should verify your configuration and test the plugin away from production before deploying it.
+Recent work has removed tracked IDE files, improved Redis and disguise lifecycle handling, fixed reload and scheduled-task issues, and removed unused client-brand and protocol code. Newer-version support is not fully tested—you should verify your configuration and test the plugin away from production before deploying it.
 
 ## Configuration
 
