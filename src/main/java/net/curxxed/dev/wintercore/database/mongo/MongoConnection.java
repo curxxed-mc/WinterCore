@@ -8,13 +8,13 @@ import lombok.Getter;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bson.Document;
 
-public final class MongoConnectionManager implements AutoCloseable {
+public final class MongoConnection implements AutoCloseable {
 
     private final MongoClient client;
     @Getter
     private final MongoDatabase database;
 
-    public MongoConnectionManager(WinterCore plugin) {
+    public MongoConnection(WinterCore plugin) {
         String uri = plugin.getConfig().getString("mongodb.uri", "mongodb://localhost:27017");
         String name = plugin.getConfig().getString("mongodb.database", "wintercore");
 
