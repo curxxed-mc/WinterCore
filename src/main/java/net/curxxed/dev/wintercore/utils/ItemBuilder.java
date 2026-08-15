@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Easily create itemstacks, without messing your hands.
  * @author NonameSL
- * @credit optimized by curxxed for WinterCore
+ * @credit improved by curxxed for WinterCore
  */
 public class ItemBuilder {
 

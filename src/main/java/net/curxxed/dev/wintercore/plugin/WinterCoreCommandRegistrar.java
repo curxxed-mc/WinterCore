@@ -5,7 +5,6 @@ import net.curxxed.dev.wintercore.commands.bungee.ServerManagerCommand;
 import net.curxxed.dev.wintercore.commands.framework.CommandHandler;
 import net.curxxed.dev.wintercore.commands.gamemode.GameModeCommand;
 import net.curxxed.dev.wintercore.commands.misc.*;
-import net.curxxed.dev.wintercore.commands.network.*;
 import net.curxxed.dev.wintercore.commands.social.DiscordCommand;
 import net.curxxed.dev.wintercore.commands.social.TagsCommand;
 import net.curxxed.dev.wintercore.commands.staff.*;
@@ -59,12 +58,6 @@ final class WinterCoreCommandRegistrar {
         commandHandler.register(SpeedCommand.class);
         commandHandler.register(ClearEffectsCommand.class);
         commandHandler.register(ServerMuteCommand.class);
-        commandHandler.register(NetworkBroadcastCommand.class);
-        commandHandler.register(NetworkFindCommand.class);
-        commandHandler.register(NetworkListCommand.class);
-        commandHandler.register(NetworkMaintenanceCommand.class);
-        commandHandler.register(NetworkSendCommand.class);
-
         ProfileCommand profile = new ProfileCommand(plugin, plugin.getRedisSocials());
         plugin.getServer().getPluginManager().registerEvents(profile, plugin);
         commandHandler.register(profile);

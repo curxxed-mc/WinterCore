@@ -53,6 +53,7 @@ public class BrigadierCommandHandler {
                     plugin.getClass().getClassLoader(),
                     new Class[]{lifecycleHandlerClass},
                     (proxy, method, args) -> {
+                        if (method.getDeclaringClass() == Object.class) return invokeObjectMethod(proxy, method, args);
                         if ("run".equals(method.getName()) && args != null && args.length == 1) {
                             onCommandsEvent(args[0]);
                         }
@@ -119,6 +120,7 @@ public class BrigadierCommandHandler {
                     plugin.getClass().getClassLoader(),
                     new Class[]{predClass},
                     (proxy, method, args) -> {
+                        if (method.getDeclaringClass() == Object.class) return invokeObjectMethod(proxy, method, args);
                         if ("test".equals(method.getName()) && args != null && args.length == 1) {
                             return checkRequires(args[0], info);
                         }
@@ -142,6 +144,7 @@ public class BrigadierCommandHandler {
                     plugin.getClass().getClassLoader(),
                     new Class[]{suggestionProviderClass},
                     (proxy, method, args) -> {
+                        if (method.getDeclaringClass() == Object.class) return invokeObjectMethod(proxy, method, args);
                         if ("getSuggestions".equals(method.getName()) && args != null && args.length == 2) {
                             return buildSuggestions(command, info, args[0], args[1]);
                         }
@@ -171,6 +174,7 @@ public class BrigadierCommandHandler {
                 plugin.getClass().getClassLoader(),
                 new Class[]{brigadierCommandClass},
                 (proxy, method, args) -> {
+                    if (method.getDeclaringClass() == Object.class) return invokeObjectMethod(proxy, method, args);
                     if ("run".equals(method.getName()) && args != null && args.length == 1) {
                         Object ctx = args[0];
                         CommandSender sender = getSenderFromContext(ctx);
@@ -189,6 +193,15 @@ public class BrigadierCommandHandler {
                     return 1;
                 }
         );
+    }
+
+    private static Object invokeObjectMethod(Object proxy, Method method, Object[] args) {
+        switch (method.getName()) {
+            case "equals": return proxy == args[0];
+            case "hashCode": return System.identityHashCode(proxy);
+            case "toString": return proxy.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(proxy));
+            default: throw new UnsupportedOperationException(method.toString());
+        }
     }
 
     private boolean checkRequires(Object source, CommandInfo info) {

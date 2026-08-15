@@ -19,7 +19,6 @@ dependencies {
     compileOnly("me.clip:placeholderapi:2.11.6")
     implementation("org.mongodb:mongodb-driver-sync:3.12.14")
     implementation("redis.clients:jedis:5.2.0")
-    implementation("org.slf4j:slf4j-simple:1.7.36")
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")
     implementation("com.google.guava:guava:21.0")
     implementation("com.warrenstrange:googleauth:1.5.0")

@@ -4,6 +4,7 @@ import net.curxxed.dev.wintercore.database.redis.packet.packets.ChatBroadcastPac
 import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -81,7 +82,7 @@ public final class StaffChatService {
             return coloredName;
         }
 
-        String visible = CC.stripColor(translatedRankPrefix);
+        String visible = ChatColor.stripColor(translatedRankPrefix);
         if (visible == null || visible.trim().isEmpty()) {
             return coloredName;
         }
