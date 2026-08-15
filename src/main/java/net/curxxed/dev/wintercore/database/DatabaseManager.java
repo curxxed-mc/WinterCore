@@ -3,7 +3,7 @@ package net.curxxed.dev.wintercore.database;
 import com.mongodb.client.MongoDatabase;
 import lombok.Getter;
 import net.curxxed.dev.wintercore.database.cache.TagCacheService;
-import net.curxxed.dev.wintercore.database.mongo.MongoConnectionManager;
+import net.curxxed.dev.wintercore.database.mongo.MongoConnection;
 import net.curxxed.dev.wintercore.database.mongo.ProfileRepository;
 import net.curxxed.dev.wintercore.database.service.IdentityService;
 import net.curxxed.dev.wintercore.database.service.CurrencyService;
@@ -17,7 +17,7 @@ public final class DatabaseManager implements AutoCloseable {
     @Getter
     private static DatabaseManager instance;
 
-    private final MongoConnectionManager mongo;
+    private final MongoConnection mongo;
     private final ProfileRepository profiles;
 
     @Getter private final RankCacheService rankCache;
@@ -31,7 +31,7 @@ public final class DatabaseManager implements AutoCloseable {
     @Getter private final ProfileRepository profileRepository;
 
     public DatabaseManager(WinterCore plugin) {
-        this.mongo = new MongoConnectionManager(plugin);
+        this.mongo = new MongoConnection(plugin);
         this.profiles = new ProfileRepository(mongo.collection("profiles"));
 
         this.rankCache = new RankCacheService(plugin, profiles);

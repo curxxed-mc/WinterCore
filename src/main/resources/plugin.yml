@@ -1,5 +1,5 @@
 name: WinterCore
-version: '0.94c'
+version: '0.95-pre-release-1'
 main: net.curxxed.dev.wintercore.plugin.WinterCore
 author: curxxed
 softdepend:

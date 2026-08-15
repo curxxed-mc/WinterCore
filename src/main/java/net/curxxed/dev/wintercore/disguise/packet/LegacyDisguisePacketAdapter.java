@@ -7,11 +7,11 @@ import org.bukkit.entity.Player;
 import java.util.Collections;
 import java.util.stream.Stream;
 
-final class LegacyCraftBukkitDisguisePacketAdapter implements DisguisePacketAdapter {
+final class LegacyDisguisePacketAdapter implements DisguisePacketAdapter {
 
     private final DisguiseHandler handler;
 
-    LegacyCraftBukkitDisguisePacketAdapter(DisguiseHandler handler) {
+    LegacyDisguisePacketAdapter(DisguiseHandler handler) {
         this.handler = handler;
     }
 
