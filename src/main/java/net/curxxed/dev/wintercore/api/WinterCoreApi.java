@@ -4,7 +4,6 @@ import net.curxxed.dev.wintercore.chat.ChatFilterService;
 import net.curxxed.dev.wintercore.config.MessageConfig;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.database.redis.RedisManager;
-import net.curxxed.dev.wintercore.database.redis.RedisPacketBus;
 import net.curxxed.dev.wintercore.database.redis.packet.RedisPacket;
 import net.curxxed.dev.wintercore.database.service.CurrencyService;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
@@ -55,8 +54,6 @@ public interface WinterCoreApi {
     NameTagColorManager nametags();
 
     List<Player> onlinePlayers();
-
-    RedisPacketBus packets();
 
     void publish(RedisPacket<?> packet);
 }

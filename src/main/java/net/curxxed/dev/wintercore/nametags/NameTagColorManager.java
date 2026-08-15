@@ -243,7 +243,8 @@ public class NameTagColorManager implements Listener {
 
     private void updatePlayerListName(Player player) {
         if (player == null || !player.isOnline()) return;
-        safeSetPlayerListName(player, getVisibleName(player));
+        String color = resolveColorPrefix(player.getUniqueId(), resolveRankName(player));
+        safeSetPlayerListName(player, color + getVisibleName(player));
     }
 
     private void refreshAllViewersForTarget(Player target) {
@@ -503,7 +504,7 @@ public class NameTagColorManager implements Listener {
             return;
         }
         try {
-            team.getClass().getMethod("setColor", ChatColor.class).invoke(team, color);
+            Team.class.getMethod("setColor", ChatColor.class).invoke(team, color);
         } catch (Exception ignored) {
         }
     }
@@ -513,7 +514,7 @@ public class NameTagColorManager implements Listener {
             return null;
         }
         try {
-            Object value = team.getClass().getMethod("getColor").invoke(team);
+            Object value = Team.class.getMethod("getColor").invoke(team);
             return value instanceof ChatColor ? (ChatColor) value : null;
         } catch (Exception ignored) {
             return null;
@@ -551,7 +552,7 @@ public class NameTagColorManager implements Listener {
     private static void safeSetPlayerListName(Player player, String name) {
         if (player == null) return;
         try {
-            if (name != null && name.length() <= 16) {
+            if (name != null && (Utilities.IS_1_13_OR_NEWER || name.length() <= 16)) {
                 player.setPlayerListName(name);
             } else {
                 player.setPlayerListName(player.getName());

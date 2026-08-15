@@ -177,7 +177,7 @@ public class DisguiseMenu extends Menu {
             case '6': return DyeColor.ORANGE;
             case '7': return DyeColor.SILVER;
             case '8': return DyeColor.GRAY;
-            case '9': return DyeColor.LIGHT_BLUE;
+            case '9': return DyeColor.BLUE;
             case 'a': return DyeColor.LIME;
             case 'b': return DyeColor.LIGHT_BLUE;
             case 'c': return DyeColor.RED;

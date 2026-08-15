@@ -7,6 +7,7 @@ import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.config.ModerationMessages;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.io.File;
@@ -70,7 +71,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                     p.sendMessage(statusMessage);
                 }
             }
-            plugin.getLogger().info(CC.stripColor(statusMessage));
+            plugin.getLogger().info(ChatColor.stripColor(statusMessage));
         });
     }
 
@@ -286,7 +287,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                     online.sendMessage(packet.getMessage());
                 }
             }
-            plugin.getLogger().info(CC.stripColor(packet.getMessage()));
+            plugin.getLogger().info(ChatColor.stripColor(packet.getMessage()));
         });
     }
 
@@ -358,7 +359,7 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
             for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
                 online.sendMessage(packet.getMessage());
             }
-            plugin.getLogger().info(CC.stripColor(packet.getMessage()));
+            plugin.getLogger().info(ChatColor.stripColor(packet.getMessage()));
         });
     }
 
@@ -377,7 +378,8 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
 
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("Connect");
-            out.writeUTF(packet.getDestinationServer());
+            out.writeUTF(plugin.getConfig().getString(
+                    "BungeeServers." + packet.getDestinationServer(), packet.getDestinationServer()));
             target.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
         });
     }

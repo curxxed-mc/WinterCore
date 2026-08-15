@@ -57,7 +57,7 @@ public class VanishCommand extends BaseCommand {
 
         plugin.getRankManager().getRank(player, rank -> plugin.getRankManager().getColorPreference(rank, rankColor -> {
             plugin.getTasks().sync(() -> {
-                String playerRankColor = CC.translateAlternateColorCodes('&', rankColor);
+                String playerRankColor = CC.translate(rankColor);
 
                 boolean nowVanished;
 

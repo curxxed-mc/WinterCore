@@ -29,6 +29,8 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
     private final Class<?> gameProfileClass;
     private final Class<?> propertyClass;
+    private final Class<?> paperProfileClass;
+    private final Class<?> paperPropertyClass;
 
     public DefaultDisguiseHandler(final WinterCore plugin, final DisguiseRegistry disguiseRegistry) {
         super(plugin);
@@ -36,10 +38,27 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         this.packetAdapter = DisguisePacketAdapters.create(plugin, this);
         this.gameProfileClass = Utilities.resolveAuthlibClass("GameProfile");
         this.propertyClass = Utilities.resolveAuthlibClass("properties.Property");
+        this.paperProfileClass = optionalClass("com.destroystokyo.paper.profile.PlayerProfile");
+        this.paperPropertyClass = optionalClass("com.destroystokyo.paper.profile.ProfileProperty");
     }
 
     public String getPacketAdapterName() {
         return packetAdapter.name();
+    }
+
+    private Class<?> optionalClass(String name) {
+        try {
+            return Class.forName(name);
+        } catch (ClassNotFoundException ignored) {
+            return null;
+        }
+    }
+
+    private Object getProfile(Player player, Object entityPlayer) throws Exception {
+        if (paperProfileClass != null) {
+            return player.getClass().getMethod("getPlayerProfile").invoke(player);
+        }
+        return getGameProfile(entityPlayer);
     }
 
     private Object getGameProfile(Object entityPlayer) throws Exception {
@@ -55,14 +74,27 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
     }
 
     private Object getProperties(Object gameProfile) throws Exception {
-        return gameProfileClass.getMethod("getProperties").invoke(gameProfile);
+        if (paperProfileClass != null && paperProfileClass.isInstance(gameProfile)) {
+            return paperProfileClass.getMethod("getProperties").invoke(gameProfile);
+        }
+        return invokeAccessor(gameProfile, gameProfileClass, "getProperties", "properties");
     }
 
     private void clearProperties(Object gameProfile) throws Exception {
+        if (paperProfileClass != null && paperProfileClass.isInstance(gameProfile)) {
+            paperProfileClass.getMethod("clearProperties").invoke(gameProfile);
+            return;
+        }
         getProperties(gameProfile).getClass().getMethod("clear").invoke(getProperties(gameProfile));
     }
 
     private void putTextureProperty(Object gameProfile, String value, String signature) throws Exception {
+        if (paperProfileClass != null && paperProfileClass.isInstance(gameProfile)) {
+            Constructor<?> constructor = paperPropertyClass.getConstructor(String.class, String.class, String.class);
+            paperProfileClass.getMethod("setProperty", paperPropertyClass)
+                    .invoke(gameProfile, constructor.newInstance("textures", value, signature));
+            return;
+        }
         Constructor<?> propCtor = propertyClass.getConstructor(String.class, String.class, String.class);
         Object property = propCtor.newInstance("textures", value, signature);
         Object propertiesMap = getProperties(gameProfile);
@@ -71,6 +103,18 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
     private void serializeProperties(Object gameProfile, JsonArray out) throws Exception {
         Object propertiesMap = getProperties(gameProfile);
+        if (paperProfileClass != null && paperProfileClass.isInstance(gameProfile)) {
+            for (Object property : (Collection<?>) propertiesMap) {
+                JsonObject obj = new JsonObject();
+                String name = (String) paperPropertyClass.getMethod("getName").invoke(property);
+                obj.addProperty("key", name);
+                obj.addProperty("value-name", name);
+                obj.addProperty("value", (String) paperPropertyClass.getMethod("getValue").invoke(property));
+                obj.addProperty("signature", (String) paperPropertyClass.getMethod("getSignature").invoke(property));
+                out.add(obj);
+            }
+            return;
+        }
         Collection<Map.Entry<Object, Object>> entries =
                 (Collection<Map.Entry<Object, Object>>) propertiesMap.getClass().getMethod("entries").invoke(propertiesMap);
 
@@ -78,14 +122,43 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             Object prop = entry.getValue();
             JsonObject obj = new JsonObject();
             obj.addProperty("key", (String) entry.getKey());
-            obj.addProperty("value-name", (String) propertyClass.getMethod("getName").invoke(prop));
-            obj.addProperty("value", (String) propertyClass.getMethod("getValue").invoke(prop));
-            obj.addProperty("signature", (String) propertyClass.getMethod("getSignature").invoke(prop));
+            obj.addProperty("value-name", (String) invokeAccessor(prop, propertyClass, "getName", "name"));
+            obj.addProperty("value", (String) invokeAccessor(prop, propertyClass, "getValue", "value"));
+            obj.addProperty("signature", (String) invokeAccessor(prop, propertyClass, "getSignature", "signature"));
             out.add(obj);
         }
     }
 
-    private void setProfileName(Object gameProfile, String newName) {
+    private Object invokeAccessor(Object target, Class<?> type, String oldName, String newName) throws Exception {
+        try {
+            return type.getMethod(oldName).invoke(target);
+        } catch (NoSuchMethodException ignored) {
+            return type.getMethod(newName).invoke(target);
+        }
+    }
+
+    private void setProfileName(Player player, Object gameProfile, String newName) {
+        if (paperProfileClass != null && paperProfileClass.isInstance(gameProfile)) {
+            try {
+                paperProfileClass.getMethod("setName", String.class).invoke(gameProfile, newName);
+                player.getClass().getMethod("setPlayerProfile", paperProfileClass).invoke(player, gameProfile);
+                return;
+            } catch (ReflectiveOperationException e) {
+                e.printStackTrace();
+                return;
+            }
+        }
+        try {
+            Object profile = player.getClass().getMethod("getPlayerProfile").invoke(player);
+            profile.getClass().getMethod("setName", String.class).invoke(profile, newName);
+            for (java.lang.reflect.Method method : player.getClass().getMethods()) {
+                if (method.getName().equals("setPlayerProfile") && method.getParameterCount() == 1) {
+                    method.invoke(player, profile);
+                    return;
+                }
+            }
+        } catch (ReflectiveOperationException ignored) {
+        }
         changeField(gameProfile, "name", newName);
     }
 
@@ -137,7 +210,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
         try {
             final Object entityPlayer = Utilities.getEntityPlayer(player);
-            final Object gameProfile = getGameProfile(entityPlayer);
+            final Object gameProfile = getProfile(player, entityPlayer);
 
             final JsonObject data = new JsonObject();
             data.addProperty("name", player.getName());
@@ -167,7 +240,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
                     plugin.getTasks().sync(() -> {
                         try {
-                            setProfileName(gameProfile, name);
+                            setProfileName(player, gameProfile, name);
                             setTablistName(player, name);
 
                             String displayField = Utilities.IS_1_7 ? "listName" : "displayName";
@@ -229,7 +302,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
         try {
             final Object entityPlayer = Utilities.getEntityPlayer(player);
-            final Object gameProfile = getGameProfile(entityPlayer);
+            final Object gameProfile = getProfile(player, entityPlayer);
             final JsonObject profileData = disguiseData.getInfo();
 
             if (profileData.has("properties")) {
@@ -245,7 +318,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
             final String originalName = profileData.get("name").getAsString();
             String displayField = Utilities.IS_1_7 ? "listName" : "displayName";
-            setProfileName(gameProfile, originalName);
+            setProfileName(player, gameProfile, originalName);
             changeField(entityPlayer, displayField, originalName);
             setTablistName(player, originalName);
 
@@ -308,7 +381,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         try {
             if (!plugin.getDisguiseDataMap().containsKey(player.getUniqueId())) {
                 Object entityPlayer = Utilities.getEntityPlayer(player);
-                Object gameProfile = getGameProfile(entityPlayer);
+                Object gameProfile = getProfile(player, entityPlayer);
                 JsonObject data = new JsonObject();
                 data.addProperty("name", player.getName());
                 data.addProperty("uuid", player.getUniqueId().toString());

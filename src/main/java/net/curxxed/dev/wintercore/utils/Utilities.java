@@ -53,7 +53,7 @@ public class Utilities {
         try {
             if (SERVER_VERSION.contains(".")) {
                 String[] parts = SERVER_VERSION.split("\\.");
-                return Integer.parseInt(parts[1]);
+                return Integer.parseInt("1".equals(parts[0]) ? parts[1] : parts[0]);
             }
             if (SERVER_VERSION.startsWith("v")) {
                 String[] parts = SERVER_VERSION.split("_");
@@ -152,10 +152,6 @@ public class Utilities {
         return new ArrayList<>();
     }
 
-    public static int getOnlinePlayerCount() {
-        return getOnlinePlayers().size();
-    }
-
     private static @NonNull List<Player> normalizeOnlinePlayers(Object onlinePlayers) {
         if (onlinePlayers instanceof Player[]) {
             return new ArrayList<>(Arrays.asList((Player[]) onlinePlayers));
@@ -168,13 +164,6 @@ public class Utilities {
         return new ArrayList<>();
     }
 
-
-    public static void logBootBanner() {
-        Bukkit.getLogger().info(
-                "Utilities initialized → Version: " + SERVER_VERSION +
-                        " | Mode: " + (IS_LEGACY ? "Legacy (≤1.16)" : "Modern (1.17+)")
-        );
-    }
 
     public static Class<?> resolveAuthlibClass(String relative) {
         try { return Class.forName("com.mojang.authlib." + relative); } catch (ClassNotFoundException ignored) {}
@@ -243,10 +232,6 @@ public class Utilities {
         Bukkit.getConsoleSender().sendMessage(CC.translate(message));
     }
 
-    public static void stop() {
-        Bukkit.shutdown();
-    }
-
     private static Map<String, String[]> buildModernNmsAliases() {
         Map<String, String[]> aliases = new HashMap<>();
         aliases.put("Packet", new String[]{"net.minecraft.network.protocol.Packet"});
@@ -256,7 +241,9 @@ public class Utilities {
         aliases.put("ItemStack", new String[]{"net.minecraft.world.item.ItemStack"});
         aliases.put("EnumItemSlot", new String[]{"net.minecraft.world.entity.EquipmentSlot"});
         aliases.put("PacketPlayOutEntityDestroy", new String[]{"net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket"});
+        aliases.put("PacketPlayOutGameStateChange", new String[]{"net.minecraft.network.protocol.game.ClientboundGameEventPacket"});
         aliases.put("PacketPlayOutNamedEntitySpawn", new String[]{"net.minecraft.network.protocol.game.ClientboundAddPlayerPacket"});
+        aliases.put("PacketPlayOutSpawnEntity", new String[]{"net.minecraft.network.protocol.game.ClientboundAddEntityPacket"});
         aliases.put("PacketPlayOutEntityEquipment", new String[]{"net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket"});
         aliases.put("PacketPlayOutPlayerInfo", new String[]{"net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket"});
         return aliases;

@@ -4,7 +4,6 @@ import net.curxxed.dev.wintercore.chat.ChatFilterService;
 import net.curxxed.dev.wintercore.config.MessageConfig;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.database.redis.RedisManager;
-import net.curxxed.dev.wintercore.database.redis.RedisPacketBus;
 import net.curxxed.dev.wintercore.database.redis.packet.RedisPacket;
 import net.curxxed.dev.wintercore.database.service.CurrencyService;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
@@ -114,11 +113,6 @@ public final class SimpleWinterCoreApi implements WinterCoreApi {
     @Override
     public List<Player> onlinePlayers() {
         return Utilities.getOnlinePlayers();
-    }
-
-    @Override
-    public RedisPacketBus packets() {
-        return plugin.getRedisManager().getPacketBus();
     }
 
     @Override

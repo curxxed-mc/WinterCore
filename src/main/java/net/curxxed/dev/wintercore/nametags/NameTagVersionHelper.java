@@ -33,7 +33,7 @@ public final class NameTagVersionHelper {
             ChatColor primary = extractPrimaryColor(translated);
             if (primary != null) {
                 try {
-                    team.getClass().getMethod("setColor", ChatColor.class).invoke(team, primary);
+                    Team.class.getMethod("setColor", ChatColor.class).invoke(team, primary);
                 } catch (Exception ignored) {}
             }
         }
@@ -44,7 +44,7 @@ public final class NameTagVersionHelper {
         team.setSuffix("");
         if (HAS_TEAM_COLOR_API) {
             try {
-                team.getClass().getMethod("setColor", ChatColor.class).invoke(team, ChatColor.WHITE);
+                Team.class.getMethod("setColor", ChatColor.class).invoke(team, ChatColor.WHITE);
             } catch (Exception ignored) {}
         }
     }

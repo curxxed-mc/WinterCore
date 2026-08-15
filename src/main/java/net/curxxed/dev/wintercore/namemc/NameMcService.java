@@ -66,9 +66,6 @@ public final class NameMcService {
             }
 
             ResponseBody body = response.body();
-            if (body == null) {
-                return false;
-            }
 
             return Boolean.parseBoolean(body.string().trim());
         }
