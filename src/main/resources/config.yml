@@ -12,12 +12,12 @@ Redis:
   host: 127.0.0.1
   port: 6379
   password: ''
+BungeeServers:
+  Lobby26: lobby
+  Practice26: practice
 NameMC:
   enabled: false
   server: ''
-DiscordWebhook:
-  url: https://discord.com/api/webhooks/.../...
-  VanishLogs: true
 mongodb:
   uri: mongodb://root:password@localhost:27017
   database: wintercore

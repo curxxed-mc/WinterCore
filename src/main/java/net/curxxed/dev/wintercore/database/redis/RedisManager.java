@@ -22,14 +22,12 @@ public final class RedisManager {
     private final String serverName;
     private final RedisPacketCodec codec;
     private final BukkitRedisPacketHandler handler;
-    private final RedisPacketBus packetBus;
 
     public RedisManager(WinterCore plugin) {
         this.plugin = plugin;
         this.serverName = plugin.getConfig().getString("server-name", "Unknown");
         this.codec = new RedisPacketCodec(new Gson());
         this.handler = new BukkitRedisPacketHandler(plugin);
-        this.packetBus = new RedisPacketBus(plugin);
     }
 
     public void start() {
@@ -152,7 +150,6 @@ public final class RedisManager {
 
                             plugin.getTasks().sync(() -> {
                                 try {
-                                    packetBus.notifyListeners(packet);
                                     packet.handle(handler);
                                 } catch (Exception e) {
                                     plugin.getLogger().warning("Failed to handle Redis packet: " + e.getMessage());
@@ -173,15 +170,10 @@ public final class RedisManager {
         publish(packet);
         plugin.getTasks().sync(() -> {
             try {
-                packetBus.notifyListeners(packet);
                 packet.handle(handler);
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to handle local packet: " + e.getMessage());
             }
         });
-    }
-
-    public RedisPacketBus getPacketBus() {
-        return packetBus;
     }
 }

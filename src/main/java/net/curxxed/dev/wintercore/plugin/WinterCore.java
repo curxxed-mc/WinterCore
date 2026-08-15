@@ -30,7 +30,7 @@ import net.curxxed.dev.wintercore.menus.TagsMenu;
 import net.curxxed.dev.wintercore.namemc.NameMcService;
 import net.curxxed.dev.wintercore.nametags.NameTagColorManager;
 import net.curxxed.dev.wintercore.nms.PacketSender;
-import net.curxxed.dev.wintercore.placeholders.Placeholder;
+import net.curxxed.dev.wintercore.placeholders.WinterCoreExpansion;
 import net.curxxed.dev.wintercore.player.BanList;
 import net.curxxed.dev.wintercore.player.PlayerService;
 import net.curxxed.dev.wintercore.rank.RankManager;
@@ -40,7 +40,6 @@ import net.curxxed.dev.wintercore.tags.TagsManager;
 import net.curxxed.dev.wintercore.utils.CC;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -49,11 +48,11 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.io.File;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 @Getter
 public final class WinterCore extends JavaPlugin {
@@ -62,7 +61,6 @@ public final class WinterCore extends JavaPlugin {
     private static WinterCore instance;
 
     public static volatile boolean isShuttingDown = false;
-    public String channel = Utilities.IS_1_13_OR_NEWER ? "minecraft:brand" : "MC|Brand";
 
     private boolean placeholderAPIEnabled = false;
     private final ConcurrentMap<UUID, DisguiseData> disguiseDataMap = new ConcurrentHashMap<>();
@@ -74,15 +72,14 @@ public final class WinterCore extends JavaPlugin {
     private RedisManager redisManager;
     private RedisSocials redisSocials;
     private SocialInput socialInput;
-    private Placeholder placeholder;
     private TagsManager tagsManager;
     private TagsMenu tagsMenu;
     private DisguiseRegistry disguiseRegistry;
     private DisguiseEventListener disguiseEventListener;
-    private PlayerService playerService;
-    private MessagingService messagingService;
-    private ChatListener chatListener;
-    private FreezeListener freezeListener;
+    PlayerService playerService;
+    MessagingService messagingService;
+    ChatListener chatListener;
+    FreezeListener freezeListener;
     private StaffModeManager staffModeManager;
     private DisguiseHandler disguiseHandler;
     private CommandHandler commandHandler;
@@ -90,11 +87,11 @@ public final class WinterCore extends JavaPlugin {
     private MenuConfig menuConfig;
     private PermissionConfigManager permissionConfigManager;
     private NameTagColorManager nameTagColorManager;
-    private StaffChatService staffChatService;
+    StaffChatService staffChatService;
     private ChatFilterService chatFilterService;
     private MessageConfig messageConfig;
     private NetworkRedisService NRS;
-    private BanList banList;
+    BanList banList;
     private Tasks tasks;
     private WinterCoreApi api;
     private NameMcService nameMcService;
@@ -142,10 +139,12 @@ public final class WinterCore extends JavaPlugin {
         this.commandHandler = new CommandHandler(this);
 
         MenuManager.initialize(this);
-        registerListeners();
-        registerCommands();
+        new WinterCoreListenerRegistrar(this).register();
+        this.authModule = new WinterCoreCommandRegistrar(this).register();
         registerBungee();
-        registerApi();
+
+        this.api = new SimpleWinterCoreApi(this);
+        getServer().getServicesManager().register(WinterCoreApi.class, api, this, ServicePriority.Normal);
 
         if (Utilities.isPaperBrigadierSupported()) {
             try {
@@ -160,7 +159,6 @@ public final class WinterCore extends JavaPlugin {
         this.nameTagColorManager.load();
 
         getLogger().info("WinterCore enabled in " + (System.currentTimeMillis() - start) + "ms.");
-        Utilities.logBootBanner();
     }
 
     @Override
@@ -191,7 +189,7 @@ public final class WinterCore extends JavaPlugin {
 
         if (redisPool != null) {
             try (Jedis jedis = redisPool.getResource()) {
-                for (Player online : net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers()) {
+                for (Player online : Utilities.getOnlinePlayers()) {
                     if (NRS != null) {
                         NRS.clearOnlinePresence(online.getUniqueId(), online.getName());
                     }
@@ -217,7 +215,10 @@ public final class WinterCore extends JavaPlugin {
             nameTagColorManager.unload();
         }
 
-        unregisterApi();
+        if (api != null) {
+            getServer().getServicesManager().unregister(WinterCoreApi.class, api);
+            api = null;
+        }
 
         getLogger().info(CC.translate("&cWinterCore has been disabled."));
         instance = null;
@@ -233,7 +234,9 @@ public final class WinterCore extends JavaPlugin {
         poolConfig.setMinIdle(1);
         poolConfig.setTestOnBorrow(true);
 
-        this.redisPool = buildJedisPool(poolConfig, redisHost, redisPort, redisPassword);
+        this.redisPool = redisPassword.isEmpty()
+                ? new JedisPool(poolConfig, redisHost, redisPort)
+                : new JedisPool(poolConfig, redisHost, redisPort, 2000, redisPassword);
 
         this.redisManager = new RedisManager(this);
         this.redisSocials = new RedisSocials(this);
@@ -248,12 +251,6 @@ public final class WinterCore extends JavaPlugin {
         ));
     }
 
-    private JedisPool buildJedisPool(JedisPoolConfig config, String host, int port, String password) {
-        return password.isEmpty()
-                ? new JedisPool(config, host, port)
-                : new JedisPool(config, host, port, 2000, password);
-    }
-
     private void initializePlaceholders() {
         if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             getLogger().warning("PlaceholderAPI not found, some features may not work.");
@@ -261,9 +258,9 @@ public final class WinterCore extends JavaPlugin {
         }
 
         getLogger().info("PlaceholderAPI found, initializing placeholders.");
-        this.placeholder = new Placeholder(this);
+        WinterCoreExpansion placeholderExpansion = new WinterCoreExpansion(this);
 
-        if (this.placeholder.register()) {
+        if (placeholderExpansion.register()) {
             placeholderAPIEnabled = true;
             getLogger().info("WinterCore placeholders registered.");
         } else {
@@ -271,54 +268,21 @@ public final class WinterCore extends JavaPlugin {
         }
     }
 
-    private void registerListeners() {
-        WinterCoreListeners listeners = new WinterCoreListenerRegistrar(this).register();
-        this.playerService = listeners.getPlayerService();
-        this.messagingService = listeners.getMessagingService();
-        this.staffChatService = listeners.getStaffChatService();
-        this.chatListener = listeners.getChatListener();
-        this.freezeListener = listeners.getFreezeListener();
-        this.banList = listeners.getBanList();
-    }
-
-    private void registerCommands() {
-        this.authModule = new WinterCoreCommandRegistrar(this).register();
-    }
-
     private void registerBungee() {
-        Bukkit.getMessenger().registerOutgoingPluginChannel(this, channel);
+        Bukkit.getMessenger().registerOutgoingPluginChannel(this, Utilities.IS_1_13_OR_NEWER ? "minecraft:brand" : "MC|Brand");
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         Bukkit.getMessenger().registerIncomingPluginChannel(this, "BungeeCord", (ch, player, message) -> { });
     }
 
-    private void registerApi() {
-        this.api = new SimpleWinterCoreApi(this);
-        getServer().getServicesManager().register(WinterCoreApi.class, api, this, ServicePriority.Normal);
-    }
-
-    private void unregisterApi() {
-        if (api != null) {
-            getServer().getServicesManager().unregister(WinterCoreApi.class, api);
-            api = null;
-        }
-    }
-
-    public void saveVanishedPlayers() {
-        Set<String> uuids = new HashSet<>();
-        for (UUID uuid : vanishedPlayers) {
-            uuids.add(uuid.toString());
-        }
-        getConfig().set("vanished_players", uuids);
+    private void saveVanishedPlayers() {
+        getConfig().set("vanished_players", vanishedPlayers.stream().map(UUID::toString).collect(Collectors.toList()));
         saveConfig();
     }
 
-    public void loadRanksFile() {
-        File ranksFile = new File(getDataFolder(), "ranks.yml");
-        if (!ranksFile.exists()) {
+    private void loadRanksFile() {
+        if (!new File(getDataFolder(), "ranks.yml").exists()) {
             saveResource("ranks.yml", false);
         }
-        YamlConfiguration.loadConfiguration(ranksFile);
-        getLogger().info("Ranks file loaded.");
     }
 
     public NetworkRedisService getNRS() {

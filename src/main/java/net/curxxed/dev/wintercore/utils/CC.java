@@ -1,7 +1,5 @@
 package net.curxxed.dev.wintercore.utils;
 
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 
 import java.util.List;
@@ -13,21 +11,9 @@ public class CC {
         return ChatColor.translateAlternateColorCodes('&', in);
     }
 
-    public static String translateAlternateColorCodes(char altColorChar, String textToTranslate) {
-        return ChatColor.translateAlternateColorCodes(altColorChar, textToTranslate);
-    }
-
     public static List<String> translate(final List<String> lines) {
         return lines.stream()
                 .map(CC::translate)
                 .collect(Collectors.toList());
-    }
-
-    public static BaseComponent[] translateToComponent(final String in) {
-        return TextComponent.fromLegacyText(translate(in));
-    }
-
-    public static String stripColor(final String input) {
-        return ChatColor.stripColor(input);
     }
 }

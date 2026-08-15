@@ -14,7 +14,7 @@ The plugin was built around Spigot/Paper 1.8.8. It includes compatibility work f
 - Ranks, permissions, tags, menus, chat filtering, scoreboards, tab lists, and name tags
 - Optional PlaceholderAPI placeholders
 
-WinterCore is a broad, ready-made replacement for a single-purpose plugin. The available commands and permissions depend on its configuration and command classes.
+WinterCore is a broad, network-specific plugin rather than a ready-made replacement for a single-purpose plugin. The available commands and permissions depend on its configuration and command classes.
 
 ## Requirements
 
@@ -24,7 +24,7 @@ WinterCore is a broad, ready-made replacement for a single-purpose plugin. The a
 - Redis for network features
 - PlaceholderAPI, if you want placeholder support
 
-Before starting the server, configure MongoDB, Redis, the server name, in `plugins/WinterCore/config.yml`. 
+Before starting the server, configure MongoDB, Redis, and the server name in `plugins/WinterCore/config.yml`. Keep real passwords and connection strings out of version control.
 
 ## Building
 
@@ -36,13 +36,13 @@ The finished plugin JAR will be placed in `build/libs/`.
 
 ## Current state
 
-WinterCore is being actively cleaned up and reworked. 
+WinterCore is being actively cleaned up and reworked. The source currently compiles and the Gradle `check` task passes, although the project does not yet have automated tests.
 
-Recent work has removed tracked IDE files, improved Redis and disguise lifecycle handling, fixed reload and scheduled-task issues, and removed unused client-brand and protocol code. Newer-version support is not fully tested—you should verify your configuration and test the plugin away from production before deploying it.
+Recent work has removed tracked IDE files, improved Redis and disguise lifecycle handling, fixed reload and scheduled-task issues, and removed unused client-brand and protocol code. Because the plugin is tailored to a specific network—and newer-version support is not fully tested—you should verify your configuration and test the plugin away from production before deploying it.
 
 ## Configuration
 
-- `config.yml` — server, Redis, MongoDB, NameMC, webhook, and general settings
+- `config.yml` — server, Redis, MongoDB, NameMC, and general settings
 - `ranks.yml` and `permissions.yml` — ranks and permissions
 - `tags.yml` and `menus.yml` — tag and menu content
 - `messages.yml` and `chat-filter.yml` — messages and chat filtering

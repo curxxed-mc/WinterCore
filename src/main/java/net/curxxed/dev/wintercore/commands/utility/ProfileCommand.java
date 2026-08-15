@@ -89,7 +89,7 @@ public class ProfileCommand extends BaseCommand implements Listener {
                                             isSelf
                                                     ? msg("profile.title.self", "&8Your Profile")
                                                     : msg("profile.title.other", "&8{target}'s Profile", "{target}", target.getName()));
-                                    String coloredName = CC.translateAlternateColorCodes('&', color) + target.getName();
+                                    String coloredName = CC.translate(color) + target.getName();
 
                                     ItemStack skull = new ItemBuilder(Material.SKULL_ITEM, 1, (byte) 3).toItemStack();
                                     SkullMeta meta = (SkullMeta) skull.getItemMeta();

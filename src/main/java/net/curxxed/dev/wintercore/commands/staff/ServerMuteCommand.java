@@ -8,7 +8,7 @@ import net.curxxed.dev.wintercore.plugin.WinterCore;
 
 @CommandInfo(
         name = "servermute",
-        description = "Mute a player.",
+        description = "Toggle the server-wide chat mute.",
         usage = "/servermute",
         inGameOnly = true,
         permission = {"wintercore.servermute", "WinterCore.servermute"}

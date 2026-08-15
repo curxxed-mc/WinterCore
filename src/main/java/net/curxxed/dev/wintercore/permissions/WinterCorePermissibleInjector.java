@@ -25,9 +25,7 @@ public class WinterCorePermissibleInjector {
         Field humanEntityPermissibleField = null;
         Field permissibleBaseAttachmentsField;
         try {
-            String version = Utilities.getServerVersion();
-            String className = "org.bukkit.craftbukkit." + version + ".entity.CraftHumanEntity";
-            Class<?> clazz = Class.forName(className);
+            Class<?> clazz = Utilities.getCraftBukkitClass("entity.CraftHumanEntity");
             humanEntityPermissibleField = clazz.getDeclaredField("perm");
             humanEntityPermissibleField.setAccessible(true);
             System.out.println("[WinterCore] Custom Permissible injected successfully!");

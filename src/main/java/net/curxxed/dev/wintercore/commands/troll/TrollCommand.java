@@ -8,9 +8,8 @@ import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
-import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,15 +21,15 @@ import java.util.concurrent.ThreadLocalRandom;
 @CommandInfo(
         name = "troll",
         description = "Troll a player with various effects.",
-        usage = "/troll <player> <demo|win|boatspam|daynight>",
+        usage = "/troll <player> <demo|win|boatspam|madeinheaven>",
         inGameOnly = true,
         permission = {"wintercore.troll"}
 )
 public class TrollCommand extends BaseCommand {
 
-    private final Map<UUID, BukkitRunnable> dayNightTasks = new HashMap<>();
+    private final Map<UUID, BukkitTask> dayNightTasks = new HashMap<>();
 
-    private static final List<String> SUBCOMMANDS = Arrays.asList("demo", "win", "boatspam", "daynight");
+    private static final List<String> SUBCOMMANDS = Arrays.asList("demo", "win", "boatspam", "madeinheaven");
 
     public TrollCommand(WinterCore plugin) {
         super(plugin);
@@ -63,7 +62,7 @@ public class TrollCommand extends BaseCommand {
             case "boatspam":
                 spawnFakeBoats(target);
                 break;
-            case "daynight":
+            case "madeinheaven":
                 toggleDayNightLoop(player, target);
                 return;
             default:
@@ -80,8 +79,14 @@ public class TrollCommand extends BaseCommand {
     private void sendGameStateChange(Player target, int reason, float value) {
         try {
             Class<?> packetClass = Utilities.getNMSClass("PacketPlayOutGameStateChange");
-            Constructor<?> ctor = Utilities.getConstructorByParamCount(packetClass, 2);
-            Utilities.sendPacket(target, ctor.newInstance(reason, value));
+            Object packet;
+            if (Utilities.IS_LEGACY) {
+                packet = Utilities.getConstructorByParamCount(packetClass, 2).newInstance(reason, value);
+            } else {
+                Object event = packetClass.getField(reason == 5 ? "DEMO_EVENT" : "WIN_GAME").get(null);
+                packet = packetClass.getConstructor(event.getClass(), float.class).newInstance(event, value);
+            }
+            Utilities.sendPacket(target, packet);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to send game state packet to " + target.getName() + ": " + e.getMessage());
         }
@@ -94,34 +99,48 @@ public class TrollCommand extends BaseCommand {
             Location loc = base.clone().add(0, i * 0.25, 0);
             try {
                 Class<?> packetClass = Utilities.getNMSClass("PacketPlayOutSpawnEntity");
-                Object packet = packetClass.newInstance();
                 int entityId = ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
+                Object packet;
 
-                if (Utilities.IS_1_7) {
-                    Utilities.setField(packet, "a", entityId);
-                    Utilities.setField(packet, "b", (int) (loc.getX() * 32));
-                    Utilities.setField(packet, "c", (int) (loc.getY() * 32));
-                    Utilities.setField(packet, "d", (int) (loc.getZ() * 32));
-                    Utilities.setField(packet, "e", 0);
-                    Utilities.setField(packet, "f", 0);
-                    Utilities.setField(packet, "g", 0);
-                    Utilities.setField(packet, "h", 0);
-                    Utilities.setField(packet, "i", 0);
-                    Utilities.setField(packet, "j", 1);
-                    Utilities.setField(packet, "k", 0);
+                if (!Utilities.IS_LEGACY) {
+                    Object boatType;
+                    try {
+                        boatType = Class.forName("net.minecraft.world.entity.EntityTypes").getField("OAK_BOAT").get(null);
+                    } catch (ReflectiveOperationException ignored) {
+                        boatType = Class.forName("net.minecraft.world.entity.EntityType").getField("BOAT").get(null);
+                    }
+                    Class<?> vec3 = Class.forName("net.minecraft.world.phys.Vec3");
+                    packet = Utilities.getConstructorByParamCount(packetClass, 11).newInstance(
+                            entityId, UUID.randomUUID(), loc.getX(), loc.getY(), loc.getZ(),
+                            0.0f, 0.0f, boatType, 0, vec3.getField("ZERO").get(null), 0.0D
+                    );
                 } else {
+                    packet = packetClass.newInstance();
                     Utilities.setField(packet, "a", entityId);
-                    Utilities.setField(packet, "b", UUID.randomUUID());
-                    Utilities.setField(packet, "c", (int) (loc.getX() * 32));
-                    Utilities.setField(packet, "d", (int) (loc.getY() * 32));
-                    Utilities.setField(packet, "e", (int) (loc.getZ() * 32));
-                    Utilities.setField(packet, "f", 0);
-                    Utilities.setField(packet, "g", 0);
-                    Utilities.setField(packet, "h", 0);
-                    Utilities.setField(packet, "i", 0);
-                    Utilities.setField(packet, "j", 0);
-                    Utilities.setField(packet, "k", 1);
-                    Utilities.setField(packet, "l", 0);
+                    if (Utilities.getMinecraftMinorVersion() <= 8) {
+                        Utilities.setField(packet, "b", (int) (loc.getX() * 32));
+                        Utilities.setField(packet, "c", (int) (loc.getY() * 32));
+                        Utilities.setField(packet, "d", (int) (loc.getZ() * 32));
+                        Utilities.setField(packet, "e", 0);
+                        Utilities.setField(packet, "f", 0);
+                        Utilities.setField(packet, "g", 0);
+                        Utilities.setField(packet, "h", 0);
+                        Utilities.setField(packet, "i", 0);
+                        Utilities.setField(packet, "j", 1);
+                        Utilities.setField(packet, "k", 0);
+                    } else {
+                        Utilities.setField(packet, "b", UUID.randomUUID());
+                        Utilities.setField(packet, "c", (int) (loc.getX() * 32));
+                        Utilities.setField(packet, "d", (int) (loc.getY() * 32));
+                        Utilities.setField(packet, "e", (int) (loc.getZ() * 32));
+                        Utilities.setField(packet, "f", 0);
+                        Utilities.setField(packet, "g", 0);
+                        Utilities.setField(packet, "h", 0);
+                        Utilities.setField(packet, "i", 0);
+                        Utilities.setField(packet, "j", 0);
+                        Utilities.setField(packet, "k", 1);
+                        Utilities.setField(packet, "l", 0);
+                    }
                 }
 
                 Utilities.sendPacket(target, packet);
@@ -134,47 +153,34 @@ public class TrollCommand extends BaseCommand {
     private void toggleDayNightLoop(Player sender, Player target) {
         UUID uuid = target.getUniqueId();
 
-        if (dayNightTasks.containsKey(uuid)) {
-            dayNightTasks.get(uuid).cancel();
-            dayNightTasks.remove(uuid);
+        BukkitTask activeTask = dayNightTasks.remove(uuid);
+        if (activeTask != null) {
+            activeTask.cancel();
+            target.resetPlayerTime();
             send(sender, "troll.daynight-stopped", "&aStopped day/night loop for {target}.",
                     "{target}", target.getName());
             return;
         }
 
-        BukkitRunnable task = new BukkitRunnable() {
+        Runnable loop = new Runnable() {
             private long time = 0;
 
             @Override
             public void run() {
                 if (!target.isOnline()) {
-                    cancel();
-                    dayNightTasks.remove(uuid);
+                    plugin.getTasks().cancel(dayNightTasks.remove(uuid));
                     return;
                 }
                 time = (time + 1000) % 24000;
-                sendTimeUpdate(target, time);
+                target.setPlayerTime(time, false);
             }
         };
 
-        plugin.getTasks().timer(task, 0L, 2L);
-        dayNightTasks.put(uuid, task);
+        dayNightTasks.put(uuid, plugin.getTasks().timer(loop, 0L, 2L));
 
         send(sender, "troll.daynight-started", "&aStarted day/night loop for {target}.",
                 "{target}", target.getName());
         send(target, "troll.daynight-target", "&cSomething feels off about time...");
-    }
-
-    private void sendTimeUpdate(Player target, long timeOfDay) {
-        try {
-            Class<?> packetClass = Utilities.getNMSClass("PacketPlayOutUpdateTime");
-            Object packet = packetClass
-                    .getConstructor(long.class, long.class)
-                    .newInstance(target.getWorld().getFullTime(), timeOfDay);
-            Utilities.sendPacket(target, packet);
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to send time packet to " + target.getName() + ": " + e.getMessage());
-        }
     }
 
     @Override

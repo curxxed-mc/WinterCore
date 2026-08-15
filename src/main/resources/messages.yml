@@ -447,9 +447,9 @@ troll:
   not-online: "&cPlayer not found or offline."
   unknown-type: "&cUnknown troll type. Use: {types}"
   success: "&aTrolled {target} with {type}!"
-  daynight-stopped: "&aStopped day/night loop for {target}."
-  daynight-started: "&aStarted day/night loop for {target}."
-  daynight-target: "&cSomething feels off about time..."
+  daynight-stopped: "&aTime resumes its normal flow for {target}."
+  daynight-started: "&aMade in Heaven is accelerating time for {target}."
+  daynight-target: "&cThe universe is accelerating... Made in Heaven."
 
 discord:
   link: "discord.gg/wintercore"

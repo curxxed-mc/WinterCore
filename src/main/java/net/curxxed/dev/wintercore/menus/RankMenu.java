@@ -5,7 +5,6 @@ import net.curxxed.dev.wintercore.menu.Button;
 import net.curxxed.dev.wintercore.menu.Menu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
-import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -101,18 +100,13 @@ public class RankMenu extends Menu {
 
             char colorChar = normalizeColorChar(colorCode);
 
-            ItemStack item;
-            if (colorChar == '4') {
-                item = new ItemBuilder(Material.STAINED_CLAY, 1, (byte) 14).toItemStack();
-            } else {
-                org.bukkit.DyeColor dye = dyeColor(colorChar);
-                item = new ItemBuilder(Material.WOOL, 1, dye.getWoolData()).toItemStack();
-            }
+            Material material = colorChar == '4' ? Material.STAINED_CLAY : Material.WOOL;
+            short data = colorChar == '4' ? 14 : dyeColor(colorChar).getWoolData();
 
-            item = plugin.getMenuConfig().buildItem(
+            ItemStack item = plugin.getMenuConfig().buildItem(
                     "rank-menu.rank-item",
-                    item.getType(),
-                    item.getDurability(),
+                    material,
+                    data,
                     "{rank}", rank,
                     "{rank_color}", colorCode,
                     "{rank_prefix}", prefix,
@@ -168,7 +162,7 @@ public class RankMenu extends Menu {
             case '8':
                 return org.bukkit.DyeColor.GRAY;
             case '9':
-                return org.bukkit.DyeColor.LIGHT_BLUE;
+                return org.bukkit.DyeColor.BLUE;
             case 'a':
                 return org.bukkit.DyeColor.LIME;
             case 'b':

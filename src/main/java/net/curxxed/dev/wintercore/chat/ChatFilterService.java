@@ -3,6 +3,7 @@ package net.curxxed.dev.wintercore.chat;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -205,7 +206,7 @@ public final class ChatFilterService {
 
     private NormalizedMessage normalizeMessage(String input) {
         String lower = input.toLowerCase(Locale.ENGLISH);
-        String noColor = CC.stripColor(CC.translate(lower));
+        String noColor = ChatColor.stripColor(CC.translate(lower));
         if (noColor == null) {
             noColor = lower;
         }

@@ -5,7 +5,6 @@ import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -31,40 +30,42 @@ final class ModernMojangDisguisePacketAdapter implements DisguisePacketAdapter {
         sendDestroy(player, entityPlayer);
         sendPlayerInfoAdd(player, entityPlayer);
         sendSpawn(player, entityPlayer);
-        trySpigotRespawn(player);
     }
 
     private void hideShow(Player player) {
-        Utilities.getOnlinePlayers().forEach(online -> online.hidePlayer(player));
-        Utilities.getOnlinePlayers().forEach(online -> online.showPlayer(player));
+        for (Player online : Utilities.getOnlinePlayers()) {
+            if (!online.equals(player)) {
+                online.hidePlayer(player);
+                online.showPlayer(player);
+            }
+        }
     }
 
     private void sendPlayerInfoRemove(Player player, Object entityPlayer) {
         Object packet = createPlayerInfoRemove(player.getUniqueId(), entityPlayer);
         if (packet != null) {
-            broadcast(packet);
+            broadcast(packet, player);
         }
     }
 
     private void sendPlayerInfoAdd(Player player, Object entityPlayer) {
         Object packet = createPlayerInfoAdd(entityPlayer);
         if (packet != null) {
-            broadcast(packet);
+            broadcast(packet, player);
         }
     }
 
     private void sendDestroy(Player player, Object entityPlayer) {
         Object packet = createDestroyPacket(entityPlayer);
         if (packet != null) {
-            broadcast(packet);
-            plugin.getPacketSender().sendPacket(player, packet);
+            broadcast(packet, player);
         }
     }
 
     private void sendSpawn(Player player, Object entityPlayer) {
         Object packet = createSpawnPacket(entityPlayer);
         if (packet != null) {
-            broadcast(packet);
+            broadcast(packet, player);
         }
     }
 
@@ -189,18 +190,11 @@ final class ModernMojangDisguisePacketAdapter implements DisguisePacketAdapter {
         return null;
     }
 
-    private void trySpigotRespawn(Player player) {
-        try {
-            Object spigot = player.getClass().getMethod("spigot").invoke(player);
-            Method respawn = spigot.getClass().getMethod("respawn");
-            respawn.invoke(spigot);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private void broadcast(Object packet) {
+    private void broadcast(Object packet, Player disguised) {
         for (Player online : Utilities.getOnlinePlayers()) {
-            plugin.getPacketSender().sendPacket(online, packet);
+            if (!online.equals(disguised)) {
+                plugin.getPacketSender().sendPacket(online, packet);
+            }
         }
     }
 
