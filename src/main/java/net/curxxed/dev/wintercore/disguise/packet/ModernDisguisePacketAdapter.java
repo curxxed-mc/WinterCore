@@ -10,11 +10,11 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.UUID;
 
-final class ModernMojangDisguisePacketAdapter implements DisguisePacketAdapter {
+final class ModernDisguisePacketAdapter implements DisguisePacketAdapter {
 
     private final WinterCore plugin;
 
-    ModernMojangDisguisePacketAdapter(WinterCore plugin) {
+    ModernDisguisePacketAdapter(WinterCore plugin) {
         this.plugin = plugin;
     }
 

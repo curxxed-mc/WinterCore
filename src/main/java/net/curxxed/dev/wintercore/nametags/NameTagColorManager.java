@@ -198,8 +198,7 @@ public class NameTagColorManager implements Listener {
         String colorPrefix = resolveColorPrefix(uuid, rankName);
 
         Team existingTeam = findEntryTeam(board, entry);
-        if (existingTeam != null
-                && isWinterCoreTeam(existingTeam)
+        if (isWinterCoreTeam(existingTeam)
                 && !existingTeam.getName().equals(teamKey)) {
             existingTeam.removeEntry(entry);
             existingTeam = null;

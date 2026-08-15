@@ -11,8 +11,8 @@ public final class DisguisePacketAdapters {
 
     public static DisguisePacketAdapter create(WinterCore plugin, DisguiseHandler handler) {
         if (Utilities.IS_LEGACY) {
-            return new LegacyCraftBukkitDisguisePacketAdapter(handler);
+            return new LegacyDisguisePacketAdapter(handler);
         }
-        return new ModernMojangDisguisePacketAdapter(plugin);
+        return new ModernDisguisePacketAdapter(plugin);
     }
 }
