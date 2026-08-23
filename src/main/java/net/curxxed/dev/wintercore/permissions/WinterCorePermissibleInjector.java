@@ -2,10 +2,12 @@ package net.curxxed.dev.wintercore.permissions;
 
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.Utilities;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissibleBase;
 
 import java.lang.reflect.Field;
+import java.util.logging.Level;
 
 public class WinterCorePermissibleInjector {
     public static final Field HUMAN_ENTITY_PERMISSIBLE_FIELD;
@@ -28,10 +30,9 @@ public class WinterCorePermissibleInjector {
             Class<?> clazz = Utilities.getCraftBukkitClass("entity.CraftHumanEntity");
             humanEntityPermissibleField = clazz.getDeclaredField("perm");
             humanEntityPermissibleField.setAccessible(true);
-            System.out.println("[WinterCore] Custom Permissible injected successfully!");
+            Bukkit.getLogger().info("[WinterCore] Custom permissible injection is available");
         } catch (Exception e) {
-            System.err.println("[WinterCore] Failed to find perm field: " + e.getMessage());
-            e.printStackTrace();
+            Bukkit.getLogger().log(Level.SEVERE, "[WinterCore] Failed to resolve the permissible field", e);
         }
         try {
             permissibleBaseAttachmentsField = PermissibleBase.class.getDeclaredField("attachments");

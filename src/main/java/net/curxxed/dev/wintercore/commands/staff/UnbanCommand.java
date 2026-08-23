@@ -9,8 +9,6 @@ import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.UUID;
-
 @CommandInfo(
         name = "unban",
         description = "Unban a player.",
@@ -41,42 +39,37 @@ public class UnbanCommand extends BaseCommand {
             return;
         }
         String targetName = args[0];
-        UUID targetUUID = Bukkit.getOfflinePlayer(targetName).getUniqueId();
-        String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        if (displayName == null || displayName.trim().isEmpty()) {
-            displayName = targetName;
-        }
-        final String finalDisplayName = displayName;
-        moderationService.isPlayerBanned(targetUUID, isBanned -> runSync(() -> {
-            if (!isBanned) {
-                send(commandArgs.getSender(), "moderation.unban.not-banned",
-                        "&cPlayer {target} is not banned.",
-                        "{target}", finalDisplayName);
-                return;
-            }
+        resolvePlayerId(commandArgs.getSender(), targetName, targetUUID ->
+                moderationService.isPlayerBanned(targetUUID, isBanned -> runSync(() -> {
+                    if (!isBanned) {
+                        send(commandArgs.getSender(), "moderation.unban.not-banned",
+                                "&cPlayer {target} is not banned.",
+                                "{target}", targetName);
+                        return;
+                    }
 
-            moderationService.unbanPlayer(targetUUID);
-            send(commandArgs.getSender(), "moderation.unban.actor-success",
-                    "&aPlayer {target} has been unbanned.",
-                    "{target}", finalDisplayName);
+                    moderationService.unbanPlayer(targetUUID);
+                    send(commandArgs.getSender(), "moderation.unban.actor-success",
+                            "&aPlayer {target} has been unbanned.",
+                            "{target}", targetName);
 
-            plugin.getRedisManager().publishAndHandleLocally(new ModerationActionPacket(
-                    plugin.getConfig().getString("server-name", "Unknown"),
-                    System.currentTimeMillis(),
-                    ModerationActionPacket.ActionType.BAN_REMOVED,
-                    targetUUID,
-                    finalDisplayName,
-                    commandArgs.getSender().getName(),
-                    "",
-                    null,
-                    false
-            ));
+                    plugin.getRedisManager().publishAndHandleLocally(new ModerationActionPacket(
+                            plugin.getConfig().getString("server-name", "Unknown"),
+                            System.currentTimeMillis(),
+                            ModerationActionPacket.ActionType.BAN_REMOVED,
+                            targetUUID,
+                            targetName,
+                            commandArgs.getSender().getName(),
+                            "",
+                            null,
+                            false
+                    ));
 
-            Player target = Bukkit.getPlayer(targetUUID);
-            if (target != null) {
-                send(target, "moderation.unban.target-success",
-                        "&aYou have been unbanned.");
-            }
-        }));
+                    Player target = Bukkit.getPlayer(targetUUID);
+                    if (target != null) {
+                        send(target, "moderation.unban.target-success",
+                                "&aYou have been unbanned.");
+                    }
+                })));
     }
 }

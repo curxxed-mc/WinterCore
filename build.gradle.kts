@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "8.3.11"
 }
 
 java {
@@ -20,17 +20,17 @@ dependencies {
     implementation("org.mongodb:mongodb-driver-sync:3.12.14")
     implementation("redis.clients:jedis:5.2.0")
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14")
-    implementation("com.google.guava:guava:21.0")
     implementation("com.warrenstrange:googleauth:1.5.0")
+    testImplementation("junit:junit:4.13.2")
 }
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
+    options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:unchecked"))
 }
 
 tasks.shadowJar {
     archiveClassifier.set("")
-    relocate("com.google.common", "net.curxxed.dev.wintercore.libs.google.common")
     relocate("redis.clients", "net.curxxed.dev.wintercore.libs.redis")
     minimize()
 }

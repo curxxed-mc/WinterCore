@@ -47,8 +47,8 @@ public class WinterCoreExpansion extends PlaceholderExpansion {
     public String onPlaceholderRequest(Player player, @NonNull String identifier) {
         if (player == null) return "";
 
-        RankManager rankManager = RankManager.getInstance();
-        DisguiseData disguiseData = plugin.getDisguiseDataMap().get(player.getUniqueId());
+        RankManager rankManager = plugin.getRankManager();
+        DisguiseData disguiseData = plugin.getDisguiseRegistry().getDisguiseData(player.getUniqueId());
         boolean disguised = disguiseData != null;
         String disguisedRank = disguised ? disguiseData.getRank() : null;
         String disguisedColor = null;

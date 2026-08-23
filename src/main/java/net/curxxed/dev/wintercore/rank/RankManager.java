@@ -21,8 +21,6 @@ import java.util.function.Consumer;
 
 public class RankManager {
 
-    private static RankManager instance;
-
     @Getter private final WinterCore plugin;
     @Getter private final RankConfigManager configManager;
     private final RankCacheService cacheService;
@@ -34,17 +32,8 @@ public class RankManager {
     public RankManager(WinterCore plugin) {
         this.plugin = plugin;
         this.configManager = new RankConfigManager(plugin);
-        this.cacheService = new RankCacheService(plugin, plugin.getDatabaseManager().getProfileRepository());
+        this.cacheService = plugin.getDatabaseManager().getRankCache();
         this.displayManager = new RankDisplayManager(plugin, configManager);
-    }
-
-    public static void initialize(WinterCore plugin) {
-        if (instance == null) instance = new RankManager(plugin);
-    }
-
-    public static RankManager getInstance() {
-        if (instance == null) throw new IllegalStateException("RankManager has not been initialized yet!");
-        return instance;
     }
 
     public void startAutoCacheRefresh() {
@@ -304,6 +293,7 @@ public class RankManager {
         }
     }
 
+    @SuppressWarnings("deprecation") // Gson API available on the 1.8 server classpath.
     private String extractDisguiseField(String disguiseJson, String field) {
         if (disguiseJson == null) return null;
         try {

@@ -1,10 +1,9 @@
 package net.curxxed.dev.wintercore.database.redis.handler;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.*;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.PluginMessageData;
 import net.curxxed.dev.wintercore.config.ModerationMessages;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -376,11 +375,12 @@ public final class BukkitRedisPacketHandler implements RedisPacketHandler {
                     "{server}", packet.getDestinationServer(),
                     "{issuer}", packet.getIssuer()));
 
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("Connect");
-            out.writeUTF(plugin.getConfig().getString(
-                    "BungeeServers." + packet.getDestinationServer(), packet.getDestinationServer()));
-            target.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+            byte[] payload = PluginMessageData.encode(
+                    "Connect",
+                    plugin.getConfig().getString(
+                            "BungeeServers." + packet.getDestinationServer(), packet.getDestinationServer())
+            );
+            target.sendPluginMessage(plugin, "BungeeCord", payload);
         });
     }
 

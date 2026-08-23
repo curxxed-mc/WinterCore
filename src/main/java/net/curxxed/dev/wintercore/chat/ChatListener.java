@@ -34,7 +34,7 @@ public class ChatListener implements Listener {
 
     public ChatListener(WinterCore plugin, TagsManager tagsManager, PlayerService playerService, StaffChatService service) {
         this.plugin = plugin;
-        this.rankManager = RankManager.getInstance();
+        this.rankManager = plugin.getRankManager();
         this.tagsManager = tagsManager;
         this.playerService = playerService;
         this.service = service;

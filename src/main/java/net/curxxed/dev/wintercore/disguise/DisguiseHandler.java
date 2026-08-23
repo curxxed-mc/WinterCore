@@ -8,29 +8,25 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
-import java.awt.image.BufferedImage;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 public abstract class DisguiseHandler {
 
-    public final WinterCore plugin;
-    public Map<String, SkinFetcher.SkinProperty> skinData;
-    public Map<String, ItemStack> itemsData;
+    protected final WinterCore plugin;
+    private final Map<String, SkinFetcher.SkinProperty> skinData;
     private final Set<String> pendingFetches = ConcurrentHashMap.newKeySet();
 
     public DisguiseHandler(WinterCore plugin) {
-        this.skinData  = new ConcurrentHashMap<>();
-        this.itemsData = new HashMap<>();
+        this.skinData = new ConcurrentHashMap<>();
         this.plugin    = plugin;
     }
 
@@ -56,11 +52,35 @@ public abstract class DisguiseHandler {
         pendingFetches.add(key);
     }
 
+    /**
+     * Resolves a skin for a name that may not be a real account. Unknown names get a random skin
+     * from {@link FallbackSkins}, cached under the requested name so the same fake name keeps the
+     * same skin for the rest of the session.
+     */
+    public void fetchSkinDataOrRandom(String name, Consumer<SkinFetcher.SkinProperty> callback) {
+        fetchSkinData(name, skin -> {
+            if (skin != null) {
+                callback.accept(skin);
+                return;
+            }
+
+            String fallback = FallbackSkins.random();
+            Bukkit.getLogger().info("[Disguise] No account for '" + name + "', using random skin: " + fallback);
+
+            fetchSkinData(fallback, resolved -> {
+                if (resolved != null) {
+                    skinData.put(name.toLowerCase(), resolved);
+                }
+                callback.accept(resolved);
+            });
+        });
+    }
+
     public void openDisguiseMenu(Player player, String targetName) {
         DisguiseMenu.setPendingTarget(player, targetName);
         String key = targetName.toLowerCase();
         if (!skinData.containsKey(key) && !pendingFetches.contains(key)) {
-            fetchSkinData(targetName, skin -> {
+            fetchSkinDataOrRandom(targetName, skin -> {
                 if (skin == null) {
                     Bukkit.getLogger().warning("[Disguise] Pre-fetch for '" + targetName + "' returned no skin.");
                 }
@@ -79,7 +99,8 @@ public abstract class DisguiseHandler {
             field.setAccessible(true);
             field.set(object, to);
         } catch (Exception e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.WARNING,
+                    "[Disguise] Failed to update field " + fieldName, e);
         }
     }
 
@@ -103,10 +124,6 @@ public abstract class DisguiseHandler {
         return clazz.getConstructors()[0];
     }
 
-    public BufferedImage getSkinTexture(String name) throws Exception {
-        return javax.imageio.ImageIO.read(new java.net.URL("https://minotar.net/avatar/" + name + "/8.png"));
-    }
-
     public void moveToWorld(Player player) {
         try {
             Object nmsPlayer = player.getClass().getMethod("getHandle").invoke(player);
@@ -119,15 +136,19 @@ public abstract class DisguiseHandler {
             Method moveToWorld = playerlist.getClass().getMethod("moveToWorld", EntityPlayer, int.class, boolean.class, Location.class, boolean.class);
             moveToWorld.invoke(playerlist, nmsPlayer, getDimensionOfWorld(minecraftServer, player.getWorld()), true, player.getLocation(), false);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            plugin.getLogger().log(Level.WARNING,
+                    "[Disguise] Failed to refresh world state for " + player.getName(), ex);
         }
     }
 
     private int getDimensionOfWorld(Object minecraftServer, World of) throws Exception {
         Field worldsField = minecraftServer.getClass().getField("worlds");
         worldsField.setAccessible(true);
-        List<Object> worlds = (List<Object>) worldsField.get(minecraftServer);
-        for (Object worldServer : worlds) {
+        Object worldsValue = worldsField.get(minecraftServer);
+        if (!(worldsValue instanceof List)) {
+            return 0;
+        }
+        for (Object worldServer : (List<?>) worldsValue) {
             Object world = safeCastTo(worldServer, getNMSClass("World"));
             Object worldData = world.getClass().getMethod("getWorldData").invoke(world);
             String name = (String) worldData.getClass().getMethod("getName").invoke(worldData);
@@ -135,16 +156,6 @@ public abstract class DisguiseHandler {
                 return worldServer.getClass().getField("dimension").getInt(worldServer);
         }
         return 0;
-    }
-
-    public Object getPlayerHandle(Object invoke) {
-        try {
-            Class<?> craftPlayer = Utilities.getCraftBukkitClass("entity.CraftPlayer");
-            return craftPlayer.getMethod("getHandle").invoke(invoke);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     public <T> T safeCastTo(Object obj, Class<T> to) {

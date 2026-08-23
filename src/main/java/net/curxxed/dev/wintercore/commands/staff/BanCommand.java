@@ -8,8 +8,6 @@ import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.DurationParser;
 import net.curxxed.dev.wintercore.config.ModerationMessages;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -17,7 +15,6 @@ import java.util.Arrays;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 
 @CommandInfo(
@@ -73,10 +70,6 @@ public class BanCommand extends BaseCommand {
         }
 
         String targetName = args[0];
-        OfflinePlayer offlineTarget = Bukkit.getOfflinePlayer(targetName);
-        UUID targetUUID = offlineTarget.getUniqueId();
-        Player target = plugin.getServer().getPlayer(targetUUID);
-        String displayName = offlineTarget.getName() != null ? offlineTarget.getName() : targetName;
 
         List<String> remainingArgs = new ArrayList<>(Arrays.asList(args).subList(1, args.length));
         boolean silent = remainingArgs.removeIf(arg -> arg.equalsIgnoreCase("-s") || arg.equalsIgnoreCase("--silent"));
@@ -109,7 +102,10 @@ public class BanCommand extends BaseCommand {
         String issuer = commandArgs.getSender().getName();
         String serverName = plugin.getConfig().getString("server-name", "Unknown");
 
-        moderationService.isPlayerBanned(targetUUID, isBanned -> runSync(() -> {
+        resolvePlayerId(commandArgs.getSender(), targetName, targetUUID -> {
+            Player target = plugin.getServer().getPlayer(targetUUID);
+            String displayName = target != null ? target.getName() : targetName;
+            moderationService.isPlayerBanned(targetUUID, isBanned -> runSync(() -> {
             if (isBanned) {
                 send(commandArgs.getSender(), "moderation.ban.already-banned",
                         "&cThis player is already banned.");
@@ -163,6 +159,7 @@ public class BanCommand extends BaseCommand {
                         silent
                 ));
             }
-        }));
+            }));
+        });
     }
 }

@@ -10,6 +10,7 @@ import org.bson.conversions.Bson;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public final class ProfileRepository {
 
@@ -24,7 +25,7 @@ public final class ProfileRepository {
     }
 
     public Document findByNameRegex(String playerName) {
-        return profiles.find(Filters.regex("name", "^" + playerName + "$", "i")).first();
+        return profiles.find(Filters.regex("name", "^" + Pattern.quote(playerName) + "$", "i")).first();
     }
 
     public Iterable<Document> findByIp(String ip) {

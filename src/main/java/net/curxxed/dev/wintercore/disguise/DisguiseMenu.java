@@ -53,6 +53,7 @@ public class DisguiseMenu extends Menu {
     }
 
     @Override
+    @SuppressWarnings("deprecation") // Material data values are required by the 1.8 inventory API.
     public Map<Integer, Button> getButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
 

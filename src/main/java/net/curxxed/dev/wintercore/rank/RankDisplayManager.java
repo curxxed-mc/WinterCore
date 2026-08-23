@@ -1,12 +1,11 @@
 package net.curxxed.dev.wintercore.rank;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import net.curxxed.dev.wintercore.config.RankConfigManager;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissible;
 import net.curxxed.dev.wintercore.permissions.WinterCorePermissibleInjector;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.PluginMessageData;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
@@ -60,14 +59,8 @@ public class RankDisplayManager {
         Collection<? extends Player> online = net.curxxed.dev.wintercore.utils.Utilities.getOnlinePlayers();
         if (online.isEmpty()) return;
 
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Forward");
-        out.writeUTF("ALL");
-        out.writeUTF("SyncRank");
-        out.writeUTF(playerName);
-        out.writeUTF(rankName);
-
-        online.iterator().next().sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+        byte[] payload = PluginMessageData.encode("Forward", "ALL", "SyncRank", playerName, rankName);
+        online.iterator().next().sendPluginMessage(plugin, "BungeeCord", payload);
     }
 
     private void applyPermissions(Player player, String rankName) {

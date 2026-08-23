@@ -1,6 +1,5 @@
 package net.curxxed.dev.wintercore.listeners;
 
-import lombok.Getter;
 import net.curxxed.dev.wintercore.player.PlayerService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.entity.Player;
@@ -25,14 +24,9 @@ public class FreezeListener implements Listener {
     private final Set<UUID> frozenPlayers = ConcurrentHashMap.newKeySet();
     private final PlayerService playerService;
     private final WinterCore plugin;
-    @Getter
-    public static FreezeListener instance;
-
-
     public FreezeListener(PlayerService playerService, WinterCore plugin) {
         this.playerService = playerService;
         this.plugin = plugin;
-        instance = this;
     }
 
     public void freezePlayer(Player player, Player staff) {
@@ -49,11 +43,11 @@ public class FreezeListener implements Listener {
     }
 
     public boolean isFrozen(Player player) {
-        return player != null && frozenPlayers.contains(player.getUniqueId());
+        return player != null && isFrozen(player.getUniqueId());
     }
 
-    public boolean isPlayerFrozen(Player player) {
-        return instance != null && instance.isFrozen(player);
+    public boolean isFrozen(UUID uuid) {
+        return uuid != null && frozenPlayers.contains(uuid);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

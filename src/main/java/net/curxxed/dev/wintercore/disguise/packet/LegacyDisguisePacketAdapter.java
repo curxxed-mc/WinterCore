@@ -1,17 +1,21 @@
 package net.curxxed.dev.wintercore.disguise.packet;
 
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.entity.Player;
 
 import java.util.Collections;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 
 final class LegacyDisguisePacketAdapter implements DisguisePacketAdapter {
 
     private final DisguiseHandler handler;
+    private final WinterCore plugin;
 
-    LegacyDisguisePacketAdapter(DisguiseHandler handler) {
+    LegacyDisguisePacketAdapter(WinterCore plugin, DisguiseHandler handler) {
+        this.plugin = plugin;
         this.handler = handler;
     }
 
@@ -97,7 +101,8 @@ final class LegacyDisguisePacketAdapter implements DisguisePacketAdapter {
                         handler.sendPacket(online, packet);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    plugin.getLogger().log(Level.WARNING,
+                            "[Disguise] Failed to refresh legacy equipment slot " + slot, e);
                 }
             });
             return;
@@ -116,7 +121,8 @@ final class LegacyDisguisePacketAdapter implements DisguisePacketAdapter {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.WARNING,
+                    "[Disguise] Failed to refresh legacy equipment", e);
         }
     }
 }

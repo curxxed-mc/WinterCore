@@ -54,7 +54,7 @@ public class WhoIsDisguisedCommand extends BaseCommand {
         List<TextComponent> lines = new ArrayList<>();
 
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
-            Set<String> aliveServers = plugin.getNRS().getAliveServers();
+            Set<String> aliveServers = plugin.getNetworkRedisService().getAliveServers();
             List<String> disguiseKeys = scanDisguiseKeys(jedis);
             if (!disguiseKeys.isEmpty()) {
                 Pipeline pipeline = jedis.pipelined();
@@ -147,6 +147,7 @@ public class WhoIsDisguisedCommand extends BaseCommand {
         send(sender, "whoisdisguised.footer", "&6&m----------------------------------------");
     }
 
+    @SuppressWarnings("deprecation") // Gson API available on the 1.8 server classpath.
     private DisguiseSnapshot parseSnapshot(String key, String disguiseJson) {
         if (key == null || !key.startsWith("player:disguise:")) {
             return null;

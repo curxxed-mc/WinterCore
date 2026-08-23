@@ -10,6 +10,7 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public abstract class BaseCommand implements TabExecutor {
@@ -89,6 +90,24 @@ public abstract class BaseCommand implements TabExecutor {
 
     protected void runAsync(Runnable action) {
         plugin.getTasks().async( action);
+    }
+
+    protected void resolvePlayerId(CommandSender sender, String playerName, Consumer<UUID> callback) {
+        runSync(() -> {
+            Player online = Bukkit.getPlayerExact(playerName);
+            if (online != null) {
+                callback.accept(online.getUniqueId());
+                return;
+            }
+
+            plugin.getDatabaseManager().getIdentityService().getUUIDByName(playerName, uuid -> {
+                if (uuid == null) {
+                    send(sender, "general.player-not-found", "&cPlayer not found.");
+                    return;
+                }
+                callback.accept(uuid);
+            });
+        });
     }
 
     protected String msg(String path, String fallback, String... placeholders) {

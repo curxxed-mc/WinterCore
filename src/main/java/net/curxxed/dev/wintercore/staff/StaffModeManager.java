@@ -1,6 +1,5 @@
 package net.curxxed.dev.wintercore.staff;
 
-import net.curxxed.dev.wintercore.commands.staff.VanishCommand;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.ItemBuilder;
 import org.bukkit.Bukkit;
@@ -126,7 +125,7 @@ public class StaffModeManager {
             else player.sendMessage(message("staff-mode.no-nearby-freeze", "&cNo player nearby to freeze."));
 
         } else if (itemName.equals(vanishItemName(false)) || itemName.equals(vanishItemName(true))) {
-            VanishCommand.toggleVanish(player, plugin, vanished -> updateVanishItem(player));
+            plugin.getVanishService().toggle(player, vanished -> updateVanishItem(player));
         }
     }
 
@@ -154,7 +153,7 @@ public class StaffModeManager {
     }
 
     private void updateVanishItem(Player player) {
-        boolean vanished = VanishCommand.isVanished(player);
+        boolean vanished = plugin.getVanishService().isVanished(player);
         player.getInventory().setItem(8, createItem(
                 Material.INK_SACK,
                 vanishItemName(vanished),

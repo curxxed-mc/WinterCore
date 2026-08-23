@@ -196,7 +196,7 @@ public class WinterCorePermissible extends PermissibleBase {
      */
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
-        if (WinterCore.isShuttingDown) return null;
+        if (WinterCore.isShuttingDown()) return null;
         if (name == null) {
             throw new IllegalArgumentException("Permission name cannot be null");
         }
@@ -215,7 +215,7 @@ public class WinterCorePermissible extends PermissibleBase {
      */
     @Override
     public PermissionAttachment addAttachment(Plugin plugin) {
-        if (WinterCore.isShuttingDown) return null;
+        if (WinterCore.isShuttingDown()) return null;
         if (plugin == null) throw new IllegalArgumentException("Plugin cannot be null");
         if (!plugin.isEnabled()) throw new IllegalArgumentException("Plugin " + plugin.getDescription().getFullName() + " is disabled");
 
@@ -231,7 +231,7 @@ public class WinterCorePermissible extends PermissibleBase {
      */
     @Override
     public void removeAttachment(PermissionAttachment attachment) {
-        if (WinterCore.isShuttingDown) return;
+        if (WinterCore.isShuttingDown()) return;
         if (attachment == null) throw new IllegalArgumentException("Attachment cannot be null");
 
         if (attachments.contains(attachment)) {

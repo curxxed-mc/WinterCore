@@ -90,29 +90,45 @@ public final class CurrencyService {
     }
 
     public void transfer(UUID from, UUID to, long amount, Consumer<Boolean> callback) {
-        if (amount <= 0L || from.equals(to)) {
-            if (callback != null) {
-                plugin.getTasks().sync(() -> callback.accept(amount <= 0L || from.equals(to)));
-            }
+        if (from == null || to == null || amount <= 0L) {
+            complete(callback, false);
+            return;
+        }
+        if (from.equals(to)) {
+            complete(callback, true);
             return;
         }
 
         plugin.getTasks().async(() -> {
             boolean success = false;
+            boolean debited = false;
             try {
-                success = profiles.decrementIfEnough(from, BALANCE_FIELD, amount);
-                if (success) {
+                debited = profiles.decrementIfEnough(from, BALANCE_FIELD, amount);
+                if (debited) {
                     profiles.inc(to, BALANCE_FIELD, amount);
+                    success = true;
                 }
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, "Could not transfer currency from " + from + " to " + to, e);
+                if (debited) {
+                    try {
+                        profiles.inc(from, BALANCE_FIELD, amount);
+                    } catch (Exception rollbackFailure) {
+                        e.addSuppressed(rollbackFailure);
+                        plugin.getLogger().log(Level.SEVERE, "Could not restore currency to " + from, rollbackFailure);
+                    }
+                }
             }
 
             boolean result = success;
-            if (callback != null) {
-                plugin.getTasks().sync(() -> callback.accept(result));
-            }
+            complete(callback, result);
         });
+    }
+
+    private void complete(Consumer<Boolean> callback, boolean result) {
+        if (callback != null) {
+            plugin.getTasks().sync(() -> callback.accept(result));
+        }
     }
 
     private long safeBalance(UUID uuid) {

@@ -24,11 +24,6 @@ public class StaffListCommand extends BaseCommand {
     public void execute(CommandArguments commandArgs) {
         Player player = commandArgs.getPlayer();
 
-        if (plugin.getNRS() == null) {
-            send(player, "staff-list.unavailable",
-                    "&cThe staff list is currently unavailable. Please try again later.");
-            return;
-        }
-        new StaffListMenu(plugin, plugin.getNRS()).open(player);
+        new StaffListMenu(plugin, plugin.getNetworkRedisService()).open(player);
     }
 }

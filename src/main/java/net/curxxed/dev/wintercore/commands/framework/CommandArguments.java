@@ -6,6 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +19,7 @@ public class CommandArguments {
 
     public CommandArguments(CommandSender sender, String[] args, String label) {
         this.sender = sender;
-        this.args = args;
+        this.args = args == null ? new String[0] : args.clone();
         this.label = label;
     }
 
@@ -35,6 +36,10 @@ public class CommandArguments {
 
     public int length() {
         return args.length;
+    }
+
+    public String[] getArgs() {
+        return args.clone();
     }
 
     public Optional<String> getOptionalString(int index) {
@@ -59,7 +64,7 @@ public class CommandArguments {
     }
 
     public List<String> getArgsList() {
-        return Arrays.asList(args);
+        return Collections.unmodifiableList(Arrays.asList(args.clone()));
     }
 }
 

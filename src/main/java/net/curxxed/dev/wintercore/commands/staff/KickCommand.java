@@ -5,7 +5,6 @@ import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
@@ -49,8 +48,7 @@ public class KickCommand extends BaseCommand {
         String reason = args.length > 1
                 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length))
                 : msg("moderation.kick.default-reason", "No reason provided");
-        String playerName = args[0];
-        UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
+        UUID targetUUID = target.getUniqueId();
         moderationService.incrementKickCount(targetUUID);
         target.kickPlayer(msg("moderation.kick.target-kick-message",
                 "&cYou have been kicked for: {reason}",
@@ -61,7 +59,6 @@ public class KickCommand extends BaseCommand {
                 "{reason}", reason);
     }
 }
-
 
 
 

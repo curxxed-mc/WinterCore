@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 public class DisguiseEventListener implements Listener {
 
@@ -32,6 +33,7 @@ public class DisguiseEventListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
+    @SuppressWarnings("deprecation") // Gson API available on the 1.8 server classpath.
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player joining = event.getPlayer();
         UUID uuid = joining.getUniqueId();
@@ -60,8 +62,8 @@ public class DisguiseEventListener implements Listener {
                         }), 2L);
 
             } catch (Exception e) {
-                plugin.getLogger().severe("[Disguise] Error parsing Redis disguise JSON for " + joining.getName());
-                e.printStackTrace();
+                plugin.getLogger().log(Level.SEVERE,
+                        "[Disguise] Error parsing Redis disguise JSON for " + joining.getName(), e);
             }
         }
 
@@ -81,7 +83,7 @@ public class DisguiseEventListener implements Listener {
         UUID uuid = player.getUniqueId();
 
         conflictEnforcement.remove(uuid);
-        plugin.getDisguiseDataMap().remove(uuid);
+        plugin.getDisguiseRegistry().removeDisguiseData(uuid);
         plugin.getDisguiseRegistry().clear(player);
     }
 
@@ -105,7 +107,6 @@ public class DisguiseEventListener implements Listener {
                                 + player.getName() + " on shutdown.");
                     }
                 });
-                plugin.getDisguiseRegistry().publishClearDisguise(player);
             }
         }
     }
@@ -121,14 +122,14 @@ public class DisguiseEventListener implements Listener {
     }
 
     private void auditNetworkDisguiseConflicts() {
-        for (Map.Entry<UUID, DisguiseData> entry : plugin.getDisguiseDataMap().entrySet()) {
+        for (Map.Entry<UUID, DisguiseData> entry : plugin.getDisguiseRegistry().getDisguiseDataSnapshot().entrySet()) {
             UUID disguisedUuid = entry.getKey();
             DisguiseData data = entry.getValue();
             if (data == null || data.getName() == null || data.getName().trim().isEmpty()) {
                 continue;
             }
 
-            UUID ownerUuid = plugin.getNRS().getOnlineUuidByName(data.getName());
+            UUID ownerUuid = plugin.getNetworkRedisService().getOnlineUuidByName(data.getName());
             if (ownerUuid == null || ownerUuid.equals(disguisedUuid)) {
                 continue;
             }
@@ -142,7 +143,7 @@ public class DisguiseEventListener implements Listener {
             return;
         }
 
-        for (Map.Entry<UUID, DisguiseData> entry : plugin.getDisguiseDataMap().entrySet()) {
+        for (Map.Entry<UUID, DisguiseData> entry : plugin.getDisguiseRegistry().getDisguiseDataSnapshot().entrySet()) {
             UUID disguisedUuid = entry.getKey();
             if (disguisedUuid.equals(realUuid)) {
                 continue;
@@ -198,7 +199,7 @@ public class DisguiseEventListener implements Listener {
             return;
         }
 
-        plugin.getDisguiseDataMap().remove(player.getUniqueId());
+        plugin.getDisguiseRegistry().removeDisguiseData(player.getUniqueId());
         plugin.getDisguiseRegistry().clear(player);
         plugin.getDisguiseRegistry().publishClearDisguise(player);
 

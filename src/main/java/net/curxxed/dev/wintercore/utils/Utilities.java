@@ -1,5 +1,6 @@
 package net.curxxed.dev.wintercore.utils;
 
+import net.curxxed.dev.wintercore.nms.PacketSender;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -14,6 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class Utilities {
 
@@ -158,7 +160,13 @@ public class Utilities {
         }
 
         if (onlinePlayers instanceof Collection) {
-            return new ArrayList<>((Collection<? extends Player>) onlinePlayers);
+            List<Player> players = new ArrayList<>();
+            for (Object value : (Collection<?>) onlinePlayers) {
+                if (value instanceof Player) {
+                    players.add((Player) value);
+                }
+            }
+            return players;
         }
 
         return new ArrayList<>();
@@ -199,7 +207,7 @@ public class Utilities {
         if (plugin != null && plugin.getPacketSender() != null) {
             return plugin.getPacketSender().sendPacket(player, packet);
         }
-        return new net.curxxed.dev.wintercore.nms.PacketSender(Bukkit.getLogger()).sendPacket(player, packet);
+        return new PacketSender(Bukkit.getLogger()).sendPacket(player, packet);
     }
 
     public static Constructor<?> getConstructorByParamCount(Class<?> clazz, int count) {
@@ -215,7 +223,8 @@ public class Utilities {
             field.setAccessible(true);
             field.set(target, value);
         } catch (Exception e) {
-            e.printStackTrace();
+            Bukkit.getLogger().log(Level.WARNING,
+                    "[WinterCore] Failed to set reflective field " + fieldName, e);
         }
     }
 

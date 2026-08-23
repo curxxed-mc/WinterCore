@@ -21,6 +21,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 public class ConnectionListener implements Listener {
 
@@ -36,7 +37,7 @@ public class ConnectionListener implements Listener {
 
     public ConnectionListener(WinterCore plugin, DisguiseEventListener disguiseEventListener, NetworkRedisService networkRedisService) {
         this.plugin = plugin;
-        this.rankManager = RankManager.getInstance();
+        this.rankManager = plugin.getRankManager();
         this.identityService = plugin.getDatabaseManager().getIdentityService();
         this.disguiseEventListener = disguiseEventListener;
         this.networkRedisService = networkRedisService;
@@ -70,7 +71,8 @@ public class ConnectionListener implements Listener {
         try {
             WinterCorePermissibleInjector.initPlayer(player);
         } catch (Exception e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE,
+                    "Failed to install permissions for " + playerName, e);
         }
         denyMaintenanceJoin(event, player);
     }
@@ -235,7 +237,7 @@ public class ConnectionListener implements Listener {
             return cached;
         }
 
-        DisguiseData data = plugin.getDisguiseDataMap().get(uuid);
+        DisguiseData data = plugin.getDisguiseRegistry().getDisguiseData(uuid);
         if (data != null && data.getInfo() != null && data.getInfo().has("name")) {
             try {
                 String original = data.getInfo().get("name").getAsString();

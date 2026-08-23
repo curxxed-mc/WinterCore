@@ -14,9 +14,6 @@ import net.curxxed.dev.wintercore.database.cache.RankCacheService;
 
 public final class DatabaseManager implements AutoCloseable {
 
-    @Getter
-    private static DatabaseManager instance;
-
     private final MongoConnection mongo;
     private final ProfileRepository profiles;
 
@@ -45,11 +42,6 @@ public final class DatabaseManager implements AutoCloseable {
         this.profileRepository = profiles;
     }
 
-    public static DatabaseManager init(WinterCore plugin) {
-        instance = new DatabaseManager(plugin);
-        return instance;
-    }
-
     @Override
     public void close() {
         mongo.close();
@@ -57,5 +49,9 @@ public final class DatabaseManager implements AutoCloseable {
 
     public MongoDatabase getMongoDatabase() {
         return mongo.getDatabase();
+    }
+
+    public void ping() {
+        mongo.ping();
     }
 }

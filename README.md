@@ -36,6 +36,31 @@ Before starting the server, configure MongoDB, Redis, and the server name in `pl
 ```
 
 The finished plugin JAR will be placed in `build/libs/`.
+
+## API
+
+WinterCore registers `WinterCoreApi` with Bukkit's services manager. Consumer plugins should add
+WinterCore to `depend` or `softdepend`, then retrieve API version 2 through the static provider:
+
+```java
+import net.curxxed.dev.wintercore.api.WinterCoreApi;
+
+WinterCoreApi api = WinterCoreApi.get();
+
+api.getBalance(player.getUniqueId()).thenAccept(balance -> {
+    // Database-backed futures complete on the Bukkit main thread.
+    player.sendMessage("Balance: " + balance);
+});
+
+boolean vanished = api.isVanished(player.getUniqueId());
+api.vanish().setVanished(player, !vanished, ignored -> {});
+```
+
+`WinterCoreApi.find()` is the non-throwing alternative for soft dependencies. The API exposes
+profile, identity, moderation, currency, rank, tag, messaging, staff, vanish, freeze, disguise,
+network, social, authentication, configuration, scheduling, and packet services. Convenience
+lookups return `Optional`, while asynchronous database lookups return `CompletableFuture`.
+
 ## Configuration
 
 - `config.yml` — server, Redis, MongoDB, NameMC, and general settings

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
+@SuppressWarnings("deprecation") // Gson API available on the 1.8 server classpath.
 public class SkinFetcher {
 
     private static final OkHttpClient CLIENT = new OkHttpClient.Builder()
