@@ -1,0 +1,51 @@
+# Build directories
+target/
+build/
+out/
+dist/
+
+# Compiled files
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# Maven
+dependency-reduced-pom.xml
+.m2/
+
+# Gradle (if applicable)
+.gradle/
+.gradle-local/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs and crash dumps
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# Node (if applicable)
+node_modules/
+npm-debug.log
+
+# Environment
+.env
+.env.local
+
+# Any other build/temp directories
+tmp/
+temp/
+

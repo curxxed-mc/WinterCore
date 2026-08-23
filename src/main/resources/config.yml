@@ -1,0 +1,34 @@
+default-rank: Default
+show-rank-in-tab: true
+show-rank-above-head: true
+server-name: Testing Servers
+join-message: '&9[S] %player% &bconnected to &e%server-name%'
+switch-message: '&9[S] %player% &bconnected to &e%server-name% &bfrom &e%previous-server%'
+quit-message: '&9[S] %player% &bdisconnected from &e%server-name%'
+StaffVanishMessages:
+  vanish: '&9[S] %player% &bhas vanished!'
+  unvanish: '&9[S] %player% &bis no longer vanished!'
+Redis:
+  host: 127.0.0.1
+  port: 6379
+  password: ''
+  timeout-ms: 2000
+  pool:
+    max-total: 10
+    max-idle: 5
+    min-idle: 1
+    test-on-borrow: true
+BungeeServers:
+  Lobby26: lobby
+  Practice26: practice
+NameMC:
+  enabled: false
+  server: ''
+mongodb:
+  uri: mongodb://localhost:27017
+  database: wintercore
+  server-selection-timeout-ms: 5000
+  collections:
+    punishments: punishments
+    grants: grants
+    players: players

@@ -1,0 +1,162 @@
+package net.curxxed.dev.wintercore.menus;
+
+import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
+import net.curxxed.dev.wintercore.menu.Button;
+import net.curxxed.dev.wintercore.menu.Menu;
+import net.curxxed.dev.wintercore.plugin.WinterCore;
+import net.curxxed.dev.wintercore.rank.RankManager;
+import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.ItemBuilder;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class StaffListMenu extends Menu {
+
+    private final WinterCore plugin;
+    private final RankManager rankManager;
+    private final NetworkRedisService nrs;
+
+    private final List<ItemStack> skulls = new CopyOnWriteArrayList<>();
+
+    public StaffListMenu(WinterCore plugin, NetworkRedisService nrs) {
+        this.plugin = plugin;
+        this.rankManager = plugin.getRankManager();
+        this.nrs = nrs;
+    }
+
+    @Override
+    public String getTitle() {
+        return plugin.getMenuConfig().getString("staff-list-menu.title", "&bOnline Staff");
+    }
+
+    @Override
+    public int getSize() {
+        return plugin.getMenuConfig().getSize("staff-list-menu");
+    }
+
+    @Override
+    public Map<Integer, Button> getButtons(Player player) {
+        Map<Integer, Button> buttons = new HashMap<>();
+        for (int i = 0; i < skulls.size() && i < getSize(); i++) {
+            buttons.put(i, new Button(skulls.get(i)));
+        }
+        if (skulls.isEmpty() && plugin.getMenuConfig().getBoolean("staff-list-menu.empty-item.enabled", true)) {
+            buttons.put(plugin.getMenuConfig().getSlot("staff-list-menu.empty-item", 22),
+                    new Button(plugin.getMenuConfig().buildItem("staff-list-menu.empty-item", Material.BARRIER)));
+        }
+        return buttons;
+    }
+
+    @Override
+    public void onOpen(Player viewer) {
+        loadStaffAsync(viewer);
+    }
+
+    private void loadStaffAsync(Player viewer) {
+        plugin.getTasks().async(() -> {
+            Map<String, String> lastServers = nrs.getStaffLastServers();
+            if (lastServers.isEmpty()) {
+                runRefresh(viewer);
+                return;
+            }
+
+            Set<String> aliveServers = nrs.getAliveServers();
+
+            List<StaffEntry> entries = new ArrayList<>();
+
+            for (Map.Entry<String, String> entry : lastServers.entrySet()) {
+                String uuidStr = entry.getKey();
+                String server = entry.getValue();
+
+                if (server == null || server.isEmpty()) continue;
+                if (!aliveServers.contains(server)) continue;
+
+                UUID uuid;
+                try {
+                    uuid = UUID.fromString(uuidStr);
+                } catch (IllegalArgumentException ex) {
+                    continue;
+                }
+
+                String playerName = nrs.getCachedUsername(uuidStr);
+                if (playerName == null || playerName.trim().isEmpty()) {
+                    playerName = "Unknown-" + uuidStr.substring(0, 8);
+                }
+
+                entries.add(new StaffEntry(uuid, playerName, server));
+            }
+
+            if (entries.isEmpty()) {
+                runRefresh(viewer);
+                return;
+            }
+
+            List<ItemStack> loaded = Collections.synchronizedList(new ArrayList<>());
+            AtomicInteger remaining = new AtomicInteger(entries.size());
+
+            for (StaffEntry se : entries) {
+                rankManager.getRank(se.uuid, rank -> {
+                    if (rank == null) rank = "Default";
+                    final String resolvedRank = rank;
+
+                    rankManager.getColorPreference(resolvedRank, color -> {
+                        if (color == null) color = "&f";
+                        String coloredRank = CC.translate(color) + resolvedRank;
+                        ItemStack skull = plugin.getMenuConfig().buildItem(
+                                "staff-list-menu.staff-item",
+                                Material.SKULL_ITEM,
+                                (short) 3,
+                                "{player}", se.playerName,
+                                "{server}", se.server,
+                                "{rank}", resolvedRank,
+                                "{rank_color}", color,
+                                "{colored_rank}", coloredRank
+                        );
+                        skull = new ItemBuilder(skull)
+                                .setSkullOwner(se.playerName)
+                                .toItemStack();
+
+                        loaded.add(skull);
+
+                        if (remaining.decrementAndGet() == 0) {
+                            plugin.getTasks().sync(() -> {
+                                skulls.clear();
+                                skulls.addAll(loaded);
+                                if (viewer.isOnline()) {
+                                    refresh(viewer);
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+        });
+    }
+
+    private void runRefresh(Player viewer) {
+        plugin.getTasks().sync(() -> {
+            skulls.clear();
+            if (viewer.isOnline()) {
+                refresh(viewer);
+            }
+        });
+    }
+
+    private static class StaffEntry {
+        final UUID uuid;
+        final String playerName;
+        final String server;
+
+        StaffEntry(UUID uuid, String playerName, String server) {
+            this.uuid = uuid;
+            this.playerName = playerName;
+            this.server = server;
+        }
+    }
+}

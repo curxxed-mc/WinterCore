@@ -1,0 +1,575 @@
+general:
+  no-permission: "&cYou do not have permission to do that."
+  in-game-only-command: "&cThis command can only be executed by players."
+  usage: "&cUsage: {usage}"
+  player-not-found: "&cPlayer not found."
+  player-data-loading: "&cYour data is still loading... Please wait a moment."
+  internal-error: "&cAn internal error occurred. Please contact an administrator."
+  unknown: "Unknown"
+
+chat:
+  set-server-chat-mute: "&aSuccessfully set server chat mute state to: {state}"
+  server-chat-muted: "&cChat is currently muted."
+  muted: "&cYou are muted and cannot send messages."
+  public-format: "{name}&f: {message_color}{message}"
+  private:
+    player-only: "&cOnly players can send private messages."
+    target-not-online: "&cThat player is not online."
+    self: "&cYou cannot send a message to yourself."
+    empty: "&cMessage cannot be empty."
+    data-loading: "&cPlayer data is still loading..."
+    to: "&e(To {recipient}) &f{message}"
+    from: "&e(From {sender}) &f{message}"
+    no-reply-target: "&cYou have no one to reply to."
+
+chat-color:
+  selected: "&aChat message color set to: {color_name}"
+  no-permission: "&cYou do not have permission to use {color_name}."
+
+moderation:
+  clear-chat:
+    success: "&aChat has been cleared."
+  kick:
+    player-only: "&cOnly players can use this command."
+    default-reason: "No reason provided"
+    target-kick-message: "&cYou have been kicked for: {reason}"
+    actor-success: "&aPlayer {target} has been kicked for: {reason}"
+  ban:
+    reason-required: "&cYou must provide a reason for the ban."
+    already-banned: "&cThis player is already banned."
+    actor-success-temporary: "&aBanned &f{target}&a until &f{until}&a."
+    actor-success-permanent: "&aBanned &f{target}&a permanently."
+    announcement:
+      public: "&8[&cBan&8] &f{target} &7was banned by &f{issuer}&7. &8(&f{duration}&8) &7Reason: &f{reason}"
+      silent: "&8[&cSilent Ban&8] &f{target} &7was banned by &f{issuer}&7. &8(&f{duration}&8) &7Reason: &f{reason}"
+    kick:
+      - "&8[&cBan Notice&8]"
+      - "&7You have been banned from the network."
+      - "&7By: &f{issuer}"
+      - "&7Duration: &f{duration}"
+      - "&7Reason: &f{reason}"
+    join-restriction:
+      - "&8[&cBan Notice&8]"
+      - "&7You are currently banned."
+      - "&7Duration: &f{duration}"
+      - "&7Reason: &f{reason}"
+      - "&7You may move, but every other action is blocked."
+    restriction-reminder: "&cYou are banned and may only move. &7Duration: &f{duration} &8| &7Reason: &f{reason}"
+  mute:
+    reason-required: "&cYou must provide a reason for the mute."
+    already-muted: "&cPlayer {target} is already muted."
+    actor-success-temporary: "&aYou have muted {target} until {until}."
+    actor-success-permanent: "&aYou have muted {target} permanently."
+    target-notice-temporary: "&cYou have been muted for: {reason} until {until}."
+    target-notice-permanent: "&cYou have been muted for: {reason} permanently."
+  unban:
+    not-banned: "&cPlayer {target} is not banned."
+    actor-success: "&aPlayer {target} has been unbanned."
+    target-success: "&aYou have been unbanned."
+  unmute:
+    not-muted: "&cPlayer {target} is not muted."
+    actor-success: "&aYou have unmuted {target}."
+    target-success: "&aYou have been unmuted."
+  warning:
+    actor-success: "&aYou have warned {target} for: {reason}"
+    target-success: "&cYou have been warned for: {reason}"
+  freeze:
+    actor-frozen: "&cFroze {target}."
+    actor-unfrozen: "&aUnfroze {target}."
+    target-frozen: "&cYou have been frozen! Join our Discord for more information. &b{discord}"
+    target-unfrozen: "&aYou have been unfrozen."
+    staff-alert-frozen: "&9[S] {target}&c has been frozen by {staff}."
+    staff-alert-unfrozen: "&9[S] {target}&a has been unfrozen by {staff}."
+    cannot-interact: "&cYou cannot interact while frozen."
+    cannot-attack: "&cYou cannot attack while frozen."
+    target-cannot-be-attacked: "&c{target} is frozen and cannot be attacked!"
+  report:
+    player-not-found: "&cPlayer not found or not online."
+    self-report: "&cYou cannot report yourself!"
+    submitted: "&aYou have reported &f{target}&a for: &f{reason}"
+    staff-alert: "&8[&cReport&8] &f{reporter} &7reported &f{reported} &7for &f{reason} &8[&7{server}&8]"
+
+history:
+  player-only: "&cOnly players can open the history menu."
+
+staff-chat:
+  usage: "&cUsage: /{label} <message>"
+  no-permission:
+    staff: "&cYou do not have permission to use staff chat."
+    admin: "&cYou do not have permission to use admin chat."
+    manager: "&cYou do not have permission to use manager chat."
+  format:
+    staff: "&9[SC] &8[&7{server}&8] {identity}&r: &9{message}&r"
+    admin: "&c[AC] &8[&7{server}&8] {identity}&r: &c{message}&r"
+    manager: "&4[MC] &8[&7{server}&8] {identity}&r: &4{message}&r"
+
+staff-list:
+  unavailable: "&cThe staff list is currently unavailable. Please try again later."
+
+sudo:
+  chat-success: "&aForced {target} to send a chat message."
+  command-success: "&aForced {target} to execute: /{command}"
+  invalid-mode: "&cInvalid mode. Use command or chat."
+
+speed:
+  player-only: "&cOnly players can use this command."
+  player-not-found: "&cPlayer not found."
+  reset-success: "&aYour speed has been reset."
+  reset-other: "&aYou reset {target}'s speed."
+  set-success: "&aYour speed has been set to {speed}."
+  set-other: "&aYou set {target}'s speed to {speed}."
+  invalid-range: "&cSpeed must be between 1 and 10."
+  invalid-value: "&cInvalid speed value."
+
+auth:
+  setup-required: "&c&l2FA Setup Required"
+  mandatory: "&7 2FA is mandatory for staff."
+  setup-timeout: "&c&lSetup Timeout\n\n&72FA setup is mandatory for staff.\n&7Please reconnect and run /2fa setup."
+  auth-timeout: "&c&lAuthentication Timeout\n\n&7You did not authenticate within 30 seconds.\n&7Please reconnect and enter your 2FA code."
+  auth-required: "&c&lAuthentication Required"
+  authenticated: "&a&lAuthenticated &8(session resumed)"
+  setup-instruction: "&7 Use &e/2fa setup &7to get started."
+  setup-timer: "&7 You have &e30 seconds&7 or you will be kicked."
+  auth-instruction: "&7 You have &e30 seconds &7to verify your identity."
+  auth-code-instruction: "&7 Use &e/auth <6-digit code> &7from your authenticator app."
+  configured: "&a2FA configured. Now authenticate to continue."
+  no-setup-required: "&c2FA is reserved for staff members."
+  already-configured: "&c2FA is already configured on your account."
+  not-configured: "&c2FA is not configured on your account."
+  confirm-required: "&cYou must confirm with your current code: &e/2fa disable <code>"
+  invalid-code: "&cInvalid code. Enter the 6-digit code from your authenticator app."
+  disabled: "&a2FA has been disabled on your account."
+  disable-failed: "&cInvalid code. 2FA was not disabled."
+  session-info: "&7Session valid for &e12 hours &7or until your IP changes."
+  setup-title: "&6&l2FA Setup"
+  scan-qr: "&7Scan the QR code or enter the key manually into a TOTP app."
+  secret-key: "&eSecret Key: &f{secret}"
+  otp-url-label: "&bOTP URL (paste into a QR generator):"
+  save-secret: "&cSave your secret key in a safe place."
+  2fa-commands: "&6&l2FA Commands"
+  setup-help: "&e/2fa setup &7- Set up 2FA for your account"
+  disable-help: "&e/2fa disable <code> &7- Remove 2FA (requires current code)"
+  disable-first: "&7Run &e/2fa disable <code> &7to reset it first."
+  setup-prompt:
+    - ""
+    - "&c&l2FA Setup Required"
+    - "&7 2FA is mandatory for staff."
+    - "&7 Use &e/2fa setup &7to get started."
+    - "&7 You have &e30 seconds&7 or you will be kicked."
+    - ""
+  auth-prompt:
+    - ""
+    - "&c&lAuthentication Required"
+    - "&7 You have &e30 seconds &7to verify your identity."
+    - "&7 Use &e/auth <6-digit code> &7from your authenticator app."
+    - ""
+  configured-prompt:
+    - ""
+    - "&a2FA configured. Now authenticate to continue."
+    - "&7 Use &e/auth <6-digit code> &7from your authenticator app."
+    - "&7 You have &e30 seconds&7."
+    - ""
+  setup-details:
+    - ""
+    - "&6&l2FA Setup"
+    - "&7Scan the QR code or enter the key manually into a TOTP app."
+    - ""
+    - "&eSecret Key: &f{secret}"
+    - ""
+    - "&bOTP URL (paste into a QR generator):"
+    - "&f{otp_url}"
+    - ""
+    - "&cSave your secret key in a safe place."
+    - ""
+  success:
+    - ""
+    - "&a&lAuthenticated &8(session resumed)"
+    - "&7Session valid for &e12 hours &7or until your IP changes."
+    - ""
+  help:
+    - ""
+    - "&6&l2FA Commands"
+    - "&e/2fa setup &7- Set up 2FA for your account"
+    - "&e/2fa disable <code> &7- Remove 2FA (requires current code)"
+    - ""
+
+client-brand:
+  player-only: "&cThis command can only be used by players."
+  disabled: "&cClient join messages disabled."
+  enabled: "&aClient join messages enabled."
+  staff-join: "&9[S] {player}&b joined using: &e{client}&7 ({version})"
+  version-unsupported: "Unknown (protocol unavailable)"
+  version-missing: "Unknown (protocol unavailable)"
+  version-unknown: "Unknown (protocol unavailable)"
+  names:
+    lunar: "Lunar Client"
+    vanilla: "Vanilla"
+    forge: "Forge"
+    fabric: "Fabric"
+    feather: "Feather Client"
+    badlion: "Badlion Client"
+    unknown: "Unknown"
+
+disguise:
+  already-disguised: "&cYou are already disguised! Use /undisguise first."
+  applied: "&aDisguise applied as &e{target} &7with rank &b{rank}&a!"
+  undisguised: "&aYou are no longer disguised."
+  not-disguised: "&cYou are not disguised."
+  error: "&cAn error occurred while undisguising."
+  success: "&aDisguise applied as &e{target} &7with rank &b{rank}&a!"
+  disguise-error: "&cFailed to apply disguise. Try again later."
+  no-rank-found: "&cSelected rank is invalid or not found."
+  global-player-found: "&cA player with that name is already online."
+  same-name: "&cYou cannot disguise as yourself."
+  not-online: "&cYou must be online to disguise."
+  unknown: "&cUnknown error occurred."
+  conflict-removed: "&cYour disguise was removed because &e{target}&c is currently online on the network."
+  conflict-saved: "&cYour saved disguise as &e{target}&c is invalid because that player is now online on the network."
+
+duration:
+  permanent: "Permanent"
+  expired: "Expired"
+  until: "Until {time}"
+
+about:
+  default-description: "The core plugin for your server network."
+  info:
+    - "&7&m----------------------------------------------------"
+    - " &b&l{name} &fv{version}"
+    - "  &7Author: &f{authors}"
+    - "  &7Description: &f{description}"
+    - "&7&m----------------------------------------------------"
+
+more:
+  no-item: "&cYou are not holding any item."
+  success: "&aYou have received a stack of {item}!"
+
+list:
+  ranks-missing: "&cThe 'ranks' section is missing from ranks.yml."
+  rank-separator: "&7, "
+  player-separator: "&7, "
+  player-count: "&7({online}/{max}) "
+  ranks-line: "{ranks}"
+  players-line: "{count}{players}"
+
+reload-config:
+  local-success: "&aReloaded locally: &f{files}"
+  sync-tip: "&7Tip: add &esync&7 to broadcast the changes over Redis."
+  network-success: "&bBroadcasted over Redis: &f{files}"
+  read-failed: "&cFailed to read &f{file}&c for network sync."
+  usage:
+    - "&eUsage: {usage}"
+    - "&7Examples:"
+    - "&7- /reloadconfig"
+    - "&7- /reloadconfig permissions"
+    - "&7- /reloadconfig all sync"
+
+feed:
+  self-player-only: "&cOnly players can use this command on themselves!"
+  self-success: "&aYou are now full."
+  target-success: "&aYou have been fed by {sender}."
+  actor-success: "&aYou have fed {target}."
+
+heal:
+  self-player-only: "&cOnly players can use this command on themselves!"
+  target-success: "&aYour health has been restored!"
+  actor-success: "&aYou have healed {target}!"
+
+fly:
+  enabled: "&aYou can now fly!"
+  enabled-other: "&a{target} can now fly!"
+  disabled: "&cYou can no longer fly!"
+  disabled-other: "&c{target} can no longer fly!"
+
+fix:
+  item-success: "&aYour item has been repaired!"
+  no-repairable-item: "&cYou are not holding an item that can be repaired."
+  all-success: "&aAll items in your inventory and armor have been repaired!"
+
+clear-effects:
+  no-all-permission: "&cYou do not have permission to clear everyone's effects."
+  target-success: "&aYour potion effects have been cleared."
+  all-success: "&aYou cleared all players' potion effects."
+  actor-success: "&aYou cleared {target}'s potion effects."
+
+check-nms:
+  result: "&bYour server is using &e{nms_type}&b and is running on &e{server_version}&b."
+
+jump-to-player:
+  success: "&aJumped to {target}."
+
+ping:
+  self: "&bYour ping: {ping}"
+  other: "&b{target}'s ping: {ping}"
+
+enchant:
+  no-item: "&cYou are not holding any item."
+  invalid-enchantment: "&cInvalid enchantment: {enchantment}"
+  invalid-level: "&cInvalid level: {level}"
+  success: "&aYou have enchanted the item with {enchantment} (Level {level})."
+  unsafe-level-warning: "&eWARNING: This level exceeds the maximum vanilla cap."
+
+thru:
+  success: "&aThere you go."
+  blocked: "&cThe other side is blocked!"
+  no-block: "&cNo block found in front of you."
+
+profile:
+  title:
+    self: "&8Your Profile"
+    other: "&8{target}'s Profile"
+  skull-lore:
+    - "&7Rank: {rank_color}{rank}"
+    - "&7Game Mode: &b{gamemode}"
+    - "&7Frozen: {frozen}"
+    - "&7Vanished: {vanished}"
+    - "&7Staff: {staff}"
+  boolean:
+    yes: "&aYes"
+    no: "&cNo"
+  social-item:
+    name: "&b{platform}"
+    not-set: "Not set"
+    lore:
+      - "&7{value}"
+    self-lore:
+      - "&eRight-click to edit"
+      - "&aLeft-click to open"
+  link-open: "&eClick this to open the link: &n{link}"
+  no-link: "&cNo link set."
+
+permission:
+  list:
+    header: "&bPermission overrides for {target}:"
+    grants: "&7  Grants: {grants}"
+    denies: "&7  Denies: {denies}"
+    none: "&8(none)"
+    grant-color: "&a"
+    deny-color: "&c"
+  empty-node: "&cPermission node cannot be empty."
+  granted: "&aGranted {permission} to {target}."
+  denied: "&aDenied {permission} for {target}."
+  removed: "&aRemoved override {permission} from {target}."
+  invalid-action: "&cInvalid action. Use add, deny, remove, or list."
+
+vanish:
+  enabled: "&bYou are now vanished!"
+  disabled: "&bYou are no longer vanished!"
+  staff-enabled: "&9[S] {player} &bhas vanished!"
+  staff-disabled: "&9[S] {player} &bis no longer vanished!"
+  item:
+    vanish: "&aVanish"
+    unvanish: "&7Un-Vanish"
+    lore:
+      - "&7Toggle vanish mode."
+
+alts:
+  none: "&a{target} has no detected alts."
+  separator: "&f, "
+  list:
+    - "&3------[ &bAlts of &e{target} &b(&d{count}&b) &3]------"
+    - "{alts}"
+    - "&8[&aOnline&8, &cMuted&8, &4Banned&8, &7Offline&8]"
+    - "&3----------------------------------------"
+
+whoisdisguised:
+  line: " &7* &f{disguise} &7-> &c{real} &7[{server}]"
+  hover:
+    - "&eInformation:"
+    - "&7Real Name: &f{real}"
+    - "&7Real Rank: {real_rank_color}{real_rank}"
+    - "&7Disguised Name: &f{disguise}"
+    - "&7Disguised Rank: {disguise_rank_color}{disguise_rank}"
+    - "&7Server: &b{server}"
+  redis-failed: "&cFailed to retrieve data from Redis."
+  header:
+    - "&6&m----------------------------------------"
+    - "&e&lNetwork Disguised Players"
+    - ""
+  none: "&cThere are no disguised players online."
+  footer: "&6&m----------------------------------------"
+
+rank:
+  help:
+    - "&eRank Help:"
+    - "&7- &b/rank create <name>"
+    - "&7- &b/rank delete <name>"
+    - "&7- &b/rank weight <rank> <weight>"
+    - "&7- &b/rank color <rank> <color>"
+    - "&7- &b/rank add <rank> <permission>"
+    - "&7- &b/rank remove <rank> <permission> [inherit]"
+    - "&7- &b/rank prefix <rank> <prefix>"
+    - "&7- &b/rank permissions <rank>"
+    - "&7- &b/grant <player>"
+  usage:
+    create: "&cUsage: /rank create <name>"
+    delete: "&cUsage: /rank delete <name>"
+    weight: "&cUsage: /rank weight <rank> <weight>"
+    color: "&cUsage: /rank color <rank> <color>"
+    add: "&cUsage: /rank add <rank> <permission>"
+    remove: "&cUsage: /rank remove <rank> <permission>"
+    prefix: "&cUsage: /rank prefix <rank> <prefix>"
+    permissions: "&cUsage: /rank permissions <rank>"
+  created: "&aRank {rank} created successfully."
+  deleted: "&aRank {rank} deleted successfully."
+  weight-set: "&aWeight for rank {rank} set to {weight}."
+  invalid-weight: "&cWeight must be a valid number."
+  color-set: "&aColor for rank {rank} set to {color}."
+  permission-added: "&aPermission {permission} added to rank {rank}."
+  permission-removed: "&aPermission {permission} removed from rank {rank}."
+  prefix-set: "&aPrefix for rank {rank} set to {prefix}."
+  permissions-list: "&aPermissions for rank {rank}: {permissions}"
+  error: "&c{error}"
+  target-set: "&aYour rank has been set to {rank} by {giver}."
+  actor-set: "&aYou have set {target}'s rank to {rank}."
+
+rank-menu:
+  invalid-rank: "&cInvalid rank selected."
+
+tags:
+  selected: "&aSelected tag: {tag}"
+  cleared: "&aTag cleared."
+  reloaded: "&eTags were reloaded. Your menu has been refreshed."
+
+gamemode:
+  spectator-unavailable: "&cSpectator mode is not available in Minecraft 1.7.10."
+  invalid: "&cInvalid gamemode specified. Use creative, survival, adventure, or spectator."
+  console-needs-player: "&cConsole must specify a player."
+  no-mode-permission: "&cYou do not have permission to set this gamemode."
+  no-others-permission: "&cYou do not have permission to change other players' gamemode."
+  target-in-staff-mode: "&cYou cannot change that player's game mode while they are in staff mode!"
+  self-success: "&bYour gamemode has been set to {mode}."
+  actor-success: "&bSet {target}'s gamemode to {mode}."
+  target-success: "&bYour gamemode has been set to {mode} by {sender}."
+
+troll:
+  usage: "&cUsage: /troll <player> <{types}>"
+  not-online: "&cPlayer not found or offline."
+  unknown-type: "&cUnknown troll type. Use: {types}"
+  success: "&aTrolled {target} with {type}!"
+  daynight-stopped: "&aTime resumes its normal flow for {target}."
+  daynight-started: "&aMade in Heaven is accelerating time for {target}."
+  daynight-target: "&cThe universe is accelerating... Made in Heaven."
+
+discord:
+  link: "discord.gg/wintercore"
+  message: "&bJoin our discord: &5{link}"
+
+server-manager:
+  usage: "&eUsage: {usage}"
+  info-usage: "&cUsage: /sm info <serverName>"
+  join-player-only: "&cThe 'join' subcommand can only be run by a player."
+  join-usage: "&cUsage: /sm join <serverName>"
+  runcmd-usage: "&cUsage: /sm runcmd <serverName> <command...>"
+  no-servers: "&cNo servers online."
+  list-header: "&bOnline Servers:"
+  list-entry: "&7 - &a{server}"
+  list-failed: "&cFailed to list servers."
+  no-match: "&cNo online server matched '{server}'."
+  no-info: "&cNo info found for server '{server}'."
+  info-pending:
+    - "&bInfo for {server}:"
+    - " &7Status: &aOnline"
+    - " &7Details: &ePending heartbeat data..."
+  info:
+    - "&bInfo for {server}:"
+    - " &7TPS: &a{tps}"
+    - " &7Players: &e{players}/{max_players}"
+    - " &7Whitelisted: &6{whitelisted}"
+  info-failed: "&cFailed to fetch server info."
+  joining: "&7Sending you to {server}..."
+  command-sent: "&aSent command to {server}."
+
+network-broadcast:
+  format: "&8[&bNetwork&8] &f{message}"
+  sent: "&aNetwork broadcast sent."
+
+network-find:
+  not-online: "&c{player} is not online on the network."
+  found: "&b{player} &7is online on &e{server}&7."
+
+network-list:
+  empty: "&cNo players are online on the network."
+  header: "&bNetwork Players &7({online} online across {servers} servers):"
+  server: "&7- &b{server} &7({count}): &f{players}"
+  separator: "&7, "
+
+network-send:
+  not-online: "&c{player} is not online on the network."
+  server-not-online: "&cServer {server} is not online."
+  already-there: "&c{player} is already on {server}."
+  sent: "&aSending {player} to {server}."
+  target: "&7Sending you to &b{server}&7..."
+
+network-maintenance:
+  enabled: "&aNetwork maintenance enabled. Reason: &f{reason}"
+  disabled: "&aNetwork maintenance disabled."
+  enabled-broadcast: "&cNetwork maintenance has been enabled. &7Reason: &f{reason}"
+  disabled-broadcast: "&aNetwork maintenance has been disabled."
+  status-enabled: "&cEnabled"
+  status-disabled: "&aDisabled"
+  status:
+    - "&bNetwork Maintenance: {status}"
+    - "&7Reason: &f{reason}"
+    - "&7Updated by: &f{actor} &7from &f{server}"
+  kick:
+    - "&cThe network is currently under maintenance."
+    - "&7Reason: &f{reason}"
+
+social-input:
+  pending: "&cYou already have an active input pending. Please type your {platform} info first."
+  prompt: "&eType your &b{platform} &einfo in chat:"
+  invalid: "&cInvalid {platform} link."
+  updated: "&aUpdated your {platform} link to: &f{input}"
+
+staff-mode:
+  enabled: "&aStaff mode enabled."
+  disabled: "&cStaff mode disabled and inventory restored."
+  no-nearby-inspect: "&cNo player nearby to inspect."
+  no-nearby-freeze: "&cNo player nearby to freeze."
+  no-random-targets: "&cNo non-staff players online."
+  random-teleport-success: "&aTeleported to {target}."
+  items:
+    push-forward:
+      name: "&6Push Forward"
+      lore:
+        - "&7Use this to move forward quickly."
+    staff-list:
+      name: "&eStaff List"
+      lore:
+        - "&7View the list of online staff members."
+    random-teleport:
+      name: "&bRandom Teleport"
+      lore:
+        - "&7Teleport to a random player."
+    better-view:
+      name: "&bBetter View"
+      lore:
+        - "&7Enhance your view for better observation."
+    inspect-player:
+      name: "&bInspect Player"
+      lore:
+        - "&7Inspect a nearby player's inventory."
+    freeze-player:
+      name: "&bFreeze Player"
+      lore:
+        - "&7Freeze a nearby player."
+
+network:
+  server-online: "&7Server &b{server}&7 has just came &aonline&7 and will be &b&ljoinable in 5 seconds!"
+  server-offline: "&7Server &b{server}&7 has just went &4offline&7 and is no longer &4&ljoinable!"
+
+staff-activity:
+  join: "&9[S] {player} &bconnected to &e{server}"
+  switch: "&9[S] {player} &bconnected to &e{server} &bfrom &e{previous_server}"
+  quit: "&9[S] {player} &bdisconnected from &e{server}"
+
+placeholderapi:
+  missing-warning:
+    - "&cWarning: PlaceholderAPI is not installed on this server!"
+    - "&ePlease install PlaceholderAPI to ensure full functionality."
+    - "&eFor more information, visit: &ahttps://www.spigotmc.org/resources/placeholderapi.6245/"
+
+invsee:
+  not-online: "&cPlayer not found or offline."
+  opened: "&aYou are now viewing &e{target}&a's inventory."
