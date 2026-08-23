@@ -5,10 +5,7 @@ import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.menus.RankMenu;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-
-import java.util.UUID;
 
 @CommandInfo(
         name = "grant",
@@ -37,8 +34,7 @@ public class GrantCommand extends BaseCommand {
         }
 
         String targetName = commandArgs.getArgs()[0];
-        UUID targetUUID = Bukkit.getOfflinePlayer(targetName).getUniqueId();
-
-        new RankMenu(plugin, targetUUID, targetName).open(sender);
+        resolvePlayerId(sender, targetName,
+                targetUUID -> new RankMenu(plugin, targetUUID, targetName).open(sender));
     }
 }

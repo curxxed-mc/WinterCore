@@ -5,10 +5,7 @@ import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.database.service.ModerationService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-
-import java.util.UUID;
 
 @CommandInfo(
         name = "warning",
@@ -38,25 +35,21 @@ public class WarningCommand extends BaseCommand {
         String playerName = args[0];
         String reason = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
         String issuer = commandArgs.getSender().getName();
-        UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
-        String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        if (displayName == null || displayName.trim().isEmpty()) {
-            displayName = playerName;
-        }
-        moderationService.addWarning(displayName, reason, issuer);
-        send(commandArgs.getSender(), "moderation.warning.actor-success",
-                "&aYou have warned {target} for: {reason}",
-                "{target}", displayName,
-                "{reason}", reason);
-        Player target = Bukkit.getPlayer(targetUUID);
-        if (target != null) {
-            send(target, "moderation.warning.target-success",
-                    "&cYou have been warned for: {reason}",
+        resolvePlayerId(commandArgs.getSender(), playerName, targetUUID -> {
+            moderationService.addWarning(playerName, reason, issuer);
+            send(commandArgs.getSender(), "moderation.warning.actor-success",
+                    "&aYou have warned {target} for: {reason}",
+                    "{target}", playerName,
                     "{reason}", reason);
-        }
+            Player target = plugin.getServer().getPlayer(targetUUID);
+            if (target != null) {
+                send(target, "moderation.warning.target-success",
+                        "&cYou have been warned for: {reason}",
+                        "{reason}", reason);
+            }
+        });
     }
 }
-
 
 
 

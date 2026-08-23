@@ -3,9 +3,7 @@ package net.curxxed.dev.wintercore.commands.utility;
 import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
 import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
-import net.curxxed.dev.wintercore.commands.staff.VanishCommand;
 import net.curxxed.dev.wintercore.database.redis.RedisSocials;
-import net.curxxed.dev.wintercore.listeners.FreezeListener;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.utils.CC;
@@ -26,6 +24,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.logging.Level;
 
 @CommandInfo(
         name = "profile",
@@ -104,8 +103,8 @@ public class ProfileCommand extends BaseCommand implements Listener {
                                     ), "{rank}", rank,
                                             "{rank_color}", color,
                                             "{gamemode}", String.valueOf(target.getGameMode()),
-                                            "{frozen}", booleanLabel(FreezeListener.getInstance().isPlayerFrozen(target)),
-                                            "{vanished}", booleanLabel(VanishCommand.vanishedPlayers.contains(target.getUniqueId())),
+                                            "{frozen}", booleanLabel(plugin.getFreezeListener().isFrozen(target)),
+                                            "{vanished}", booleanLabel(plugin.getVanishService().isVanished(target)),
                                             "{staff}", booleanLabel(target.hasPermission("WinterCore.staff") || target.hasPermission("WinterCore.Admin")
                                                     || target.isOp() || target.hasPermission("WinterCore.Manager"))));
                                     skull.setItemMeta(meta);
@@ -144,52 +143,29 @@ public class ProfileCommand extends BaseCommand implements Listener {
 
         if (e.getClick() != ClickType.LEFT && e.getClick() != ClickType.RIGHT) return;
 
-        if (view.self) {
-            if (e.getClick() == ClickType.LEFT) {
-                String link;
-                switch (slot) {
-                    case 29:
-                        link = redis.getSocialLink(uuid, "Discord");
-                        break;
-                    case 31:
-                        link = redis.getSocialLink(uuid, "YouTube");
-                        break;
-                    case 33:
-                        link = redis.getSocialLink(uuid, "Twitter");
-                        break;
-                    default:
-                        return;
-                }
-                if (link != null && !link.isEmpty()) {
-                    send(p, "profile.link-open", "&eClick this to open the link: &n{link}",
-                            "{link}", link);
-                } else {
-                    send(p, "profile.no-link", "&cNo link set.");
-                }
-            }
+        if (e.getClick() != ClickType.LEFT) {
+            return;
+        }
+
+        UUID socialOwner = view.self ? uuid : view.targetUuid;
+        String link;
+        switch (slot) {
+            case 29:
+                link = redis.getSocialLink(socialOwner, "Discord");
+                break;
+            case 31:
+                link = redis.getSocialLink(socialOwner, "YouTube");
+                break;
+            case 33:
+                link = redis.getSocialLink(socialOwner, "Twitter");
+                break;
+            default:
+                return;
+        }
+        if (link != null && !link.isEmpty()) {
+            send(p, "profile.link-open", "&eClick this to open the link: &n{link}", "{link}", link);
         } else {
-            if (e.getClick() == ClickType.LEFT) {
-                String link;
-                switch (slot) {
-                    case 29:
-                        link = redis.getSocialLink(view.targetUuid, "Discord");
-                        break;
-                    case 31:
-                        link = redis.getSocialLink(view.targetUuid, "YouTube");
-                        break;
-                    case 33:
-                        link = redis.getSocialLink(view.targetUuid, "Twitter");
-                        break;
-                    default:
-                        return;
-                }
-                if (link != null && !link.isEmpty()) {
-                    send(p, "profile.link-open", "&eClick this to open the link: &n{link}",
-                            "{link}", link);
-                } else {
-                    send(p, "profile.no-link", "&cNo link set.");
-                }
-            }
+            send(p, "profile.no-link", "&cNo link set.");
         }
     }
 
@@ -227,7 +203,7 @@ public class ProfileCommand extends BaseCommand implements Listener {
             profileField.set(meta, profile);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.WARNING, "Could not apply profile head texture", e);
         }
 
         meta.setDisplayName(msg("profile.social-item.name", "&b{platform}", "{platform}", name));

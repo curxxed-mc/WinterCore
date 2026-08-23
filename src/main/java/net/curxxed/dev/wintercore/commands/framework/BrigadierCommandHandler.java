@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 
 public class BrigadierCommandHandler {
     private final WinterCore plugin;
@@ -74,8 +75,7 @@ public class BrigadierCommandHandler {
             }
 
         } catch (Exception e) {
-            plugin.getLogger().severe("[WinterCore] Failed to initialize Brigadier registration: " + e.getMessage());
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE, "Failed to initialize Brigadier registration", e);
         }
     }
 

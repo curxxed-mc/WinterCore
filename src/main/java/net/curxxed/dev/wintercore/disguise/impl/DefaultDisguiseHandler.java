@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 public class DefaultDisguiseHandler extends DisguiseHandler {
 
@@ -115,13 +116,19 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             }
             return;
         }
-        Collection<Map.Entry<Object, Object>> entries =
-                (Collection<Map.Entry<Object, Object>>) propertiesMap.getClass().getMethod("entries").invoke(propertiesMap);
+        Object entriesValue = propertiesMap.getClass().getMethod("entries").invoke(propertiesMap);
+        if (!(entriesValue instanceof Collection)) {
+            return;
+        }
 
-        for (Map.Entry<Object, Object> entry : entries) {
+        for (Object value : (Collection<?>) entriesValue) {
+            if (!(value instanceof Map.Entry)) {
+                continue;
+            }
+            Map.Entry<?, ?> entry = (Map.Entry<?, ?>) value;
             Object prop = entry.getValue();
             JsonObject obj = new JsonObject();
-            obj.addProperty("key", (String) entry.getKey());
+            obj.addProperty("key", String.valueOf(entry.getKey()));
             obj.addProperty("value-name", (String) invokeAccessor(prop, propertyClass, "getName", "name"));
             obj.addProperty("value", (String) invokeAccessor(prop, propertyClass, "getValue", "value"));
             obj.addProperty("signature", (String) invokeAccessor(prop, propertyClass, "getSignature", "signature"));
@@ -144,8 +151,8 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                 player.getClass().getMethod("setPlayerProfile", paperProfileClass).invoke(player, gameProfile);
                 return;
             } catch (ReflectiveOperationException e) {
-                e.printStackTrace();
-                return;
+                plugin.getLogger().log(Level.WARNING,
+                        "[Disguise] Could not apply the Paper player profile for " + player.getName(), e);
             }
         }
         try {
@@ -220,11 +227,10 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             data.add("properties", properties);
 
             final DisguiseData disguiseData = new DisguiseData(effectiveRank, name, skin, data, System.currentTimeMillis());
-            plugin.getDisguiseDataMap().put(player.getUniqueId(), disguiseData);
-            disguiseRanks.put(player.getUniqueId(), effectiveRank);
 
-            fetchSkinData(skin, skinProperty -> {
+            fetchSkinDataOrRandom(skin, skinProperty -> {
                 if (skinProperty == null) {
+                    // only reachable if the fallback lookup failed too (Mojang unreachable)
                     callback.accept(DisguiseCallback.ERROR);
                     return;
                 }
@@ -232,14 +238,12 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                 String value = skinProperty.value;
                 String signature = skinProperty.signature;
 
-                disguiseRegistry.setDisguised(player, skinProperty);
-
-                try {
-                    clearProperties(gameProfile);
-                    putTextureProperty(gameProfile, value, signature);
-
-                    plugin.getTasks().sync(() -> {
-                        try {
+                plugin.getTasks().sync(() -> {
+                    boolean profileTouched = false;
+                    try {
+                            clearProperties(gameProfile);
+                            profileTouched = true;
+                            putTextureProperty(gameProfile, value, signature);
                             setProfileName(player, gameProfile, name);
                             setTablistName(player, name);
 
@@ -259,6 +263,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                             String nameColor = getRankString(effectiveRank, "name-color", "&f");
                             String coloredPrefix = CC.translate(rawPrefix);
 
+                            activateDisguise(player, disguiseData, effectiveRank);
                             disguiseRegistry.publishDisguiseState(player, name, effectiveRank, skin, nameColor, coloredPrefix);
                             disguiseRegistry.getEffectiveColor(player, color -> {
                                 if (plugin.getNameTagColorManager() != null) {
@@ -268,25 +273,27 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
                             disguiseRegistry.updateColorCache(player);
                             callback.accept(DisguiseCallback.SUCCESS);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            callback.accept(DisguiseCallback.ERROR);
+                    } catch (Exception e) {
+                        if (profileTouched) {
+                            // Keep the original profile data so a later undisguise can recover a partial refresh.
+                            activateDisguise(player, disguiseData, effectiveRank);
                         }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    callback.accept(DisguiseCallback.ERROR);
-                }
+                        plugin.getLogger().log(Level.SEVERE,
+                                "[Disguise] Failed to refresh disguise for " + player.getName(), e);
+                        callback.accept(DisguiseCallback.ERROR);
+                    }
+                });
             });
         } catch (Exception e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE,
+                    "[Disguise] Failed to prepare disguise for " + player.getName(), e);
             callback.accept(DisguiseCallback.ERROR);
         }
     }
 
     @Override
     public void unDisguise(final Player player, final boolean save, Consumer<DisguiseCallback> callback) {
-        final DisguiseData disguiseData = plugin.getDisguiseDataMap().get(player.getUniqueId());
+        final DisguiseData disguiseData = plugin.getDisguiseRegistry().getDisguiseData(player.getUniqueId());
         if (disguiseData == null) {
             if (plugin.getNameTagColorManager() != null) {
                 plugin.getNameTagColorManager().clearDisguise(player);
@@ -323,7 +330,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             setTablistName(player, originalName);
 
             if (!save) {
-                plugin.getDisguiseDataMap().remove(player.getUniqueId());
+                plugin.getDisguiseRegistry().removeDisguiseData(player.getUniqueId());
                 disguiseRanks.remove(player.getUniqueId());
                 disguiseRegistry.clear(player);
                 if (plugin.getNameTagColorManager() != null) {
@@ -345,7 +352,7 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
                 player.updateInventory();
             });
 
-            plugin.getDisguiseDataMap().remove(player.getUniqueId());
+            plugin.getDisguiseRegistry().removeDisguiseData(player.getUniqueId());
             disguiseRanks.remove(player.getUniqueId());
             disguiseRegistry.clear(player);
             if (plugin.getNameTagColorManager() != null) {
@@ -357,7 +364,8 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
 
             callback.accept(DisguiseCallback.SUCCESS);
         } catch (Exception e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE,
+                    "[Disguise] Failed to restore profile for " + player.getName(), e);
             callback.accept(DisguiseCallback.ERROR);
         }
     }
@@ -378,25 +386,6 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             return;
         }
 
-        try {
-            if (!plugin.getDisguiseDataMap().containsKey(player.getUniqueId())) {
-                Object entityPlayer = Utilities.getEntityPlayer(player);
-                Object gameProfile = getProfile(player, entityPlayer);
-                JsonObject data = new JsonObject();
-                data.addProperty("name", player.getName());
-                data.addProperty("uuid", player.getUniqueId().toString());
-                JsonArray props = new JsonArray();
-                serializeProperties(gameProfile, props);
-                data.add("properties", props);
-                plugin.getDisguiseDataMap().put(player.getUniqueId(),
-                        new DisguiseData("", player.getName(), player.getName(), data, System.currentTimeMillis()));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            callback.accept(DisguiseCallback.ERROR);
-            return;
-        }
-
         disguise(player, resolveDisguiseRank(player, null), targetName, targetName, callback);
     }
 
@@ -413,6 +402,12 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
         org.bukkit.configuration.ConfigurationSection section =
                 plugin.getRankManager().getRanksSection().getConfigurationSection(rank);
         return section != null ? section.getString(key, def) : def;
+    }
+
+    private void activateDisguise(Player player, DisguiseData data, String rank) {
+        disguiseRegistry.putDisguiseData(player.getUniqueId(), data);
+        disguiseRanks.put(player.getUniqueId(), rank);
+        disguiseRegistry.setDisguised(player);
     }
 
     private String resolveDisguiseRank(Player player, String rank) {
@@ -440,6 +435,6 @@ public class DefaultDisguiseHandler extends DisguiseHandler {
             return true;
         }
 
-        return plugin.getNRS().isNameOnlineElsewhere(requestedName, selfUuid);
+        return plugin.getNetworkRedisService().isNameOnlineElsewhere(requestedName, selfUuid);
     }
 }

@@ -81,6 +81,7 @@ public class RankMenu extends Menu {
         return view == View.RANK_SELECT ? buildRankButtons(player) : buildDurationButtons(player);
     }
 
+    @SuppressWarnings("deprecation") // Material data values are required by the 1.8 inventory API.
     private Map<Integer, Button> buildRankButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
         List<String> sortedRanks = plugin.getRankManager().getSortedRanks();

@@ -10,6 +10,7 @@ public final class DurationParser {
     private static final Pattern TOKEN = Pattern.compile("^(\\d+)([smhdw])$", Pattern.CASE_INSENSITIVE);
 
     private DurationParser() {
+        throw new UnsupportedOperationException();
     }
 
     public static Duration parse(String token) {
@@ -34,19 +35,23 @@ public final class DurationParser {
         }
 
         String unit = matcher.group(2).toLowerCase(Locale.ENGLISH);
-        switch (unit) {
-            case "s":
-                return Duration.ofSeconds(amount);
-            case "m":
-                return Duration.ofMinutes(amount);
-            case "h":
-                return Duration.ofHours(amount);
-            case "d":
-                return Duration.ofDays(amount);
-            case "w":
-                return Duration.ofDays(amount * 7L);
-            default:
-                return null;
+        try {
+            switch (unit) {
+                case "s":
+                    return Duration.ofSeconds(amount);
+                case "m":
+                    return Duration.ofMinutes(amount);
+                case "h":
+                    return Duration.ofHours(amount);
+                case "d":
+                    return Duration.ofDays(amount);
+                case "w":
+                    return Duration.ofDays(Math.multiplyExact(amount, 7L));
+                default:
+                    return null;
+            }
+        } catch (ArithmeticException overflow) {
+            return null;
         }
     }
 

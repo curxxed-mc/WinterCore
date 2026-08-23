@@ -126,7 +126,7 @@ public class PlayerService implements Listener {
     }
 
     public String getIdentity(Player player) {
-        DisguiseData data = plugin.getDisguiseDataMap().get(player.getUniqueId());
+        DisguiseData data = plugin.getDisguiseRegistry().getDisguiseData(player.getUniqueId());
         if (data != null && data.getInfo() != null && data.getInfo().has("name")) {
             return data.getInfo().get("name").getAsString();
         }

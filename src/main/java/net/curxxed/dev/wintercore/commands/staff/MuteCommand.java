@@ -15,7 +15,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 @CommandInfo(
         name = "mute",
@@ -72,12 +71,6 @@ public class MuteCommand extends BaseCommand {
             return;
         }
 
-        UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
-        String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        if (displayName == null || displayName.trim().isEmpty()) {
-            displayName = playerName;
-        }
-
         Duration duration = null;
         if (args.length >= 3) {
             Duration parsed = DurationParser.parse(args[args.length - 1]);
@@ -92,14 +85,14 @@ public class MuteCommand extends BaseCommand {
             }
         }
 
-        final String finalDisplayName = displayName;
         final String finalReason = reason;
         final Duration finalDuration = duration;
-        moderationService.isPlayerMuted(targetUUID, isMuted -> runSync(() -> {
+        resolvePlayerId(commandArgs.getSender(), playerName, targetUUID ->
+                moderationService.isPlayerMuted(targetUUID, isMuted -> runSync(() -> {
             if (isMuted) {
                 send(commandArgs.getSender(), "moderation.mute.already-muted",
                         "&cPlayer {target} is already muted.",
-                        "{target}", finalDisplayName);
+                        "{target}", playerName);
                 return;
             }
 
@@ -109,12 +102,12 @@ public class MuteCommand extends BaseCommand {
             if (expiration != null) {
                 send(commandArgs.getSender(), "moderation.mute.actor-success-temporary",
                         "&aYou have muted {target} until {until}.",
-                        "{target}", finalDisplayName,
+                        "{target}", playerName,
                         "{until}", ModerationMessages.formatTimestamp(expiration.toEpochMilli()));
             } else {
                 send(commandArgs.getSender(), "moderation.mute.actor-success-permanent",
                         "&aYou have muted {target} permanently.",
-                        "{target}", finalDisplayName);
+                        "{target}", playerName);
             }
 
             Player target = Bukkit.getPlayer(targetUUID);
@@ -130,6 +123,6 @@ public class MuteCommand extends BaseCommand {
                             "{reason}", finalReason);
                 }
             }
-        }));
+                })));
     }
 }

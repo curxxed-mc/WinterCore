@@ -3,6 +3,7 @@ package net.curxxed.dev.wintercore.database.redis.packet;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.*;
+import net.curxxed.dev.wintercore.database.redis.handler.RedisPacketHandler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -136,7 +137,7 @@ public final class RedisPacketCodec {
         return gson.toJson(packet.serialize());
     }
 
-    public RedisPacket<?> decode(String raw) {
+    public RedisPacket<RedisPacketHandler> decode(String raw) {
         JsonObject json = gson.fromJson(raw, JsonObject.class);
         RedisPacketType type = RedisPacketType.valueOf(json.get("type").getAsString());
 
@@ -149,6 +150,6 @@ public final class RedisPacketCodec {
     }
 
     private interface PacketDeserializer {
-        RedisPacket<?> deserialize(JsonObject json);
+        RedisPacket<RedisPacketHandler> deserialize(JsonObject json);
     }
 }

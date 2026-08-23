@@ -4,46 +4,69 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.curxxed.dev.wintercore.database.redis.RedisManager;
 import net.curxxed.dev.wintercore.database.redis.packet.packets.DisguiseStatePacket;
+import net.curxxed.dev.wintercore.disguise.player.DisguiseData;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
-import net.curxxed.dev.wintercore.utils.SkinFetcher;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DisguiseRegistry {
 
-    private final Map<UUID, SkinFetcher.SkinProperty> originalSkins = new ConcurrentHashMap<>();
-    public final Set<UUID> disguisedPlayers = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> disguisedPlayers = ConcurrentHashMap.newKeySet();
+    private final ConcurrentMap<UUID, DisguiseData> activeDisguises = new ConcurrentHashMap<>();
     private final Map<UUID, String> colorCache = new ConcurrentHashMap<>();
     private final Map<UUID, String> disguiseDataCache = new ConcurrentHashMap<>();
 
+    private final WinterCore plugin;
     private final RedisManager redisManager;
     private final Logger logger;
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    public DisguiseRegistry(RedisManager redisManager, Logger logger) {
-        this.redisManager = redisManager;
-        this.logger = logger;
+    public DisguiseRegistry(WinterCore plugin) {
+        this.plugin = plugin;
+        this.redisManager = plugin.getRedisManager();
+        this.logger = plugin.getLogger();
     }
 
     public boolean isDisguised(Player player) {
-        return disguisedPlayers.contains(player.getUniqueId());
+        return player != null && isDisguised(player.getUniqueId());
     }
 
-    public SkinFetcher.SkinProperty getOriginalSkin(Player player) {
-        return originalSkins.get(player.getUniqueId());
+    public boolean isDisguised(UUID uuid) {
+        return uuid != null && disguisedPlayers.contains(uuid);
     }
 
-    public void setDisguised(Player player, SkinFetcher.SkinProperty skin) {
-        if (player == null || skin == null) {
+    public boolean hasDisguiseData(UUID uuid) {
+        return uuid != null && activeDisguises.containsKey(uuid);
+    }
+
+    public DisguiseData getDisguiseData(UUID uuid) {
+        return uuid == null ? null : activeDisguises.get(uuid);
+    }
+
+    public void putDisguiseData(UUID uuid, DisguiseData data) {
+        if (uuid != null && data != null) {
+            activeDisguises.put(uuid, data);
+        }
+    }
+
+    public DisguiseData removeDisguiseData(UUID uuid) {
+        return uuid == null ? null : activeDisguises.remove(uuid);
+    }
+
+    public Map<UUID, DisguiseData> getDisguiseDataSnapshot() {
+        return Collections.unmodifiableMap(new HashMap<>(activeDisguises));
+    }
+
+    public void setDisguised(Player player) {
+        if (player == null) {
             return;
         }
-        originalSkins.put(player.getUniqueId(), skin);
         disguisedPlayers.add(player.getUniqueId());
     }
 
@@ -52,43 +75,14 @@ public class DisguiseRegistry {
     }
 
     public void clear(UUID uuid) {
-        originalSkins.remove(uuid);
         disguisedPlayers.remove(uuid);
+        activeDisguises.remove(uuid);
         disguiseDataCache.remove(uuid);
         colorCache.remove(uuid);
     }
 
-    public void clearAll(Consumer<Player> undisguiseAction) {
-        for (UUID uuid : new HashSet<>(disguisedPlayers)) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null && player.isOnline()) {
-                try {
-                    undisguiseAction.accept(player);
-                } catch (Exception ignored) {}
-            }
-        }
-    }
-
-    public void handleQuit(Player player, Consumer<Player> undisguiseAction) {
-        UUID uuid = player.getUniqueId();
-        scheduler.schedule(() -> {
-            if (isDisguised(player)) {
-                try {
-                    undisguiseAction.accept(player);
-                } catch (Exception e) {
-                    logger.warning("Failed to undisguise player on quit: " + player.getName());
-                }
-                clear(uuid);
-            }
-        }, 4, TimeUnit.SECONDS);
-    }
-
-    public void shutdown() {
-        scheduler.shutdownNow();
-    }
-
     public void publishDisguiseState(Player player, String disguiseName, String disguiseRank, String skin, String color, String prefix) {
-        String serverName = WinterCore.getInstance().getConfig().getString("server-name", "Unknown");
+        String serverName = plugin.getConfig().getString("server-name", "Unknown");
         JsonObject obj = new JsonObject();
         obj.addProperty("name", disguiseName);
         obj.addProperty("rank", disguiseRank);
@@ -99,10 +93,10 @@ public class DisguiseRegistry {
         String json = obj.toString();
         disguiseDataCache.put(player.getUniqueId(), json);
 
-        try (redis.clients.jedis.Jedis jedis = WinterCore.getInstance().getRedisPool().getResource()) {
+        try (redis.clients.jedis.Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.setex("player:disguise:" + player.getUniqueId(), 7200, json);
         } catch (Exception e) {
-            WinterCore.getInstance().getLogger().warning("Failed to persist disguise data: " + e.getMessage());
+            logger.log(Level.WARNING, "Failed to persist disguise data", e);
         }
 
         redisManager.publish(new DisguiseStatePacket(
@@ -117,14 +111,14 @@ public class DisguiseRegistry {
     public void publishClearDisguise(Player player) {
         disguiseDataCache.remove(player.getUniqueId());
 
-        try (redis.clients.jedis.Jedis jedis = WinterCore.getInstance().getRedisPool().getResource()) {
+        try (redis.clients.jedis.Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.del("player:disguise:" + player.getUniqueId());
         } catch (Exception e) {
-            WinterCore.getInstance().getLogger().warning("Failed to clear disguise data: " + e.getMessage());
+            logger.log(Level.WARNING, "Failed to clear disguise data", e);
         }
 
         redisManager.publish(new DisguiseStatePacket(
-                WinterCore.getInstance().getConfig().getString("server-name", "Unknown"),
+                plugin.getConfig().getString("server-name", "Unknown"),
                 System.currentTimeMillis(),
                 player.getUniqueId(),
                 false,
@@ -136,14 +130,14 @@ public class DisguiseRegistry {
         String cached = disguiseDataCache.get(uuid);
         if (cached != null && !cached.isEmpty()) return cached;
 
-        try (redis.clients.jedis.Jedis jedis = WinterCore.getInstance().getRedisPool().getResource()) {
+        try (redis.clients.jedis.Jedis jedis = plugin.getRedisPool().getResource()) {
             String persisted = jedis.get("player:disguise:" + uuid);
             if (persisted != null && !persisted.isEmpty()) {
                 disguiseDataCache.put(uuid, persisted);
                 return persisted;
             }
         } catch (Exception e) {
-            WinterCore.getInstance().getLogger().warning("Failed to load disguise data: " + e.getMessage());
+            logger.log(Level.WARNING, "Failed to load disguise data", e);
         }
         return "";
     }
@@ -155,7 +149,7 @@ public class DisguiseRegistry {
             callback.accept(rank);
             return;
         }
-        RankManager.getInstance().getRank(player.getUniqueId(), callback);
+        plugin.getRankManager().getRank(player.getUniqueId(), callback);
     }
 
     public void getEffectiveColor(Player player, Consumer<String> callback) {
@@ -165,14 +159,14 @@ public class DisguiseRegistry {
             callback.accept(color);
             return;
         }
-        RankManager rankManager = RankManager.getInstance();
+        RankManager rankManager = plugin.getRankManager();
         rankManager.getRank(player.getUniqueId(), rank -> rankManager.getColorPreference(rank, callback));
     }
 
     public String getEffectiveColorSync(Player player) {
         String disguiseJson = disguiseDataCache.get(player.getUniqueId());
         String color = extractField(disguiseJson, "color");
-        return color != null ? color : RankManager.getInstance().getColorPreferenceSync(player);
+        return color != null ? color : plugin.getRankManager().getColorPreferenceSync(player);
     }
 
     public void getEffectivePrefix(Player player, Consumer<String> callback) {
@@ -182,7 +176,7 @@ public class DisguiseRegistry {
             callback.accept(prefix);
             return;
         }
-        RankManager rankManager = RankManager.getInstance();
+        RankManager rankManager = plugin.getRankManager();
         rankManager.getRank(player.getUniqueId(), rank -> callback.accept(rankManager.getRankPrefixSync(rank)));
     }
 
@@ -194,17 +188,13 @@ public class DisguiseRegistry {
             color = extractField(disguiseJson, "color");
         }
         if (color == null) {
-            color = RankManager.getInstance().getColorPreferenceSync(player);
+            color = plugin.getRankManager().getColorPreferenceSync(player);
         }
         colorCache.put(uuid, color);
         final String resolvedColor = color;
-        WinterCore instance = WinterCore.getInstance();
-        if (instance == null) {
-            return;
-        }
-        instance.getTasks().sync(() -> {
-            if (instance != null && instance.getNameTagColorManager() != null) {
-                instance.getNameTagColorManager().applyColor(player, resolvedColor);
+        plugin.getTasks().sync(() -> {
+            if (plugin.getNameTagColorManager() != null) {
+                plugin.getNameTagColorManager().applyColor(player, resolvedColor);
             }
         });
     }
@@ -223,6 +213,7 @@ public class DisguiseRegistry {
         }
     }
 
+    @SuppressWarnings("deprecation") // Gson API available on the 1.8 server classpath.
     private String extractField(String disguiseJson, String field) {
         if (disguiseJson == null) return null;
         try {

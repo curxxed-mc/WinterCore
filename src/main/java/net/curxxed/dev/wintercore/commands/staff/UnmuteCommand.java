@@ -8,8 +8,6 @@ import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.UUID;
-
 @CommandInfo(
         name = "unmute",
         description = "Unmute a player.",
@@ -40,28 +38,23 @@ public class UnmuteCommand extends BaseCommand {
             return;
         }
         String playerName = args[0];
-        UUID targetUUID = Bukkit.getOfflinePlayer(playerName).getUniqueId();
-        String displayName = Bukkit.getOfflinePlayer(targetUUID).getName();
-        if (displayName == null || displayName.trim().isEmpty()) {
-            displayName = playerName;
-        }
-        final String finalDisplayName = displayName;
-        moderationService.isPlayerMuted(targetUUID, isMuted -> runSync(() -> {
-            if (!isMuted) {
-                send(commandArgs.getSender(), "moderation.unmute.not-muted",
-                        "&cPlayer {target} is not muted.",
-                        "{target}", finalDisplayName);
-                return;
-            }
-            moderationService.unmutePlayer(targetUUID);
-            send(commandArgs.getSender(), "moderation.unmute.actor-success",
-                    "&aYou have unmuted {target}.",
-                    "{target}", finalDisplayName);
-            Player target = Bukkit.getPlayer(targetUUID);
-            if (target != null) {
-                send(target, "moderation.unmute.target-success",
-                        "&aYou have been unmuted.");
-            }
-        }));
+        resolvePlayerId(commandArgs.getSender(), playerName, targetUUID ->
+                moderationService.isPlayerMuted(targetUUID, isMuted -> runSync(() -> {
+                    if (!isMuted) {
+                        send(commandArgs.getSender(), "moderation.unmute.not-muted",
+                                "&cPlayer {target} is not muted.",
+                                "{target}", playerName);
+                        return;
+                    }
+                    moderationService.unmutePlayer(targetUUID);
+                    send(commandArgs.getSender(), "moderation.unmute.actor-success",
+                            "&aYou have unmuted {target}.",
+                            "{target}", playerName);
+                    Player target = Bukkit.getPlayer(targetUUID);
+                    if (target != null) {
+                        send(target, "moderation.unmute.target-success",
+                                "&aYou have been unmuted.");
+                    }
+                })));
     }
 }

@@ -45,24 +45,20 @@ public class AltsCommand extends BaseCommand {
             return;
         }
 
-        OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
-        if (target == null || target.getName() == null) {
-            send(commandArgs.getSender(), "general.player-not-found", "&cPlayer not found.");
-            return;
-        }
+        String targetName = args[0];
+        resolvePlayerId(commandArgs.getSender(), targetName, targetUuid ->
+                plugin.getDatabaseManager().getIdentityService().getAlts(targetUuid, alts -> runSync(() -> {
+                    if (alts.isEmpty()) {
+                        send(commandArgs.getSender(), "alts.none", "&a{target} has no detected alts.",
+                                "{target}", targetName);
+                        return;
+                    }
 
-        plugin.getDatabaseManager().getIdentityService().getAlts(target.getUniqueId(), alts -> runSync(() -> {
-            if (alts.isEmpty()) {
-                send(commandArgs.getSender(), "alts.none", "&a{target} has no detected alts.",
-                        "{target}", target.getName());
-                return;
-            }
-
-            sendAltList(commandArgs, target, alts);
-        }));
+                    sendAltList(commandArgs, targetName, alts);
+                })));
     }
 
-    private void sendAltList(CommandArguments commandArgs, OfflinePlayer target, Set<UUID> alts) {
+    private void sendAltList(CommandArguments commandArgs, String targetName, Set<UUID> alts) {
         List<UUID> altList = new ArrayList<>(alts);
         AtomicInteger completed = new AtomicInteger(0);
         List<String> formatted = Collections.synchronizedList(new ArrayList<>());
@@ -95,7 +91,7 @@ public class AltsCommand extends BaseCommand {
                                     "{alts}",
                                     "&8[&aOnline&8, &cMuted&8, &4Banned&8, &7Offline&8]",
                                     "&3----------------------------------------"
-                            ), "{target}", target.getName(),
+                            ), "{target}", targetName,
                                     "{count}", String.valueOf(count),
                                     "{alts}", joined);
                         }

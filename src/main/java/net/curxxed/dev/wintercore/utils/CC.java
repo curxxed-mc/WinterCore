@@ -7,6 +7,10 @@ import java.util.stream.Collectors;
 
 public class CC {
 
+    private CC() {
+        throw new UnsupportedOperationException();
+    }
+
     public static String translate(final String in) {
         return ChatColor.translateAlternateColorCodes('&', in);
     }

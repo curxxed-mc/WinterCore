@@ -56,7 +56,13 @@ public class Rank {
         List<Map<String, String>> result = new ArrayList<>();
         for (Object obj : rawList) {
             if (obj instanceof Map) {
-                result.add((Map<String, String>) obj);
+                Map<String, String> permission = new HashMap<>();
+                for (Map.Entry<?, ?> entry : ((Map<?, ?>) obj).entrySet()) {
+                    if (entry.getKey() != null && entry.getValue() != null) {
+                        permission.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
+                    }
+                }
+                result.add(permission);
             } else if (obj instanceof String) {
                 Map<String, String> map = new HashMap<>();
                 map.put("permission", (String) obj);

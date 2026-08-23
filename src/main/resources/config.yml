@@ -12,6 +12,12 @@ Redis:
   host: 127.0.0.1
   port: 6379
   password: ''
+  timeout-ms: 2000
+  pool:
+    max-total: 10
+    max-idle: 5
+    min-idle: 1
+    test-on-borrow: true
 BungeeServers:
   Lobby26: lobby
   Practice26: practice
@@ -19,10 +25,10 @@ NameMC:
   enabled: false
   server: ''
 mongodb:
-  uri: mongodb://root:password@localhost:27017
+  uri: mongodb://localhost:27017
   database: wintercore
+  server-selection-timeout-ms: 5000
   collections:
     punishments: punishments
     grants: grants
     players: players
-vanished_players: !!set {}

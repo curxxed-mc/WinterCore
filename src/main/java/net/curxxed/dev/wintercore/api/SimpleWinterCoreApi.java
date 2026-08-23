@@ -1,13 +1,21 @@
 package net.curxxed.dev.wintercore.api;
 
+import net.curxxed.dev.wintercore.auth.AuthManager;
 import net.curxxed.dev.wintercore.chat.ChatFilterService;
+import net.curxxed.dev.wintercore.chat.MessagingService;
+import net.curxxed.dev.wintercore.chat.StaffChatService;
+import net.curxxed.dev.wintercore.config.MenuConfig;
 import net.curxxed.dev.wintercore.config.MessageConfig;
+import net.curxxed.dev.wintercore.config.PermissionConfigManager;
 import net.curxxed.dev.wintercore.database.DatabaseManager;
 import net.curxxed.dev.wintercore.database.redis.RedisManager;
+import net.curxxed.dev.wintercore.database.redis.RedisSocials;
 import net.curxxed.dev.wintercore.database.redis.packet.RedisPacket;
+import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
 import net.curxxed.dev.wintercore.database.service.CurrencyService;
 import net.curxxed.dev.wintercore.disguise.DisguiseHandler;
 import net.curxxed.dev.wintercore.disguise.DisguiseRegistry;
+import net.curxxed.dev.wintercore.listeners.FreezeListener;
 import net.curxxed.dev.wintercore.namemc.NameMcService;
 import net.curxxed.dev.wintercore.nametags.NameTagColorManager;
 import net.curxxed.dev.wintercore.nms.PacketSender;
@@ -15,6 +23,8 @@ import net.curxxed.dev.wintercore.player.PlayerService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.rank.RankManager;
 import net.curxxed.dev.wintercore.scheduler.Tasks;
+import net.curxxed.dev.wintercore.staff.StaffModeManager;
+import net.curxxed.dev.wintercore.staff.VanishService;
 import net.curxxed.dev.wintercore.tags.TagsManager;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.entity.Player;
@@ -27,6 +37,26 @@ public final class SimpleWinterCoreApi implements WinterCoreApi {
 
     public SimpleWinterCoreApi(WinterCore plugin) {
         this.plugin = plugin;
+    }
+
+    @Override
+    public String pluginVersion() {
+        return plugin.getDescription().getVersion();
+    }
+
+    @Override
+    public String serverName() {
+        return plugin.getConfig().getString("server-name", "Unknown");
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return plugin.isEnabled();
+    }
+
+    @Override
+    public boolean isShuttingDown() {
+        return WinterCore.isShuttingDown();
     }
 
     @Override
@@ -66,6 +96,16 @@ public final class SimpleWinterCoreApi implements WinterCoreApi {
     }
 
     @Override
+    public NetworkRedisService network() {
+        return plugin.getNetworkRedisService();
+    }
+
+    @Override
+    public RedisSocials socials() {
+        return plugin.getRedisSocials();
+    }
+
+    @Override
     public MessageConfig messages() {
         return plugin.getMessageConfig();
     }
@@ -73,6 +113,16 @@ public final class SimpleWinterCoreApi implements WinterCoreApi {
     @Override
     public ChatFilterService chatFilter() {
         return plugin.getChatFilterService();
+    }
+
+    @Override
+    public MessagingService messaging() {
+        return plugin.getMessagingService();
+    }
+
+    @Override
+    public StaffChatService staffChat() {
+        return plugin.getStaffChatService();
     }
 
     @Override
@@ -88,6 +138,21 @@ public final class SimpleWinterCoreApi implements WinterCoreApi {
     @Override
     public PlayerService players() {
         return plugin.getPlayerService();
+    }
+
+    @Override
+    public StaffModeManager staffMode() {
+        return plugin.getStaffModeManager();
+    }
+
+    @Override
+    public VanishService vanish() {
+        return plugin.getVanishService();
+    }
+
+    @Override
+    public FreezeListener freeze() {
+        return plugin.getFreezeListener();
     }
 
     @Override
@@ -108,6 +173,21 @@ public final class SimpleWinterCoreApi implements WinterCoreApi {
     @Override
     public NameTagColorManager nametags() {
         return plugin.getNameTagColorManager();
+    }
+
+    @Override
+    public AuthManager authentication() {
+        return plugin.getAuthModule().getAuthManager();
+    }
+
+    @Override
+    public PermissionConfigManager permissions() {
+        return plugin.getPermissionConfigManager();
+    }
+
+    @Override
+    public MenuConfig menus() {
+        return plugin.getMenuConfig();
     }
 
     @Override

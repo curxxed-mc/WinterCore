@@ -1,6 +1,5 @@
 package net.curxxed.dev.wintercore.commands.framework;
 
-import lombok.SneakyThrows;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandMap;
@@ -17,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.logging.Level;
 
 public class CommandHandler {
 
@@ -25,13 +25,16 @@ public class CommandHandler {
     private final List<BaseCommand> registeredCommands = new ArrayList<>();
     private final Set<String> registeredPermissionNodes = new LinkedHashSet<>();
 
-    @SneakyThrows
     public CommandHandler(WinterCore plugin) {
         this.plugin = plugin;
-        SimplePluginManager spm = (SimplePluginManager) Bukkit.getPluginManager();
-        Field field = spm.getClass().getDeclaredField("commandMap");
-        field.setAccessible(true);
-        this.commandMap = (CommandMap) field.get(spm);
+        try {
+            SimplePluginManager spm = (SimplePluginManager) Bukkit.getPluginManager();
+            Field field = spm.getClass().getDeclaredField("commandMap");
+            field.setAccessible(true);
+            this.commandMap = (CommandMap) field.get(spm);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Could not access Bukkit command map", e);
+        }
     }
 
     public void register(Class<? extends BaseCommand> commandClass) {
@@ -46,8 +49,7 @@ public class CommandHandler {
             BaseCommand commandExecutor = constructor.newInstance(plugin);
             registerInternal(commandExecutor, info);
         } catch (Exception e) {
-            plugin.getLogger().severe("Failed to register command: " + info.name());
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE, "Failed to register command: " + info.name(), e);
         }
     }
 
@@ -61,8 +63,7 @@ public class CommandHandler {
         try {
             registerInternal(commandInstance, info);
         } catch (Exception e) {
-            plugin.getLogger().severe("Failed to register command instance: " + info.name());
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE, "Failed to register command instance: " + info.name(), e);
         }
     }
 

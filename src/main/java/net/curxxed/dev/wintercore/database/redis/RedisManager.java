@@ -8,11 +8,13 @@ import net.curxxed.dev.wintercore.database.redis.packet.RedisPacketCodec;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.Utilities;
 import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitTask;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public final class RedisManager {
 
@@ -22,6 +24,11 @@ public final class RedisManager {
     private final String serverName;
     private final RedisPacketCodec codec;
     private final BukkitRedisPacketHandler handler;
+
+    // assigned on the subscriber thread, read from the main thread on stop()
+    private volatile JedisPubSub subscription;
+    private BukkitTask heartbeatTask;
+    private BukkitTask listenerTask;
 
     public RedisManager(WinterCore plugin) {
         this.plugin = plugin;
@@ -36,6 +43,24 @@ public final class RedisManager {
     }
 
     public void stop() {
+        JedisPubSub current = subscription;
+        if (current != null) {
+            try {
+                if (current.isSubscribed()) {
+                    // unblocks the subscribe() call so its task exits and returns the pooled connection
+                    current.unsubscribe();
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to unsubscribe Redis listener", e);
+            }
+            subscription = null;
+        }
+
+        plugin.getTasks().cancel(listenerTask);
+        plugin.getTasks().cancel(heartbeatTask);
+        listenerTask = null;
+        heartbeatTask = null;
+
         stopHeartbeat();
     }
 
@@ -43,12 +68,12 @@ public final class RedisManager {
         try (Jedis jedis = plugin.getRedisPool().getResource()) {
             jedis.publish(CHANNEL, codec.encode(packet));
         } catch (Exception e) {
-            plugin.getLogger().warning("Failed to publish Redis packet: " + e.getMessage());
+            plugin.getLogger().log(Level.WARNING, "Failed to publish Redis packet", e);
         }
     }
 
     private void startHeartbeat() {
-        plugin.getTasks().timerAsync(() -> {
+        heartbeatTask = plugin.getTasks().timerAsync(() -> {
             try (Jedis jedis = plugin.getRedisPool().getResource()) {
                 String key = "server:" + serverName + ":heartbeat";
                 jedis.set(key, "1");
@@ -63,7 +88,7 @@ public final class RedisManager {
                 jedis.hset(infoKey, "updatedAt", String.valueOf(System.currentTimeMillis()));
                 jedis.expire(infoKey, 30);
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to write heartbeat: " + e.getMessage());
+                plugin.getLogger().log(Level.WARNING, "Failed to write Redis heartbeat", e);
             }
         }, 0L, 200L);
     }
@@ -73,7 +98,7 @@ public final class RedisManager {
             jedis.del("server:" + serverName + ":heartbeat");
             jedis.del("server:" + serverName + ":info");
         } catch (Exception e) {
-            plugin.getLogger().warning("Failed to remove heartbeat: " + e.getMessage());
+            plugin.getLogger().log(Level.WARNING, "Failed to remove Redis heartbeat", e);
         }
     }
 
@@ -84,7 +109,7 @@ public final class RedisManager {
             }
             return plugin.getTasks().callSync(this::buildServerInfoSnapshot).get(2, TimeUnit.SECONDS);
         } catch (Exception e) {
-            plugin.getLogger().warning("Failed to collect server info snapshot: " + e.getMessage());
+            plugin.getLogger().log(Level.WARNING, "Failed to collect server info snapshot", e);
             return new ServerInfoSnapshot("0.00", 0, 0, false);
         }
     }
@@ -131,9 +156,9 @@ public final class RedisManager {
     }
 
     private void startListening() {
-        plugin.getTasks().async(() -> {
+        listenerTask = plugin.getTasks().async(() -> {
             try (Jedis jedis = plugin.getRedisPool().getResource()) {
-                jedis.subscribe(new JedisPubSub() {
+                subscription = new JedisPubSub() {
                     @Override
                     public void onMessage(String channel, String message) {
                         if (!CHANNEL.equals(channel)) {
@@ -141,8 +166,7 @@ public final class RedisManager {
                         }
 
                         try {
-                            final RedisPacket<RedisPacketHandler> packet =
-                                    (RedisPacket<RedisPacketHandler>) codec.decode(message);
+                            final RedisPacket<RedisPacketHandler> packet = codec.decode(message);
 
                             if (serverName.equalsIgnoreCase(packet.getSourceServer())) {
                                 return;
@@ -152,16 +176,17 @@ public final class RedisManager {
                                 try {
                                     packet.handle(handler);
                                 } catch (Exception e) {
-                                    plugin.getLogger().warning("Failed to handle Redis packet: " + e.getMessage());
+                                    plugin.getLogger().log(Level.WARNING, "Failed to handle Redis packet", e);
                                 }
                             });
                         } catch (Exception e) {
-                            plugin.getLogger().warning("Failed to decode Redis packet: " + e.getMessage());
+                            plugin.getLogger().log(Level.WARNING, "Failed to decode Redis packet", e);
                         }
                     }
-                }, CHANNEL);
+                };
+                jedis.subscribe(subscription, CHANNEL);
             } catch (Exception e) {
-                plugin.getLogger().warning("Redis subscription failed: " + e.getMessage());
+                plugin.getLogger().log(Level.WARNING, "Redis subscription failed", e);
             }
         });
     }
@@ -172,7 +197,7 @@ public final class RedisManager {
             try {
                 packet.handle(handler);
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to handle local packet: " + e.getMessage());
+                plugin.getLogger().log(Level.WARNING, "Failed to handle local Redis packet", e);
             }
         });
     }

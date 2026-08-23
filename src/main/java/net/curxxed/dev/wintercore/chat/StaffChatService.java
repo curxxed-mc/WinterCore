@@ -96,7 +96,7 @@ public final class StaffChatService {
     private String resolveRealName(Player player) {
         UUID uuid = player.getUniqueId();
 
-        DisguiseData data = plugin.getDisguiseDataMap().get(uuid);
+        DisguiseData data = plugin.getDisguiseRegistry().getDisguiseData(uuid);
         if (data != null && data.getInfo() != null && data.getInfo().has("name") && !data.getInfo().get("name").isJsonNull()) {
             try {
                 String original = data.getInfo().get("name").getAsString();
@@ -108,7 +108,7 @@ public final class StaffChatService {
         }
 
         try {
-            String cached = plugin.getNRS().getCachedUsername(uuid.toString());
+            String cached = plugin.getNetworkRedisService().getCachedUsername(uuid.toString());
             if (cached != null && !cached.trim().isEmpty()) {
                 return cached;
             }

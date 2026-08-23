@@ -6,8 +6,6 @@ import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
 import net.curxxed.dev.wintercore.menus.HistoryMenu;
 import net.curxxed.dev.wintercore.config.MenuConfig;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 @CommandInfo(
@@ -44,15 +42,8 @@ public class HistoryCommand extends BaseCommand {
         }
 
         Player sender = args.getPlayer();
-
-        @SuppressWarnings("deprecation")
-        OfflinePlayer target = Bukkit.getOfflinePlayer(args.getArgs()[0]);
-
-        if (!target.hasPlayedBefore() && !target.isOnline()) {
-            send(sender, "general.player-not-found", "&cPlayer not found.");
-            return;
-        }
-
-        new HistoryMenu(plugin, menuConfig, target.getName(), target.getUniqueId()).open(sender);
+        String targetName = args.getArgs()[0];
+        resolvePlayerId(sender, targetName,
+                targetUuid -> new HistoryMenu(plugin, menuConfig, targetName, targetUuid).open(sender));
     }
 }

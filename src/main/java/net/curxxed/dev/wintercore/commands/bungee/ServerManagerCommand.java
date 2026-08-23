@@ -1,7 +1,5 @@
 package net.curxxed.dev.wintercore.commands.bungee;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import net.curxxed.dev.wintercore.commands.framework.BaseCommand;
 import net.curxxed.dev.wintercore.commands.framework.CommandArguments;
 import net.curxxed.dev.wintercore.commands.framework.CommandInfo;
@@ -11,6 +9,7 @@ import net.curxxed.dev.wintercore.database.redis.packet.packets.RemoteCommandPac
 import net.curxxed.dev.wintercore.database.redis.service.NetworkRedisService;
 import net.curxxed.dev.wintercore.plugin.WinterCore;
 import net.curxxed.dev.wintercore.utils.CC;
+import net.curxxed.dev.wintercore.utils.PluginMessageData;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -162,7 +161,7 @@ public class ServerManagerCommand extends BaseCommand {
             }
         }
         if (args.length() == 3 && "send".equals(subCommand)) {
-            return completeCurrentArg(args, plugin.getNRS().getAliveServers());
+            return completeCurrentArg(args, plugin.getNetworkRedisService().getAliveServers());
         }
 
         return Collections.emptyList();
@@ -208,7 +207,7 @@ public class ServerManagerCommand extends BaseCommand {
 
     private void listPlayers(CommandSender sender) {
         Map<String, List<String>> grouped = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        for (NetworkRedisService.OnlinePresence presence : plugin.getNRS().getOnlinePlayers().values()) {
+        for (NetworkRedisService.OnlinePresence presence : plugin.getNetworkRedisService().getOnlinePlayers().values()) {
             grouped.computeIfAbsent(presence.getServerName(), ignored -> new ArrayList<>())
                     .add(presence.getPlayerName());
         }
@@ -243,7 +242,7 @@ public class ServerManagerCommand extends BaseCommand {
         }
 
         String target = args.getOptionalString(1).orElse("");
-        NetworkRedisService.OnlinePresence presence = plugin.getNRS().getOnlinePresenceByName(target);
+        NetworkRedisService.OnlinePresence presence = plugin.getNetworkRedisService().getOnlinePresenceByName(target);
         if (presence == null) {
             reply(sender, "network-find.not-online", "&c{player} is not online on the network.",
                     "{player}", target);
@@ -262,7 +261,7 @@ public class ServerManagerCommand extends BaseCommand {
         }
 
         String targetName = args.getOptionalString(1).orElse("");
-        NetworkRedisService.OnlinePresence presence = plugin.getNRS().getOnlinePresenceByName(targetName);
+        NetworkRedisService.OnlinePresence presence = plugin.getNetworkRedisService().getOnlinePresenceByName(targetName);
         if (presence == null) {
             reply(sender, "network-send.not-online", "&c{player} is not online on the network.",
                     "{player}", targetName);
@@ -318,7 +317,7 @@ public class ServerManagerCommand extends BaseCommand {
         if ("on".equals(action)) {
             String reason = joinArgs(args.getArgsList(), 2);
             if (reason.isEmpty()) reason = "Maintenance";
-            plugin.getNRS().setMaintenance(true, reason, sender.getName(), sourceServer());
+            plugin.getNetworkRedisService().setMaintenance(true, reason, sender.getName(), sourceServer());
             broadcastMaintenance("network-maintenance.enabled-broadcast",
                     "&cNetwork maintenance has been enabled. &7Reason: &f{reason}",
                     sender.getName(), reason);
@@ -327,7 +326,7 @@ public class ServerManagerCommand extends BaseCommand {
             return;
         }
         if ("off".equals(action)) {
-            plugin.getNRS().setMaintenance(false, "Maintenance", sender.getName(), sourceServer());
+            plugin.getNetworkRedisService().setMaintenance(false, "Maintenance", sender.getName(), sourceServer());
             broadcastMaintenance("network-maintenance.disabled-broadcast",
                     "&aNetwork maintenance has been disabled.", sender.getName(), "Maintenance");
             reply(sender, "network-maintenance.disabled", "&aNetwork maintenance disabled.");
@@ -338,7 +337,7 @@ public class ServerManagerCommand extends BaseCommand {
     }
 
     private void sendMaintenanceStatus(CommandSender sender) {
-        NetworkRedisService.MaintenanceState state = plugin.getNRS().getMaintenanceState();
+        NetworkRedisService.MaintenanceState state = plugin.getNetworkRedisService().getMaintenanceState();
         String status = state.isEnabled()
                 ? message("network-maintenance.status-enabled", "&cEnabled")
                 : message("network-maintenance.status-disabled", "&aDisabled");
@@ -422,10 +421,11 @@ public class ServerManagerCommand extends BaseCommand {
             player.sendMessage(message("server-manager.joining", "&7Sending you to {server}...",
                     "{server}", serverName));
 
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("Connect");
-            out.writeUTF(plugin.getConfig().getString("BungeeServers." + serverName, serverName));
-            player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+            byte[] payload = PluginMessageData.encode(
+                    "Connect",
+                    plugin.getConfig().getString("BungeeServers." + serverName, serverName)
+            );
+            player.sendPluginMessage(plugin, "BungeeCord", payload);
         });
     }
 
@@ -476,14 +476,14 @@ public class ServerManagerCommand extends BaseCommand {
     }
 
     private String resolveAliveServer(String requested) {
-        for (String server : plugin.getNRS().getAliveServers()) {
+        for (String server : plugin.getNetworkRedisService().getAliveServers()) {
             if (server.equalsIgnoreCase(requested.trim())) return server;
         }
         return null;
     }
 
     private List<String> onlinePlayerNames() {
-        return plugin.getNRS().getOnlinePlayers().values().stream()
+        return plugin.getNetworkRedisService().getOnlinePlayers().values().stream()
                 .map(NetworkRedisService.OnlinePresence::getPlayerName)
                 .collect(Collectors.toList());
     }

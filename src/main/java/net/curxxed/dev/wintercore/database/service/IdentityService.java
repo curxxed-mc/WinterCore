@@ -64,18 +64,12 @@ public final class IdentityService {
                 if (doc != null) {
                     uuid = UUID.fromString(doc.getString("_id"));
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Could not resolve player UUID for " + playerName, e);
             }
 
             if (uuid == null) {
-                plugin.getTasks().sync(() -> {
-                    try {
-                        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
-                        callback.accept(offlinePlayer.getUniqueId());
-                    } catch (Exception e) {
-                        callback.accept(null);
-                    }
-                });
+                plugin.getTasks().sync(() -> callback.accept(null));
                 return;
             }
 
@@ -123,7 +117,7 @@ public final class IdentityService {
     public void getAlts(UUID uuid, Consumer<Set<UUID>> callback) {
         getIPsForUUID(uuid, ips -> {
             if (ips.isEmpty()) {
-                plugin.getTasks().sync(() -> callback.accept(Collections.singleton(uuid)));
+                plugin.getTasks().sync(() -> callback.accept(Collections.emptySet()));
                 return;
             }
 
@@ -139,6 +133,7 @@ public final class IdentityService {
                 } catch (Exception e) {
                     plugin.getLogger().log(Level.SEVERE, "Could not fetch alts for " + uuid, e);
                 }
+                alts.remove(uuid);
 
                 Set<UUID> finalAlts = alts;
                 plugin.getTasks().sync(() -> callback.accept(finalAlts));
